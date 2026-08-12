@@ -8,6 +8,20 @@
 	"observability": {
 		"enabled": true
 	},
+	// Cloudflare creates and maintains the DNS records for these itself, so the
+	// zone needs no A or CNAME added by hand. The workers.dev address keeps
+	// working alongside them, which is what the smoke tests run against before
+	// a change reaches the real domain.
+	"routes": [
+		{
+			"pattern": "themaildoc.co",
+			"custom_domain": true
+		},
+		{
+			"pattern": "www.themaildoc.co",
+			"custom_domain": true
+		}
+	],
 	// The Astro adapter generates `main` and `assets` itself. Prerendered pages
 	// are served as free static assets and only /api/* invokes the Worker.
 	//
