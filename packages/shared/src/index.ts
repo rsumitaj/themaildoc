@@ -28,5 +28,6 @@ export {
   stripWww,
   toDomain,
   domainRejectionMessage,
+  tidyDomainInput,
 } from './domain.js';
 export type { DomainResult, DomainRejection } from './domain.js';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeDomain, stripWww, toDomain } from '../src/index.js';
+import { normalizeDomain, stripWww, tidyDomainInput, toDomain } from '../src/index.js';
 
 describe('normalizeDomain', () => {
   it.each([
@@ -56,5 +56,49 @@ describe('stripWww', () => {
     expect(stripWww('www.example.com')).toBe('example.com');
     expect(stripWww('wwwx.example.com')).toBe('wwwx.example.com');
     expect(stripWww('mail.www.example.com')).toBe('mail.www.example.com');
+  });
+});
+
+describe('tidyDomainInput', () => {
+  it('strips a scheme, because the field already shows one', () => {
+    expect(tidyDomainInput('https://online.canarabank.bank.in')).toBe('online.canarabank.bank.in');
+    expect(tidyDomainInput('http://example.com')).toBe('example.com');
+  });
+
+  it('keeps only the host from a full URL', () => {
+    expect(tidyDomainInput('https://bank.example.com/login?next=/account#top')).toBe(
+      'bank.example.com',
+    );
+  });
+
+  it('takes the domain out of an email address', () => {
+    expect(tidyDomainInput('sumit@example.co.uk')).toBe('example.co.uk');
+  });
+
+  it('drops a leading www, but never down to a bare TLD', () => {
+    expect(tidyDomainInput('www.example.com')).toBe('example.com');
+    expect(tidyDomainInput('www.com')).toBe('www.com');
+  });
+
+  it('leaves a plain domain exactly as typed', () => {
+    expect(tidyDomainInput('example.com')).toBe('example.com');
+    expect(tidyDomainInput('mail.example')).toBe('mail.example');
+  });
+
+  it('does not fight someone mid-keystroke', () => {
+    // Half-typed input must survive untouched, or the caret jumps.
+    expect(tidyDomainInput('exam')).toBe('exam');
+    expect(tidyDomainInput('example.')).toBe('example.');
+  });
+
+  it('agrees with the validator on everything it produces', () => {
+    for (const raw of [
+      'https://www.example.com/path',
+      'sumit@example.com',
+      'HTTP://Example.COM',
+      'example.com',
+    ]) {
+      expect(normalizeDomain(tidyDomainInput(raw)).ok, raw).toBe(true);
+    }
   });
 });

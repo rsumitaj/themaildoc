@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { domainRejectionMessage, normalizeDomain } from '@maildoc/shared';
+import { domainRejectionMessage, normalizeDomain, tidyDomainInput } from '@maildoc/shared';
 import { ArrowIcon, StethoscopeIcon } from './Icons';
 
 /**
@@ -63,7 +63,14 @@ export function CheckupForm({ initial = '', busy = false, onExamine }: CheckupFo
           spellcheck={false}
           inputMode="url"
           value={input}
-          onInput={(event) => setInput((event.target as HTMLInputElement).value)}
+          onInput={(event) => {
+            const field = event.target as HTMLInputElement;
+            const tidied = tidyDomainInput(field.value);
+            // Only write back when something was actually removed, so the
+            // caret does not jump while somebody is still typing.
+            if (tidied !== field.value) field.value = tidied;
+            setInput(tidied);
+          }}
           aria-describedby="checkup-note"
         />
         <button class="md-btn" type="submit" disabled={busy}>

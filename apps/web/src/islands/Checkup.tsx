@@ -139,7 +139,12 @@ export default function Checkup() {
     : [];
   // Re-scored in the browser so DKIM's findings count toward Vitals, using the
   // same arithmetic the Worker used.
-  const scored = core ? computeVitals(conditions) : null;
+  // The verdict has to come along. Without it the headline number is scored
+  // one way and the explainer below it another, which is how a page ends up
+  // showing 53 above an explanation that adds up to 65.
+  const scored = core
+    ? computeVitals(conditions, { spoofability: core.spoofability.verdict })
+    : null;
 
   return (
     <div>

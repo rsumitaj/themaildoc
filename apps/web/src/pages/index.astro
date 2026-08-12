@@ -6,6 +6,35 @@ const title = 'Free Email Authentication Check: SPF, DKIM and DMARC | The MailDo
 const description =
   "Free email health checkup: enter your domain and get a full diagnosis of SPF, DKIM, DMARC, MX and DNSSEC in seconds, with the exact prescription to fix what's wrong.";
 
+/**
+ * The questions people actually type into a search box before they know what
+ * SPF stands for. Answering them here earns the rich result and, more to the
+ * point, means somebody arriving from that search finds their answer rather
+ * than a tool they have to learn first.
+ */
+const faqs = [
+  {
+    q: 'How do I know if someone can send email pretending to be my domain?',
+    a: 'Put your domain in the box above. The answer depends almost entirely on one record, DMARC, and on the policy it publishes. Without DMARC, or with a policy of p=none, anyone in the world can put your domain in the From line and most inboxes will deliver it. The checkup tells you which of those you are in one line, before any of the detail.',
+  },
+  {
+    q: 'What is a good email authentication score?',
+    a: 'Above 85 means nothing serious is wrong. Between 65 and 84 there are real gaps costing you delivery or leaving you exposed. Below 40 means somebody can impersonate you right now. The score is built from four separate questions rather than one list, so a domain can be excellent at stopping impersonation and still lose marks for reporting it cannot see.',
+  },
+  {
+    q: 'Is this actually free, and do you store my domain?',
+    a: 'It is free with no account, and there is no paid tier holding the real answer back. Every check reads public DNS, the same records any mail server reads when it decides what to do with your mail. Nothing about a checkup is stored. The only thing this site keeps is a consultation request, and only if you fill one in.',
+  },
+  {
+    q: 'Why does another tool say my SPF is fine when this one does not?',
+    a: 'Usually the lookup count. SPF allows ten DNS lookups and the ones inside your includes count against the same ten, so a record that looks short can be over the limit through somebody else’s vendor. Past ten, receivers return a permanent error and SPF fails for every message you send. This walks the whole chain and shows you the count with the tree that produced it.',
+  },
+  {
+    q: 'What should I fix first?',
+    a: 'Whatever the chart lists first. Findings are triaged by what they cost you, not by which record they sit in, so the first card is the one doing the most damage. Every card carries the exact record to publish and the standard it comes from.',
+  },
+];
+
 const steps = [
   {
     n: '01',
@@ -39,7 +68,21 @@ const tests = [
 ];
 ---
 
-<Base title={title} description={description}>
+<Base
+  title={title}
+  description={description}
+  jsonLd={[
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: { '@type': 'Answer', text: faq.a },
+      })),
+    },
+  ]}
+>
   <section class="hero">
     <svg class="ekg" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
       <path
@@ -123,6 +166,20 @@ const tests = [
         }
       </div>
       <p class="lab__more"><a href="/lab">Every test in the Lab &rarr;</a></p>
+    </div>
+  </section>
+
+  <section class="faq">
+    <div class="md-wrap">
+      <h2 class="md-eyebrow">Common questions</h2>
+      {
+        faqs.map((faq) => (
+          <details class="faq__item">
+            <summary>{faq.q}</summary>
+            <p>{faq.a}</p>
+          </details>
+        ))
+      }
     </div>
   </section>
 </Base>
@@ -316,5 +373,42 @@ const tests = [
 
   .test:hover {
     border-color: var(--md-red-line);
+  }
+
+  .faq {
+    padding-block: var(--md-space-9);
+    border-top: var(--md-hairline) solid var(--md-line);
+  }
+
+  .faq__item {
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .faq__item summary {
+    padding: var(--md-space-4) 0;
+    font-weight: var(--md-weight-medium);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--md-faint);
+  }
+
+  .faq__item[open] summary::after {
+    content: '\2212';
+  }
+
+  .faq__item p {
+    padding-bottom: var(--md-space-4);
+    color: var(--md-muted);
+    max-width: 68ch;
+    line-height: 1.65;
   }
 </style>

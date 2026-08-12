@@ -102,3 +102,29 @@ const REJECTION_MESSAGES: Record<DomainRejection, string> = {
 export function domainRejectionMessage(reason: DomainRejection): string {
   return REJECTION_MESSAGES[reason];
 }
+
+/**
+ * Tidy what somebody pasted, while they are still in the box.
+ *
+ * `normalizeDomain` above already accepts a full URL, so pasting one always
+ * worked. It just looked as though it would not: the input carries a static
+ * `https://` in front of it, so pasting an address straight out of the browser
+ * bar showed `https:// https://bank.example.com/login` and read as an error
+ * before anyone pressed the button.
+ *
+ * Only the obviously-removable parts belong here. Trailing dots, ports,
+ * unicode and the rest are `normalizeDomain`'s job, and stripping them
+ * mid-keystroke would fight the person typing.
+ */
+export function tidyDomainInput(raw: string): string {
+  return raw
+    .replace(/^\s+/, '')
+    // scheme
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    // mailbox, so pasting an address gives the domain it belongs to
+    .replace(/^[^/@\s]*@/, '')
+    // a leading www., but never when it would leave a bare TLD
+    .replace(/^www\.(?=[^.]+\.[^.]+)/i, '')
+    // path, query, fragment
+    .replace(/[/?#].*$/, '');
+}
