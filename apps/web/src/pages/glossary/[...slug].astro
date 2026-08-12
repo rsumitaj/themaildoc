@@ -1,0 +1,144 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ConsultLine from '../../components/ConsultLine.astro';
+import { LAB_GROUPS } from '../../data/tests';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('glossary', (entry) => !entry.data.draft);
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry, all: entries },
+  }));
+}
+
+const { entry, all } = Astro.props;
+const { Content } = await render(entry);
+const data = entry.data;
+
+const bySlug = new Map(all.map((item) => [item.id, item]));
+const seeAlso = data.seeAlso.map((slug) => bySlug.get(slug)).filter((item) => item !== undefined);
+
+const labBySlug = new Map(
+  LAB_GROUPS.flatMap((group) => group.tests)
+    .filter((test) => test.href)
+    .map((test) => [test.href!.replace('/lab/', ''), test]),
+);
+const tools = data.tools.map((slug) => labBySlug.get(slug)).filter((test) => test !== undefined);
+
+const library = await getCollection('library', (item) => !item.data.draft);
+const libraryBySlug = new Map(library.map((item) => [item.id, item]));
+const reading = data.related.map((slug) => libraryBySlug.get(slug)).filter((item) => item !== undefined);
+
+const updated = data.updated.toISOString().slice(0, 10);
+---
+
+<Base
+  title={data.title}
+  description={data.description}
+  kind="term"
+  term={{ name: data.term, definition: data.definition }}
+  updated={data.updated.toISOString()}
+  faqs={data.faq}
+  crumbs={[
+    { name: 'Glossary', href: '/glossary' },
+    { name: data.term, href: `/glossary/${entry.id}` },
+  ]}
+>
+  <article class="page">
+    <div class="md-wrap">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="/glossary">Glossary</a>
+        <span aria-hidden="true">/</span>
+        <span>{data.term}</span>
+      </nav>
+
+      <header class="head">
+        <h1>{data.term}</h1>
+        <p class="definition">{data.definition}</p>
+        <p class="byline md-mono">Reviewed <time datetime={updated}>{updated}</time></p>
+      </header>
+
+      <div class="prose"><Content /></div>
+
+      {
+        (seeAlso.length > 0 || tools.length > 0 || reading.length > 0) && (
+          <section class="next">
+            <h2>Related</h2>
+            <ul class="next__list">
+              {seeAlso.map((item) => (
+                <li>
+                  <a href={`/glossary/${item!.id}`}>{item!.data.term}</a>
+                  <span>{item!.data.definition}</span>
+                </li>
+              ))}
+              {reading.map((item) => (
+                <li>
+                  <a href={`/health-library/${item!.id}`}>{item!.data.heading}</a>
+                  <span>{item!.data.standfirst}</span>
+                </li>
+              ))}
+              {tools.map((test) => (
+                <li>
+                  <a href={test!.href}>{test!.name}</a>
+                  <span>{test!.blurb}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <ConsultLine />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .page { padding-block: var(--md-space-8) var(--md-space-9); }
+  .crumbs {
+    display: flex;
+    gap: var(--md-space-2);
+    font-size: var(--md-text-xs);
+    font-family: var(--md-font-mono);
+    color: var(--md-faint);
+    margin-bottom: var(--md-space-5);
+  }
+  .head {
+    max-width: 44rem;
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    padding-bottom: var(--md-space-6);
+  }
+  h1 {
+    font-size: clamp(1.8rem, 4.2vw, 2.6rem);
+    letter-spacing: var(--md-tracking-tight);
+  }
+  .definition {
+    margin-top: var(--md-space-4);
+    font-size: 1.1rem;
+    line-height: 1.55;
+    color: var(--md-muted);
+  }
+  .byline { margin-top: var(--md-space-4); font-size: var(--md-text-xs); color: var(--md-faint); }
+  .prose { max-width: 42rem; margin-top: var(--md-space-7); }
+  .next {
+    max-width: 42rem;
+    margin-top: var(--md-space-8);
+    padding-top: var(--md-space-6);
+    border-top: var(--md-hairline) solid var(--md-line);
+  }
+  .next h2 { font-size: 1.25rem; margin-bottom: var(--md-space-4); }
+  .next__list { list-style: none; display: grid; gap: var(--md-space-3); }
+  .next__list li {
+    padding-bottom: var(--md-space-3);
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+  .next__list a { display: block; font-weight: var(--md-weight-medium); color: var(--md-ink); }
+  .next__list a:hover { color: var(--md-red-ink); }
+  .next__list span {
+    display: block;
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+    margin-top: 0.15rem;
+  }
+</style>

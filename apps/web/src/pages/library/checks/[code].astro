@@ -45,7 +45,7 @@ const RECORD_TOOL: Record<string, string> = {
   RUA: '/bloodwork',
 };
 
-const tool = RECORD_TOOL[issue.record] ?? '/health-library';
+const tool = RECORD_TOOL[issue.record] ?? '/checkup';
 const related = ALL_ISSUES.filter(
   (other) => other.record === issue.record && other.code !== issue.code,
 ).slice(0, 6);
@@ -79,17 +79,48 @@ const jsonLd = [
     ],
   },
 ];
+
+/**
+ * Trim to what a search result shows, at a word boundary.
+ *
+ * A straight slice to 155 was not enough: a quotation mark in the text becomes
+ * six characters once escaped into the attribute, so descriptions containing
+ * one came out past 160 and got cut off mid-word in the SERP.
+ */
+function metaDescription(value: string): string {
+  const flat = value.replace(/\s+/g, ' ').trim();
+  if (flat.length <= 140) return flat;
+  const cut = flat.slice(0, 140);
+  return `${cut.slice(0, cut.lastIndexOf(' '))}\u2026`;
+}
+
+/**
+ * Titles come from the catalog, and a few conditions are worded long enough to
+ * be cut off in a search result. Trim at a word boundary rather than shipping a
+ * title Google will truncate mid-word.
+ */
+function trimTitle(value: string): string {
+  if (value.length <= 60) return value;
+  const cut = value.slice(0, 60);
+  return `${cut.slice(0, cut.lastIndexOf(' '))}\u2026`;
+}
 ---
 
 <Base
-  title={`${issue.title} | ${issue.record} | The MailDoc`}
-  description={readable(issue.why).slice(0, 155)}
-  jsonLd={jsonLd}
+  {/*
+    No brand suffix here. These are deep reference pages whose titles are the
+    condition itself, and fourteen characters of branding pushed most of them
+    past what a search result shows. The record name earns its place because it
+    is what disambiguates two similarly worded conditions.
+  */}
+  title={trimTitle(`${issue.title} | ${issue.record}`)}
+  description={metaDescription(readable(issue.why))}
+  extra={jsonLd}
 >
   <section class="check">
     <div class="md-wrap">
       <nav class="crumbs md-mono" aria-label="Breadcrumb">
-        <a href="/health-library">Checkup</a> <span aria-hidden="true">/</span>
+        <a href="/checkup">Checkup</a> <span aria-hidden="true">/</span>
         <a href="/library/checks">Checks</a> <span aria-hidden="true">/</span>
         <span>{issue.record}</span>
       </nav>
@@ -114,7 +145,7 @@ const jsonLd = [
         <p>
           This page describes the condition. To find out whether your domain has it,
           <a href={tool}>run the {issue.record} test</a> or
-          <a href="/health-library">the full checkup</a>, which examines every record at once.
+          <a href="/checkup">the full checkup</a>, which examines every record at once.
         </p>
 
         <h2>Where this comes from</h2>
@@ -162,7 +193,7 @@ const jsonLd = [
   }
 
   .crumbs a:hover {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 
   .head {

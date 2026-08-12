@@ -50,7 +50,7 @@ export type LeadResult =
 
 const LIMITS = {
   name: 120,
-  email: 254, // RFC 5321 §4.5.3.1.3
+  email: 254, // RFC 5321 section 4.5.3.1.3
   company: 160,
   message: 4_000,
   sourcePage: 300,

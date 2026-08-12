@@ -102,8 +102,16 @@ describe('titles and descriptions', () => {
   });
 
   it('gives every title the brand', () => {
+    // "MailDoc" rather than "The MailDoc": the definite article cost four
+    // characters on every page and pushed sixty titles past what a search
+    // result shows. The condition pages carry the record name instead, because
+    // that is what tells two similarly worded conditions apart, and they are
+    // reference pages nobody reaches from a brand search.
     const orphan = metas.filter(
-      (meta) => meta.kind === 'title' && !/\| (The MailDoc|Sumit Raj)$/.test(meta.value),
+      (meta) =>
+        meta.kind === 'title' &&
+        !/\| (MailDoc|Sumit Raj, MailDoc)$/.test(meta.value) &&
+        !meta.file.includes('checks/[code]'),
     );
     expect(orphan.map((m) => `${m.file}: ${m.value}`).join('\n')).toBe('');
   });

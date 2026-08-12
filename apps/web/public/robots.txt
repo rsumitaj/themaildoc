@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
 
+# Results are generated per domain from a query string. They are the same
+# template every time, so indexing them would fill the index with duplicates
+# of one page. The template itself is indexable.
+Disallow: /checkup?
+Disallow: /api/
+
 Sitemap: https://themaildoc.co/sitemap-index.xml

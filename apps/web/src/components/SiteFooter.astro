@@ -1,5 +1,6 @@
 ---
 import Logo from './Logo.astro';
+import { LAB_GROUPS } from '../data/tests';
 
 /**
  * The footer's top border is a flat EKG line that beats once at the left —
@@ -8,14 +9,40 @@ import Logo from './Logo.astro';
  */
 const year = new Date().getFullYear();
 
+/**
+ * Every tool, by name, in the footer.
+ *
+ * Partly for people, mostly so that every test is one hop from every page. A
+ * crawler that lands on a glossary entry should be able to reach the SPF
+ * checker without going through a mega-menu it cannot open.
+ */
+const authentication = LAB_GROUPS.find((group) => group.heading === 'Authentication');
+const everythingElse = LAB_GROUPS.filter((group) => group.heading !== 'Authentication')
+  .flatMap((group) => group.tests)
+  .filter((test) => test.href);
+
 const columns = [
   {
-    heading: 'Diagnose',
+    heading: 'Authentication',
     links: [
-      { label: 'Full checkup', href: '/health-library' },
-      { label: 'Every test', href: '/lab' },
-      { label: 'DMARC reports', href: '/bloodwork' },
+      { label: 'Full checkup', href: '/checkup' },
+      ...(authentication?.tests ?? [])
+        .filter((test) => test.href)
+        .map((test) => ({ label: test.name, href: test.href! })),
+    ],
+  },
+  {
+    heading: 'More tests',
+    links: everythingElse.slice(0, 8).map((test) => ({ label: test.name, href: test.href! })),
+  },
+  {
+    heading: 'Read',
+    links: [
+      { label: 'Health Library', href: '/health-library' },
+      { label: 'Glossary', href: '/glossary' },
       { label: 'Every condition', href: '/library/checks' },
+      { label: 'DMARC reports', href: '/bloodwork' },
+      { label: 'RSS feed', href: '/rss.xml' },
     ],
   },
   {
@@ -86,13 +113,13 @@ const columns = [
     top: 0;
     inset-inline: 0;
     height: 12px;
-    color: var(--md-red);
+    color: var(--md-red-ink);
     opacity: 0.55;
   }
 
   .inner {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 1.6fr repeat(4, minmax(0, 1fr));
     gap: var(--md-space-8);
     padding-bottom: var(--md-space-8);
   }
@@ -107,7 +134,7 @@ const columns = [
   }
 
   .brand .mark {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 
   .tld {
@@ -131,8 +158,8 @@ const columns = [
   }
 
   .mail:hover {
-    color: var(--md-red);
-    border-color: var(--md-red);
+    color: var(--md-red-ink);
+    border-color: var(--md-red-ink);
   }
 
   .col ul {
@@ -144,7 +171,7 @@ const columns = [
   }
 
   .col a:hover {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 
   .bottom {

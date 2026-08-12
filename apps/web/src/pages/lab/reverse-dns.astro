@@ -13,12 +13,12 @@ const faqs = [
   record="PTR"
   label="Reverse DNS"
   action="Check reverse DNS"
-  title="Reverse DNS Lookup: free PTR record and FCrDNS check | The MailDoc"
-  description="Free reverse DNS check: does your mail server IP have a PTR record, and does that hostname resolve back to the same address? Catches the FCrDNS failures that get mail rejected."
+  title="Reverse DNS Lookup: free PTR record and FCrDNS check | MailDoc"
+  description="Free reverse DNS check: does your sending IP have a PTR record, and does that name resolve back to the same address? The check receivers run."
   eyebrow="Reverse DNS"
   heading="Reverse DNS check"
   intro="Checks the PTR records of the mail servers you publish, and confirms they resolve back again, which is what receivers actually test."
-  spec="RFC 1912 §2.1"
+  spec="RFC 1912 section 2.1"
   faqs={faqs}
   related={[
     { href: '/lab/mx-lookup', label: 'MX lookup, the hosts this checks' },

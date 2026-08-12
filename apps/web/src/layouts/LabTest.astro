@@ -49,59 +49,33 @@ const {
 const site = Astro.site ?? new URL('https://themaildoc.co');
 const url = new URL(Astro.url.pathname, site).href;
 
-const jsonLd = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: `${label}. The MailDoc`,
-    applicationCategory: 'SecurityApplication',
-    operatingSystem: 'Any',
-    url,
-    description,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    provider: { '@type': 'Organization', name: 'The MailDoc', url: site.href },
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((faq) => ({
-      '@type': 'Question',
-      name: faq.q,
-      acceptedAnswer: { '@type': 'Answer', text: faq.a },
-    })),
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'HowTo',
-    name: `How to fix ${eyebrow.toLowerCase()} problems`,
-    description,
-    totalTime: 'PT15M',
-    estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
-    tool: [{ '@type': 'HowToTool', name: 'Access to your domain DNS' }],
-    step: [
-      { '@type': 'HowToStep', name: 'Check', text: `Run the ${eyebrow} test on this page to see what your domain publishes today.`, url },
-      { '@type': 'HowToStep', name: 'Read the diagnosis', text: 'Each finding says what is wrong and cites the specification it comes from.', url },
-      { '@type': 'HowToStep', name: 'Publish the fix', text: 'Copy the prescription into your DNS, one change at a time.', url },
-      { '@type': 'HowToStep', name: 'Verify', text: 'Re-run the test after DNS propagates, usually within an hour.', url },
-    ],
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'The MailDoc', item: site.href },
-      { '@type': 'ListItem', position: 2, name: 'The Lab', item: new URL('/lab', site).href },
-      { '@type': 'ListItem', position: 3, name: label, item: url },
-    ],
-  },
-];
+
+const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
 ---
 
-<Base title={title} description={description} jsonLd={jsonLd}>
+<Base
+  title={title}
+  description={description}
+  kind="tool"
+  faqs={faqs}
+  howTo={{
+    name: `How to fix ${eyebrow.toLowerCase()} problems`,
+    steps: [
+      { name: 'Check', text: `Run the ${eyebrow} test on this page to see what your domain publishes today.` },
+      { name: 'Read the diagnosis', text: 'Each finding says what is wrong and cites the specification it comes from.' },
+      { name: 'Publish the fix', text: 'Copy the prescription into your DNS, one change at a time.' },
+      { name: 'Verify', text: 'Re-run the test after DNS propagates, usually within an hour.' },
+    ],
+  }}
+  crumbs={[
+    { name: 'The Lab', href: '/lab' },
+    { name: eyebrow, href: cleanPath },
+  ]}
+>
   <section class="test">
     <div class="md-wrap">
       <nav class="crumbs md-mono" aria-label="Breadcrumb">
-        <a href="/health-library">Checkup</a> <span aria-hidden="true">/</span> <a href="/lab">The Lab</a>
+        <a href="/checkup">Checkup</a> <span aria-hidden="true">/</span> <a href="/lab">The Lab</a>
         <span aria-hidden="true">/</span> <span>{eyebrow}</span>
       </nav>
 
@@ -158,7 +132,7 @@ const jsonLd = [
   }
 
   .crumbs a:hover {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 
   h1 {

@@ -5,7 +5,7 @@ import Flatten from '../../islands/Flatten';
 const faqs = [
   {
     q: 'What is the ten lookup limit?',
-    a: 'RFC 7208 §4.6.4 caps an SPF evaluation at ten DNS-lookup-consuming terms. include, a, mx, ptr and exists each cost one, and the includes inside your includes count too. Cross the limit and the receiver returns PermError, which most treat as an SPF failure for every message you send.',
+    a: 'RFC 7208 section 4.6.4 caps an SPF evaluation at ten DNS-lookup-consuming terms. include, a, mx, ptr and exists each cost one, and the includes inside your includes count too. Cross the limit and the receiver returns PermError, which most treat as an SPF failure for every message you send.',
   },
   {
     q: 'Does flattening break anything?',
@@ -31,12 +31,12 @@ const faqs = [
 ---
 
 <ToolPage
-  title="SPF Flattener: fix the 10 lookup limit, free | The MailDoc"
-  description="Free SPF flattener. Expands every include, a and mx into the addresses behind them, merges them into the fewest CIDR blocks, and tells you honestly what flattening costs you."
+  title="SPF Flattener: fix the 10 lookup limit, free | MailDoc"
+  description="Free SPF flattener: expands every include into the addresses behind it, merges them into the fewest CIDR blocks, and shows the count before and after."
   eyebrow="SPF Flattener"
   heading="Over the ten lookup limit? Get a record that fits."
   intro="Expands your whole include chain into the addresses behind it and merges them into the fewest blocks that authorise exactly the same senders. Nothing is widened, and nothing you cannot resolve is quietly dropped."
-  spec="RFC 7208 §4.6.4 for the lookup limit and §5.6 for address mechanisms"
+  spec="RFC 7208 section 4.6.4 for the lookup limit and section 5.6 for address mechanisms"
   faqs={faqs}
   related={[
     { href: '/lab/spf-checker', label: 'SPF checker to see the chain before you flatten it' },

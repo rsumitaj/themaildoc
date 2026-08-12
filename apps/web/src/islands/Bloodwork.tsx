@@ -457,7 +457,7 @@ function Results({
 
       <p class="md-testresult__more">
         Reports describe last week's mail.{' '}
-        <a href={`/health-library?domain=${encodeURIComponent(policy.domain)}`}>Run the full checkup</a> to see
+        <a href={`/checkup?domain=${encodeURIComponent(policy.domain)}`}>Run the full checkup</a> to see
         what {policy.domain || 'your domain'} publishes today.
       </p>
     </div>

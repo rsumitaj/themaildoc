@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ConsultLine from '../../components/ConsultLine.astro';
+
+/** Every term, alphabetical. Short pages, heavily interlinked, easy to crawl. */
+const terms = (await getCollection('glossary', (entry) => !entry.data.draft)).sort((a, b) =>
+  a.data.term.localeCompare(b.data.term),
+);
+
+const title = 'Email Authentication Glossary | MailDoc';
+const description =
+  'Plain definitions of the terms in email authentication: SPF, DKIM, DMARC, alignment, MTA-STS, BIMI, DNSSEC, DANE, PermError and more.';
+---
+
+<Base
+  title={title}
+  description={description}
+  crumbs={[{ name: 'Glossary', href: '/glossary' }]}
+>
+  <section class="page">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red-ink)">Glossary</p>
+      <h1>The terms, defined</h1>
+      <p class="lead">
+        One page per term. Each says what it is, what it proves, and the thing about it that most
+        often goes wrong.
+      </p>
+
+      <ul class="grid">
+        {
+          terms.map((entry) => (
+            <li>
+              <a href={`/glossary/${entry.id}`}>{entry.data.term}</a>
+              <span>{entry.data.definition}</span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <ConsultLine />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page { padding-block: var(--md-space-8) var(--md-space-9); }
+  h1 {
+    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    letter-spacing: var(--md-tracking-tight);
+    margin-top: var(--md-space-2);
+  }
+  .lead {
+    max-width: 44rem;
+    margin-top: var(--md-space-4);
+    color: var(--md-muted);
+    line-height: 1.6;
+  }
+  .grid {
+    list-style: none;
+    margin-top: var(--md-space-7);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--md-space-5);
+  }
+  .grid li {
+    padding-bottom: var(--md-space-4);
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+  .grid a {
+    font-weight: var(--md-weight-bold);
+    font-size: 1.05rem;
+    color: var(--md-ink);
+  }
+  .grid a:hover { color: var(--md-red-ink); }
+  .grid span {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+    line-height: 1.55;
+  }
+</style>

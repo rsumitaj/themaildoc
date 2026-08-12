@@ -68,13 +68,13 @@ const jsonLd = [
 ---
 
 <Base
-  title={`Every email authentication check we run (${ALL_ISSUES.length}) | The MailDoc`}
-  description="The full list of conditions the checkup can find across SPF, DKIM, DMARC, MX, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA, each with what it means, how to fix it, and the RFC it comes from."
-  jsonLd={jsonLd}
+  title={`Every email authentication check we run (${ALL_ISSUES.length}) | MailDoc`}
+  description="Every condition the checkup can find across SPF, DKIM, DMARC, MX, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA, each with why it matters and the fix."
+  extra={jsonLd}
 >
   <section class="intro">
     <div class="md-wrap">
-      <p class="md-eyebrow" style="color: var(--md-red)">Checks</p>
+      <p class="md-eyebrow" style="color: var(--md-red-ink)">Checks</p>
       <h1>Everything we look for.</h1>
       <p class="lead">
         {ALL_ISSUES.length} conditions across {groups.length} record types. Each one has a page saying
@@ -174,6 +174,6 @@ const jsonLd = [
   }
 
   .group a:hover {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 </style>

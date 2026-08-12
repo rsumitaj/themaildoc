@@ -11,17 +11,17 @@ const faqs = [
 ---
 
 <ToolPage
-  title="BIMI Checker: free BIMI record and logo test | The MailDoc"
+  title="BIMI Checker: free BIMI record and logo test | MailDoc"
   description="Free BIMI record check: version, logo location, certificate, and the DMARC enforcement BIMI depends on. Cites the actual draft, not an imaginary RFC."
   eyebrow="BIMI Test"
   heading="BIMI record check"
   intro="Reads the record, then fetches the logo and the certificate the way a mailbox does. Most checkers stop at the record, which is why a domain whose certificate lapsed months ago still gets a green tick elsewhere."
-  spec="draft-brand-indicators-for-message-identification §4.3"
+  spec="draft-brand-indicators-for-message-identification section 4.3"
   faqs={faqs}
   related={[
     { href: '/lab/dmarc-checker', label: 'DMARC checker, what BIMI depends on' },
     { href: '/lab/dkim-checker', label: 'DKIM checker, half of what DMARC needs' },
-    { href: '/health-library', label: 'Full checkup, every record at once' },
+    { href: '/checkup', label: 'Full checkup, every record at once' },
   ]}
 >
   <h2>Symptoms</h2>

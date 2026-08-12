@@ -142,7 +142,7 @@ export default function ReadinessCheck() {
           ))}
 
           <p class="md-testresult__more">
-            <a href={`/health-library?domain=${encodeURIComponent(domain)}`}>Run the full checkup</a> for the
+            <a href={`/checkup?domain=${encodeURIComponent(domain)}`}>Run the full checkup</a> for the
             records behind each of these, with the fix for every one.
           </p>
 

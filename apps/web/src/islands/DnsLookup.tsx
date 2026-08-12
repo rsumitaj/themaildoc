@@ -134,7 +134,7 @@ export default function DnsLookup() {
           ))}
 
           <p class="md-testresult__more">
-            Records are what is published. <a href={`/health-library?domain=${encodeURIComponent(result.domain)}`}>
+            Records are what is published. <a href={`/checkup?domain=${encodeURIComponent(result.domain)}`}>
               Run the full checkup
             </a>{' '}
             to find out whether they are correct.

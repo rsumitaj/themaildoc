@@ -229,7 +229,7 @@ export default function Bimi() {
 
           <p class="md-testresult__more">
             This page checks brand indicator only.{' '}
-            <a href={`/health-library?domain=${encodeURIComponent(result.domain)}`}>
+            <a href={`/checkup?domain=${encodeURIComponent(result.domain)}`}>
               Run the full checkup
             </a>{' '}
             to see every record together, with a Vitals score for the whole domain.

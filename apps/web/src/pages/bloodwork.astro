@@ -35,12 +35,12 @@ const faqs = [
 ---
 
 <ToolPage
-  title="DMARC Report Analyzer: read your aggregate reports free | The MailDoc"
-  description="Drop your DMARC aggregate reports in and see who is sending as your domain, what passes alignment and what does not. Parsed entirely in your browser, your reports are never uploaded. Free, no signup."
+  title="DMARC Report Analyzer: read your reports free | MailDoc"
+  description="Drop in your DMARC aggregate reports and see who sends as your domain and what passes alignment. Parsed in your browser, never uploaded."
   eyebrow="Bloodwork"
   heading="Read your DMARC reports without a spreadsheet."
   intro="Aggregate reports arrive as compressed XML nobody wants to open. Drop them here and get the picture you actually need: every source sending as you, ranked, classified and explained, in your browser, where your data belongs."
-  spec="RFC 9990 for the report format and RFC 9989 §4.4 for alignment"
+  spec="RFC 9990 for the report format and RFC 9989 section 4.4 for alignment"
   faqs={faqs}
   related={[
     { href: '/lab/dmarc-checker', label: 'DMARC checker, the record these reports come from' },
@@ -120,6 +120,6 @@ const faqs = [
     quietly becomes a database. Bloodwork parses the file in your browser: decompression, XML
     parsing, alignment and classification all run here, and the page makes no request after it
     loads. The XML reader refuses entity declarations outright, which is the standard way a hostile
-    report file carries an attack (RFC 9990 §8.1).
+    report file carries an attack (RFC 9990 section 8.1).
   </p>
 </ToolPage>

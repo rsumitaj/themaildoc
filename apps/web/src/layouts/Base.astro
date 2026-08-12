@@ -3,47 +3,17 @@ import '@maildoc/ui/maildoc.css';
 import ClinicStatusBar from '../components/ClinicStatusBar.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-
-interface Props {
-  title: string;
-  description: string;
-  /** Structured data blocks for this page. */
-  jsonLd?: unknown[];
-}
-
-const { title, description, jsonLd = [] } = Astro.props;
+import Seo from '../components/Seo.astro';
+import type { Props as SeoProps } from '../components/Seo.astro';
 
 /**
- * `build.format: 'file'` makes Astro.url.pathname end in `.html` at build
- * time, and a canonical pointing at /lab/spf-checker.html would split every
- * page's ranking signals across two URLs.
+ * Every page's shell. All SEO lives in `Seo.astro`, which this passes straight
+ * through, so there is exactly one definition of a canonical, a card and a
+ * schema block.
  */
-const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
-const canonical = new URL(cleanPath, Astro.site ?? Astro.url).href;
-const site = (Astro.site ?? new URL('https://themaildoc.co')).href;
+type Props = SeoProps;
 
-/** Emitted on every page: who we are, and how to search us. */
-const siteJsonLd = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'The MailDoc',
-    url: site,
-    email: 'support@themaildoc.co',
-    description: "The doctor for your domain's email. Free diagnosis, honest prescriptions.",
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'The MailDoc',
-    url: site,
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: { '@type': 'EntryPoint', urlTemplate: `${site}?domain={domain}` },
-      'query-input': 'required name=domain',
-    },
-  },
-];
+const seo = Astro.props;
 ---
 
 <!doctype html>
@@ -51,14 +21,18 @@ const siteJsonLd = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    <Seo {...seo} />
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#E5322D" />
 
+    <!--
+      The one font the first paint needs. Preloading the mono face too would
+      compete with it for bandwidth during LCP, and the mono is below the fold
+      on every page that has records to show.
+    -->
     <link
       rel="preload"
       href="/fonts/space-grotesk-latin.woff2"
@@ -67,28 +41,7 @@ const siteJsonLd = [
       crossorigin
     />
 
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={`${site}og.png`} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The MailDoc. Is your domain sick? Find out in 5 seconds." />
-    <meta property="og:site_name" content="The MailDoc" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content={`${site}og.png`} />
     <meta name="generator" content={Astro.generator} />
-
-    {
-      [...siteJsonLd, ...jsonLd].map((block) => (
-        <script
-          is:inline
-          type="application/ld+json"
-          set:html={JSON.stringify(block).replace(/</g, '\\u003c')}
-        />
-      ))
-    }
   </head>
 
   <body>

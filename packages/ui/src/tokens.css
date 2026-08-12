@@ -12,6 +12,16 @@
   /* ---- Brand ---------------------------------------------------------- */
   --md-red: #e5322d;
   --md-red-deep: #c62828;
+  /*
+   * The brand red as *text*, and as a button background behind white text.
+   *
+   * #e5322d is the identity and it stays exactly where it is on the logo, the
+   * EKG line and the triage dots, none of which carry meaning through colour
+   * alone. It measures 4.35:1 against white and 4.07:1 against the red tint,
+   * both under the 4.5:1 that WCAG AA asks of normal text, so anywhere the red
+   * *is* the text this darker step is used instead. Two shades, one identity.
+   */
+  --md-red-ink: #cf2b26;
   --md-red-tint: #fff5f5;
   --md-red-line: #f3c9c7;
 
@@ -25,7 +35,8 @@
   /* ---- Ink ------------------------------------------------------------ */
   --md-ink: #14171a;
   --md-muted: #5b6470;
-  --md-faint: #9aa3ae;
+  /* Was #9aa3ae, which is 2.47:1 on the page background. Not readable. */
+  --md-faint: #6b7280;
   --md-inverse: #ffffff;
 
   /* ---- Triage (meaning only — always with icon + label, WCAG AA) ------- */

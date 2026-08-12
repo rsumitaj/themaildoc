@@ -1,0 +1,259 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ConsultLine from '../../components/ConsultLine.astro';
+import { LAB_GROUPS } from '../../data/tests';
+
+/**
+ * One article. Everything SEO-bearing comes from validated frontmatter, so a
+ * page cannot ship without a title, a description or a review date.
+ */
+export async function getStaticPaths() {
+  const entries = await getCollection('library', (entry) => !entry.data.draft);
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry, all: entries },
+  }));
+}
+
+const { entry, all } = Astro.props;
+const { Content } = await render(entry);
+const data = entry.data;
+
+/** Only link to entries that exist, so a rename can never leave a 404 behind. */
+const bySlug = new Map(all.map((item) => [item.id, item]));
+const related = data.related.map((slug) => bySlug.get(slug)).filter((item) => item !== undefined);
+
+const pillar = data.pillar ? bySlug.get(data.pillar) : undefined;
+const clusters =
+  data.kind === 'pillar' ? all.filter((item) => item.data.pillar === entry.id) : [];
+
+/** Tool slugs resolve against the Lab, so a link can never point at an unbuilt page. */
+const labBySlug = new Map(
+  LAB_GROUPS.flatMap((group) => group.tests)
+    .filter((test) => test.href)
+    .map((test) => [test.href!.replace('/lab/', ''), test]),
+);
+const tools = data.tools.map((slug) => labBySlug.get(slug)).filter((test) => test !== undefined);
+
+const updated = data.updated.toISOString().slice(0, 10);
+const readable = data.updated.toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+---
+
+<Base
+  title={data.title}
+  description={data.description}
+  kind="article"
+  published={data.published?.toISOString()}
+  updated={data.updated.toISOString()}
+  faqs={data.faq}
+  howTo={data.steps.length > 0 ? { name: data.heading, steps: data.steps } : undefined}
+  crumbs={[
+    { name: 'Health Library', href: '/health-library' },
+    { name: data.heading, href: `/health-library/${entry.id}` },
+  ]}
+>
+  <article class="page">
+    <div class="md-wrap">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="/health-library">Health Library</a>
+        <span aria-hidden="true">/</span>
+        <span>{data.kind === 'pillar' ? 'Guide' : 'Article'}</span>
+      </nav>
+
+      <header class="head">
+        <h1>{data.heading}</h1>
+        <p class="standfirst">{data.standfirst}</p>
+        <p class="byline md-mono">
+          The Practice · reviewed <time datetime={updated}>{readable}</time>
+        </p>
+      </header>
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      {
+        data.faq.length > 0 && (
+          <section class="faq">
+            <h2>Common questions</h2>
+            {data.faq.map((item) => (
+              <details class="faq__item">
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </section>
+        )
+      }
+
+      {
+        tools.length > 0 && (
+          <section class="next">
+            <h2>Run the test</h2>
+            <ul class="next__list">
+              {tools.map((test) => (
+                <li>
+                  <a href={test!.href}>{test!.name}</a>
+                  <span>{test!.blurb}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        (related.length > 0 || pillar || clusters.length > 0) && (
+          <section class="next">
+            <h2>Read next</h2>
+            <ul class="next__list">
+              {pillar && (
+                <li>
+                  <a href={`/health-library/${pillar.id}`}>{pillar.data.heading}</a>
+                  <span>The full guide this belongs to.</span>
+                </li>
+              )}
+              {clusters.map((item) => (
+                <li>
+                  <a href={`/health-library/${item.id}`}>{item.data.heading}</a>
+                  <span>{item.data.standfirst}</span>
+                </li>
+              ))}
+              {related.map((item) => (
+                <li>
+                  <a href={`/health-library/${item!.id}`}>{item!.data.heading}</a>
+                  <span>{item!.data.standfirst}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <ConsultLine />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--md-space-8) var(--md-space-9);
+  }
+
+  .crumbs {
+    display: flex;
+    gap: var(--md-space-2);
+    font-size: var(--md-text-xs);
+    font-family: var(--md-font-mono);
+    color: var(--md-faint);
+    margin-bottom: var(--md-space-5);
+  }
+
+  .head {
+    max-width: 46rem;
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    padding-bottom: var(--md-space-6);
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    letter-spacing: var(--md-tracking-tight);
+    line-height: 1.12;
+  }
+
+  .standfirst {
+    margin-top: var(--md-space-4);
+    font-size: 1.12rem;
+    line-height: 1.55;
+    color: var(--md-muted);
+  }
+
+  .byline {
+    margin-top: var(--md-space-5);
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+  }
+
+  .prose {
+    max-width: 42rem;
+    margin-top: var(--md-space-7);
+  }
+
+  .faq,
+  .next {
+    max-width: 42rem;
+    margin-top: var(--md-space-8);
+    padding-top: var(--md-space-6);
+    border-top: var(--md-hairline) solid var(--md-line);
+  }
+
+  .faq h2,
+  .next h2 {
+    font-size: 1.25rem;
+    margin-bottom: var(--md-space-4);
+  }
+
+  .faq__item {
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .faq__item summary {
+    padding: var(--md-space-4) 0;
+    font-weight: var(--md-weight-medium);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary::after {
+    content: '+';
+    float: right;
+    color: var(--md-faint);
+  }
+
+  .faq__item[open] summary::after {
+    content: '\2212';
+  }
+
+  .faq__item p {
+    padding-bottom: var(--md-space-4);
+    color: var(--md-muted);
+    line-height: 1.65;
+  }
+
+  .next__list {
+    list-style: none;
+    display: grid;
+    gap: var(--md-space-3);
+  }
+
+  .next__list li {
+    padding-bottom: var(--md-space-3);
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .next__list a {
+    display: block;
+    font-weight: var(--md-weight-medium);
+    color: var(--md-ink);
+  }
+
+  .next__list a:hover {
+    color: var(--md-red-ink);
+  }
+
+  .next__list span {
+    display: block;
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+    margin-top: 0.15rem;
+  }
+</style>

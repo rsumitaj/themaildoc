@@ -1,0 +1,160 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ConsultLine from '../../components/ConsultLine.astro';
+
+/**
+ * The Health Library hub. Guides first, then everything filed under them, so
+ * the pillar-to-cluster shape is visible to a reader and to a crawler without
+ * either having to infer it.
+ */
+const entries = await getCollection('library', (entry) => !entry.data.draft);
+const pillars = entries.filter((entry) => entry.data.kind === 'pillar');
+const orphans = entries.filter(
+  (entry) => entry.data.kind !== 'pillar' && !entry.data.pillar,
+);
+
+const clustersOf = (slug: string) => entries.filter((entry) => entry.data.pillar === slug);
+
+const title = 'Health Library: email authentication guides | MailDoc';
+const description =
+  'Guides and answers on SPF, DKIM, DMARC and deliverability. Written from the RFCs, with the free test for each, and no signup to read any of it.';
+---
+
+<Base
+  title={title}
+  description={description}
+  crumbs={[{ name: 'Health Library', href: '/health-library' }]}
+>
+  <section class="page">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red-ink)">Health Library</p>
+      <h1>How email authentication actually works</h1>
+      <p class="lead">
+        Three guides and the articles that sit under them. Every one is written from the standards,
+        cites the section it came from, and ends with the test that proves it on your own domain.
+      </p>
+
+      {
+        pillars.map((pillar) => (
+          <section class="cluster">
+            <h2>
+              <a href={`/health-library/${pillar.id}`}>{pillar.data.heading}</a>
+            </h2>
+            <p class="cluster__lead">{pillar.data.standfirst}</p>
+
+            <ul class="list">
+              {clustersOf(pillar.id).map((entry) => (
+                <li>
+                  <a href={`/health-library/${entry.id}`}>{entry.data.heading}</a>
+                  <span>{entry.data.standfirst}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+
+      {
+        orphans.length > 0 && (
+          <section class="cluster">
+            <h2>Everything else</h2>
+            <ul class="list">
+              {orphans.map((entry) => (
+                <li>
+                  <a href={`/health-library/${entry.id}`}>{entry.data.heading}</a>
+                  <span>{entry.data.standfirst}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <section class="cluster">
+        <h2>Definitions</h2>
+        <p class="cluster__lead">
+          One page per term, for when you need the meaning rather than the guide.
+          <a href="/glossary">Open the glossary</a>.
+        </p>
+      </section>
+
+      <ConsultLine />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--md-space-8) var(--md-space-9);
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    letter-spacing: var(--md-tracking-tight);
+    margin-top: var(--md-space-2);
+  }
+
+  .lead {
+    max-width: 46rem;
+    margin-top: var(--md-space-4);
+    font-size: 1.08rem;
+    color: var(--md-muted);
+    line-height: 1.6;
+  }
+
+  .cluster {
+    margin-top: var(--md-space-8);
+    padding-top: var(--md-space-6);
+    border-top: var(--md-hairline) solid var(--md-line);
+    max-width: 46rem;
+  }
+
+  .cluster h2 {
+    font-size: 1.4rem;
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .cluster h2 a:hover {
+    color: var(--md-red-ink);
+  }
+
+  .cluster__lead {
+    margin-top: var(--md-space-3);
+    color: var(--md-muted);
+    line-height: 1.6;
+  }
+
+  .cluster__lead a {
+    color: var(--md-red-ink);
+  }
+
+  .list {
+    list-style: none;
+    margin-top: var(--md-space-5);
+    display: grid;
+    gap: var(--md-space-3);
+  }
+
+  .list li {
+    padding-bottom: var(--md-space-3);
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .list a {
+    display: block;
+    font-weight: var(--md-weight-medium);
+    color: var(--md-ink);
+  }
+
+  .list a:hover {
+    color: var(--md-red-ink);
+  }
+
+  .list span {
+    display: block;
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+    margin-top: 0.15rem;
+  }
+</style>

@@ -44,7 +44,7 @@ const STATUS_TONE: Record<string, string> = {
   TRUNCATED: 'is-warn',
 };
 
-/** RFC 7208 §4.6.4. */
+/** RFC 7208 section 4.6.4. */
 const LOOKUP_LIMIT = 10;
 
 interface Walked {

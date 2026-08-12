@@ -2,9 +2,9 @@
 import Base from '../layouts/Base.astro';
 import HomeCheckup from '../islands/HomeCheckup';
 
-const title = 'Free Email Authentication Check: SPF, DKIM and DMARC | The MailDoc';
+const title = 'Free Email Authentication Check: SPF, DKIM and DMARC | MailDoc';
 const description =
-  "Free email health checkup: enter your domain and get a full diagnosis of SPF, DKIM, DMARC, MX and DNSSEC in seconds, with the exact prescription to fix what's wrong.";
+  "Free email checkup: enter your domain for a full diagnosis of SPF, DKIM, DMARC, MX and DNSSEC in seconds, with the exact fix for what is wrong.";
 
 /**
  * The questions people actually type into a search box before they know what
@@ -71,17 +71,8 @@ const tests = [
 <Base
   title={title}
   description={description}
-  jsonLd={[
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faqs.map((faq) => ({
-        '@type': 'Question',
-        name: faq.q,
-        acceptedAnswer: { '@type': 'Answer', text: faq.a },
-      })),
-    },
-  ]}
+  kind="website"
+  faqs={faqs}
 >
   <section class="hero">
     <svg class="ekg" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
@@ -145,7 +136,7 @@ const tests = [
 
   <section class="lab">
     <div class="md-wrap">
-      <p class="md-eyebrow" style="color: var(--md-red)">The Lab</p>
+      <p class="md-eyebrow" style="color: var(--md-red-ink)">The Lab</p>
       <h2>Run a single test</h2>
       <p class="lab__lead">
         Need to check just one thing? The Lab has a dedicated test for every part of your email
@@ -197,7 +188,7 @@ const tests = [
     inset-inline: 0;
     top: 340px;
     height: 200px;
-    color: var(--md-red);
+    color: var(--md-red-ink);
     opacity: 0.06;
     pointer-events: none;
   }
@@ -217,7 +208,7 @@ const tests = [
     border-radius: var(--md-radius-pill);
     background: var(--md-red-tint);
     border: var(--md-hairline) solid var(--md-red-line);
-    color: var(--md-red);
+    color: var(--md-red-ink);
     font-size: var(--md-text-sm);
     font-weight: var(--md-weight-semibold);
   }
@@ -249,7 +240,7 @@ const tests = [
   }
 
   .sick {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 
   .lead {
@@ -279,7 +270,7 @@ const tests = [
   }
 
   .step__n {
-    color: var(--md-red);
+    color: var(--md-red-ink);
     font-weight: var(--md-weight-bold);
     font-size: var(--md-text-sm);
   }
@@ -368,7 +359,7 @@ const tests = [
   }
 
   .lab__more a {
-    color: var(--md-red);
+    color: var(--md-red-ink);
   }
 
   .test:hover {

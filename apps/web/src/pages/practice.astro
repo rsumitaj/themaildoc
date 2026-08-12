@@ -106,9 +106,9 @@ const jsonLd = [
 ---
 
 <Base
-  title="Email Deliverability Consultant: DMARC, SPF and DKIM | Sumit Raj"
-  description="I build and fix email authentication. DMARC monitoring across 2,000+ domains, around 2M email records analysed daily, and SPF records brought back under the lookup limit. Tell me what is broken."
-  jsonLd={jsonLd}
+  title="Email Deliverability Consultant | Sumit Raj, MailDoc"
+  description="I build and fix email authentication. DMARC monitoring across 2,000+ domains, around 2M records analysed daily. Tell me what is broken."
+  extra={jsonLd}
 >
   <section class="intro">
     <div class="md-wrap grid">
@@ -130,19 +130,21 @@ const jsonLd = [
         <p class="first">
           For three years I built and ran a DMARC monitoring platform across <b>2,000+ client
           domains</b>, and the pipeline behind it that analyses <b>around 2 million outbound email
-          records a day</b> from aggregate reports. Banks, insurers and SaaS companies, on the
-          domains their invoices and password resets go out from.
+          records a day</b> from aggregate reports. Those clients were banks, insurers and SaaS
+          companies, and the domains involved were the ones their invoices and password resets go
+          out from.
         </p>
         <p>
-          When a client's mail stopped arriving, the ticket came to me. Not a dashboard reading
-          amber: a finance team whose invoices were being answered by somebody else, a payroll run
-          bouncing at 2am, a marketing domain that had quietly been on the wrong side of Gmail's
-          filters for a month. Every one of those turned out to be four or five characters of DNS.
+          When a client's mail stopped arriving, the ticket came to me. It was never a dashboard
+          reading amber. It was a finance team whose invoices were being answered by somebody else,
+          a payroll run bouncing at 2am, a marketing domain that had quietly been on the wrong side
+          of Gmail's filters for a month. Every one of those turned out to be four or five
+          characters of DNS.
         </p>
         <p>
-          <strong>That is the job.</strong> Records that say what you mean, authentication that
-          survives a forward, and a policy strict enough to stop somebody impersonating you without
-          taking your own mail down with it. Most people can publish an SPF record. Knowing which
+          <strong>That is the job.</strong> It means records that say what you mean, authentication
+          that survives a forward, and a policy strict enough to stop somebody impersonating you
+          without taking your own mail down with it. Most people can publish an SPF record. Knowing which
           change breaks payroll on Monday is a different thing, and it comes from having broken it,
           fixed it and watched the reports afterwards.
         </p>
@@ -258,7 +260,7 @@ const jsonLd = [
 
   /* Red appears once on this page, on the sentence that says what I do. */
   .lede strong {
-    color: var(--md-red);
+    color: var(--md-red-ink);
     font-weight: var(--md-weight-semibold);
   }
 
@@ -281,7 +283,7 @@ const jsonLd = [
   }
 
   .linked:hover {
-    color: var(--md-red);
+    color: var(--md-red-ink);
     border-color: currentColor;
   }
 

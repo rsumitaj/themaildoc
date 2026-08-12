@@ -122,7 +122,7 @@ function Result({ result }: { result: FlattenSuccess }) {
         </div>
         <p class="md-testresult__more">
           <a href="/lab/spf-generator">Build an SPF record</a> or{' '}
-          <a href={`/health-library?domain=${encodeURIComponent(result.domain)}`}>
+          <a href={`/checkup?domain=${encodeURIComponent(result.domain)}`}>
             run the full checkup
           </a>
           .

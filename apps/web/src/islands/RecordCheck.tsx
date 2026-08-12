@@ -206,7 +206,7 @@ export default function RecordCheck({ record, label, action, endpoint = 'check' 
 
           <p class="md-testresult__more">
             This page checks {label.toLowerCase()} only.{' '}
-            <a href={`/health-library?domain=${encodeURIComponent(result?.domain ?? input)}`}>
+            <a href={`/checkup?domain=${encodeURIComponent(result?.domain ?? input)}`}>
               Run the full checkup
             </a>{' '}
             to see every record together, with a Vitals score for the whole domain.

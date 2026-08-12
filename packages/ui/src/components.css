@@ -136,7 +136,7 @@
   width: 13px;
   height: 13px;
   border: 2px solid var(--md-line);
-  border-top-color: var(--md-red);
+  border-top-color: var(--md-red-ink);
   border-radius: 50%;
   animation: md-spin 0.7s linear infinite;
 }
@@ -345,7 +345,7 @@
   font-size: 0.94rem;
   padding: 0.8rem 1.25rem;
   border-radius: var(--md-radius-md);
-  background: var(--md-red);
+  background: var(--md-red-ink);
   color: #fff;
   transition: transform var(--md-duration-fast) var(--md-ease),
     background var(--md-duration-fast) var(--md-ease);
@@ -360,7 +360,7 @@
   border: var(--md-hairline) solid var(--md-line);
 }
 
-.md-btn.is-ghost:hover { border-color: var(--md-red); color: var(--md-red); background: transparent; }
+.md-btn.is-ghost:hover { border-color: var(--md-red-ink); color: var(--md-red-ink); background: transparent; }
 
 /* ---- The domain input -------------------------------------------------- */
 /* Lives here rather than in a scoped Astro block because the island owns this
@@ -384,7 +384,7 @@
 }
 
 .inrow:focus-within {
-  border-color: var(--md-red);
+  border-color: var(--md-red-ink);
 }
 
 .inrow .pre {
@@ -424,7 +424,7 @@
 
 .diagbox .noteicon {
   flex: none;
-  color: var(--md-red);
+  color: var(--md-red-ink);
 }
 
 @media (max-width: 560px) {
@@ -496,7 +496,7 @@
 }
 
 .md-testresult__more a {
-  color: var(--md-red);
+  color: var(--md-red-ink);
   border-bottom: var(--md-hairline) solid currentColor;
 }
 
@@ -507,7 +507,7 @@
   background: none;
   padding: 0;
   cursor: pointer;
-  color: var(--md-red);
+  color: var(--md-red-ink);
   font-size: inherit;
   border-bottom: var(--md-hairline) solid currentColor;
 }
@@ -574,8 +574,8 @@
 }
 
 .md-type:hover {
-  border-color: var(--md-red);
-  color: var(--md-red);
+  border-color: var(--md-red-ink);
+  color: var(--md-red-ink);
 }
 
 .md-type.is-active {
@@ -661,7 +661,7 @@
 .md-field select:focus,
 .md-field textarea:focus {
   outline: none;
-  border-color: var(--md-red);
+  border-color: var(--md-red-ink);
 }
 
 .md-check {
@@ -676,7 +676,7 @@
 
 .md-check input {
   margin-top: 0.2rem;
-  accent-color: var(--md-red);
+  accent-color: var(--md-red-ink);
 }
 
 .md-gen__field {
@@ -747,7 +747,7 @@
 }
 
 .md-prose li::marker {
-  color: var(--md-red);
+  color: var(--md-red-ink);
 }
 
 .md-prose code {
@@ -788,7 +788,7 @@
 .md-faq summary::after {
   content: '+';
   font-family: var(--md-font-mono);
-  color: var(--md-red);
+  color: var(--md-red-ink);
 }
 
 .md-faq[open] summary::after {
@@ -830,7 +830,7 @@
 }
 
 .md-labcard:hover {
-  border-color: var(--md-red);
+  border-color: var(--md-red-ink);
   transform: translateY(-2px);
 }
 
@@ -880,7 +880,7 @@
   font-family: var(--md-font-mono);
   font-size: var(--md-text-sm);
   letter-spacing: 0.1em;
-  color: var(--md-red);
+  color: var(--md-red-ink);
 }
 
 .md-chart__domain {
@@ -924,7 +924,7 @@
 }
 
 .md-drop.is-over {
-  border-color: var(--md-red);
+  border-color: var(--md-red-ink);
   background: var(--md-red-tint);
 }
 
@@ -1134,7 +1134,7 @@
 }
 
 .md-consultform__small a {
-  color: var(--md-red);
+  color: var(--md-red-ink);
 }
 
 /* Off-screen rather than display:none — the bots that fill it read CSS badly,
@@ -1227,7 +1227,7 @@
 
 .md-bwpolicy__tag {
   font-size: var(--md-text-sm);
-  color: var(--md-red);
+  color: var(--md-red-ink);
   font-weight: var(--md-weight-medium);
 }
 
@@ -1636,8 +1636,8 @@
 }
 
 .md-tree__toggle:hover {
-  border-color: var(--md-red);
-  color: var(--md-red);
+  border-color: var(--md-red-ink);
+  color: var(--md-red-ink);
 }
 
 .md-tree__toggle.is-leaf {
@@ -1728,8 +1728,8 @@
 
 .md-explain__button:hover,
 .md-explain__button[aria-expanded='true'] {
-  border-color: var(--md-red);
-  color: var(--md-red);
+  border-color: var(--md-red-ink);
+  color: var(--md-red-ink);
 }
 
 .md-explain__body {
@@ -1850,7 +1850,7 @@
 }
 
 .md-condition__foot a:hover {
-  color: var(--md-red);
+  color: var(--md-red-ink);
   border-bottom-color: currentColor;
 }
 
@@ -1949,7 +1949,7 @@
 .md-field.is-bad input,
 .md-field.is-bad select,
 .md-field.is-bad textarea {
-  border-color: var(--md-red);
+  border-color: var(--md-red-ink);
   background: var(--md-red-tint);
 }
 
@@ -1978,4 +1978,24 @@
   font-size: 0.7rem;
   color: var(--md-faint);
   overflow-wrap: anywhere;
+}
+
+/*
+ * Inline links inside a paragraph get an underline, not just a colour.
+ *
+ * WCAG 1.4.1: colour cannot be the only thing distinguishing a link from the
+ * text around it, because that is invisible to a reader who cannot separate the
+ * two hues. Navigation, cards and buttons are exempt because their position and
+ * shape already say what they are; a link in the middle of a sentence has
+ * nothing else to go on.
+ */
+.md-prose a:not([class]),
+.md-consultform__small a,
+.md-consult__note a,
+.md-testresult__more a,
+.md-condition__why a,
+.md-tree__note a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
 }

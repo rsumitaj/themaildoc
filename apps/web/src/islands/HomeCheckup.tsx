@@ -16,7 +16,7 @@ export default function HomeCheckup() {
       busy={leaving}
       onExamine={(domain) => {
         setLeaving(true);
-        location.href = `/health-library?domain=${encodeURIComponent(domain)}`;
+        location.href = `/checkup?domain=${encodeURIComponent(domain)}`;
       }}
     />
   );

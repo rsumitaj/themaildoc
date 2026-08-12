@@ -109,7 +109,7 @@ export default function Spoofability() {
           </div>
 
           <p class="md-testresult__more">
-            <a href={`/health-library?domain=${encodeURIComponent(result.domain)}`}>Run the full checkup</a> to see
+            <a href={`/checkup?domain=${encodeURIComponent(result.domain)}`}>Run the full checkup</a> to see
             every record behind this verdict, each with its prescription.
           </p>
 

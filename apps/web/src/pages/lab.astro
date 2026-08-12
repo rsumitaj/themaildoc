@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { LAB_GROUPS } from '../data/tests';
 
-const title = 'Email Authentication Tools: SPF, DKIM and DMARC | The MailDoc';
+const title = 'Email Authentication Tools: SPF, DKIM and DMARC | MailDoc';
 const description =
   'Every email authentication test on its own page: SPF checker, DMARC checker, DKIM checker, MX lookup, DNSSEC, MTA-STS and more. Free, no signup, RFC-cited.';
 
@@ -19,10 +19,10 @@ const jsonLd = [
 ];
 ---
 
-<Base title={title} description={description} jsonLd={jsonLd}>
+<Base title={title} description={description} extra={jsonLd}>
   <section class="intro">
     <div class="md-wrap">
-      <p class="md-eyebrow" style="color: var(--md-red)">The Lab</p>
+      <p class="md-eyebrow" style="color: var(--md-red-ink)">The Lab</p>
       <h1>Run a single test.</h1>
       <p class="lead">
         The full checkup examines every record at once. The Lab gives each one its own room: what
@@ -54,7 +54,7 @@ const jsonLd = [
       }
 
       <div class="cta">
-        <a class="md-btn" href="/health-library">Run the full checkup &rarr;</a>
+        <a class="md-btn" href="/checkup">Run the full checkup &rarr;</a>
         <a class="md-btn is-ghost" href="/library/checks">Every condition we check</a>
       </div>
     </div>

@@ -1,0 +1,238 @@
+---
+/**
+ * Everything a search engine, a social card and an AI crawler read, in one
+ * place.
+ *
+ * This used to live inline in `Base.astro`, which was fine while every page
+ * was the same shape. It is not: a tool page wants SoftwareApplication, an
+ * article wants TechArticle with dates and an author, a glossary entry wants
+ * DefinedTerm, and every deep page wants breadcrumbs. Spreading that across
+ * thirty page files is how one of them quietly ends up with no canonical.
+ *
+ * The blocks below are assembled from props rather than hand-written per page,
+ * so a page cannot forget one and a mistake is fixed once.
+ */
+export type SeoKind = 'website' | 'tool' | 'article' | 'term' | 'page';
+
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+export interface Crumb {
+  name: string;
+  href: string;
+}
+
+export interface HowToStep {
+  name: string;
+  text: string;
+}
+
+export interface Props {
+  title: string;
+  description: string;
+  kind?: SeoKind;
+  /** Breadcrumbs, without the site root; that is prepended. */
+  crumbs?: Crumb[];
+  faqs?: FaqItem[];
+  howTo?: { name: string; steps: HowToStep[] };
+  /** Articles only. ISO dates. */
+  published?: string;
+  updated?: string;
+  /** Glossary entries only. */
+  term?: { name: string; definition: string };
+  /** Keep this page out of the index without hiding it from people. */
+  noindex?: boolean;
+  /** Extra blocks a page needs that nothing here models. */
+  extra?: unknown[];
+}
+
+const {
+  title,
+  description,
+  kind = 'page',
+  crumbs = [],
+  faqs = [],
+  howTo,
+  published,
+  updated,
+  term,
+  noindex = false,
+  extra = [],
+} = Astro.props;
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+
+/**
+ * `build.format: 'file'` makes `Astro.url.pathname` end in `.html`, and a
+ * canonical pointing at /lab/spf-checker.html would split every page's ranking
+ * signals across two URLs.
+ */
+const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
+const canonical = new URL(cleanPath, site).href;
+
+/** One card per page type, rendered ahead of the build into /og/. */
+const ogImage = new URL(`/og/${kind === 'website' ? 'home' : kind}.png`, site).href;
+
+const org = {
+  '@type': 'Organization',
+  '@id': `${site.href}#organization`,
+  name: 'The MailDoc',
+  url: site.href,
+  logo: new URL('/favicon.png', site).href,
+  email: 'support@themaildoc.co',
+  description: "The doctor for your domain's email. Free diagnosis, honest prescriptions.",
+  founder: { '@type': 'Person', name: 'Sumit Raj' },
+  sameAs: [
+    'https://www.linkedin.com/in/sumit-raj-9918ba183/',
+    'https://github.com/rsumitaj/themaildoc',
+  ],
+};
+
+const blocks: unknown[] = [];
+
+// The entity itself, on every page, so Google learns "The MailDoc" is a thing
+// rather than a phrase. The brand SERP does not resolve until it does.
+blocks.push({ '@context': 'https://schema.org', ...org });
+
+if (kind === 'website') {
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${site.href}#website`,
+    name: 'The MailDoc',
+    url: site.href,
+    publisher: { '@id': `${site.href}#organization` },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: { '@type': 'EntryPoint', urlTemplate: `${site.href}?domain={domain}` },
+      'query-input': 'required name=domain',
+    },
+  });
+}
+
+if (kind === 'tool') {
+  // No aggregateRating: inventing review counts to win a star in the SERP is
+  // exactly the kind of thing this site exists to argue against, and Google
+  // has been stripping self-serving ratings for years anyway.
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: title.split(':')[0]?.trim() ?? title,
+    url: canonical,
+    description,
+    applicationCategory: 'SecurityApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript for the live test.',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    publisher: { '@id': `${site.href}#organization` },
+  });
+}
+
+if (kind === 'article') {
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: title.split('|')[0]?.trim() ?? title,
+    description,
+    url: canonical,
+    image: ogImage,
+    ...(published ? { datePublished: published } : {}),
+    dateModified: updated ?? published ?? undefined,
+    author: { '@type': 'Organization', name: 'The Practice', url: new URL('/practice', site).href },
+    publisher: { '@id': `${site.href}#organization` },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+  });
+}
+
+if (kind === 'term' && term) {
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTerm',
+    name: term.name,
+    description: term.definition,
+    url: canonical,
+    inDefinedTermSet: {
+      '@type': 'DefinedTermSet',
+      name: 'The MailDoc glossary of email authentication',
+      url: new URL('/glossary', site).href,
+    },
+  });
+}
+
+if (faqs.length > 0) {
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  });
+}
+
+if (howTo) {
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: howTo.name,
+    description,
+    step: howTo.steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.name,
+      text: step.text,
+    })),
+  });
+}
+
+if (crumbs.length > 0) {
+  blocks.push({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ name: 'The MailDoc', href: '/' }, ...crumbs].map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: new URL(crumb.href, site).href,
+    })),
+  });
+}
+
+blocks.push(...extra);
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+
+{noindex && <meta name="robots" content="noindex, follow" />}
+
+<meta property="og:type" content={kind === 'article' ? 'article' : 'website'} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="The MailDoc. The doctor for your domain's email." />
+<meta property="og:site_name" content="The MailDoc" />
+<meta property="og:locale" content="en_GB" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+{
+  blocks.map((block) => (
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(block).replace(/</g, '\\u003c')}
+    />
+  ))
+}
