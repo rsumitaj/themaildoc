@@ -7,7 +7,6 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "wrangler dev",
-    "deploy": "astro build && wrangler deploy",
     "typecheck": "wrangler types && astro check",
     "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist .astro .wrangler",

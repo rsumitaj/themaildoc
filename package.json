@@ -15,7 +15,11 @@
     "test:watch": "pnpm --filter @maildoc/engines exec vitest",
     "typecheck": "tsc -p tsconfig.check.json && turbo run typecheck",
     "lint": "turbo run lint",
-    "clean": "turbo run clean && rm -rf node_modules/.cache .turbo"
+    "clean": "turbo run clean && rm -rf node_modules/.cache .turbo",
+    "ship": "pnpm --filter @maildoc/web run ship",
+    "leads": "pnpm --filter @maildoc/web run leads",
+    "leads:new": "pnpm --filter @maildoc/web run leads:new",
+    "db:migrate": "pnpm --filter @maildoc/web run db:migrate"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
