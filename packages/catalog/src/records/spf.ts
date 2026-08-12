@@ -15,7 +15,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'No SPF record',
     why: 'Nothing tells receivers which servers may send as {domain}. Your legitimate mail arrives unvouched, far likelier to be filtered, and anyone can put your domain on the envelope of theirs.',
     fix: 'Publish one TXT record at {domain} listing every service that sends your mail, then close it: v=spf1 include:_spf.yourprovider.com ~all',
-    rfc: 'RFC 7208 §3',
+    rfc: 'RFC 7208 section 3',
     vars: ['domain'],
   },
   {
@@ -26,7 +26,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'Multiple SPF records',
     why: '{domain} publishes {count} SPF records. More than one is a permanent error: receivers stop evaluating and SPF fails for all of your mail, including the mail you want delivered.',
     fix: 'Merge every mechanism into a single v=spf1 TXT record and delete the others. One SPF record per domain, always.',
-    rfc: 'RFC 7208 §4.5',
+    rfc: 'RFC 7208 section 4.5',
     vars: ['domain', 'count'],
   },
   {
@@ -37,7 +37,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF record has the wrong version prefix',
     why: 'The record at {domain} looks like SPF but does not start with exactly v=spf1, so every receiver ignores it. You have the maintenance burden of SPF with none of the protection.',
     fix: 'Make the record start with v=spf1 followed by a space, e.g. v=spf1 include:_spf.yourprovider.com ~all',
-    rfc: 'RFC 7208 §4.5',
+    rfc: 'RFC 7208 section 4.5',
     vars: ['domain'],
   },
   {
@@ -48,7 +48,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF exceeds the 10-lookup limit',
     why: 'Evaluating your record costs {count} DNS lookups; the limit is 10. Receivers return a permanent error and stop trusting SPF, so your mail fails authentication even from your own servers.',
     fix: 'Cut lookups back under 10: drop unused vendor includes, replace stable includes with their ip4:/ip6: ranges, or run the free SPF Flattener and publish the flattened record.',
-    rfc: 'RFC 7208 §4.6.4',
+    rfc: 'RFC 7208 section 4.6.4',
     vars: ['count'],
   },
   {
@@ -59,7 +59,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'Too many SPF lookups resolve to nothing',
     why: '{count} of your SPF lookups return no records at all ({void_domains}). More than two of these is a permanent error. Receivers abandon SPF for your whole domain.',
     fix: 'Remove or correct the entries that resolve to nothing. They are usually vendors you stopped using, or a typo in a hostname.',
-    rfc: 'RFC 7208 §4.6.4',
+    rfc: 'RFC 7208 section 4.6.4',
     vars: ['count', 'void_domains'],
   },
   {
@@ -70,7 +70,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF authorises the entire internet',
     why: 'The record for {domain} ends in {offending_term}, which tells receivers that any server on earth is allowed to send as you. SPF is published, but it protects nothing.',
     fix: 'Replace {offending_term} with ~all while you confirm your senders, then -all once your reports are clean.',
-    rfc: 'RFC 7208 §5.1',
+    rfc: 'RFC 7208 section 5.1',
     vars: ['domain', 'offending_term'],
   },
   {
@@ -81,7 +81,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF includes itself in a loop',
     why: 'The include chain {chain_path} comes back to where it started. Evaluation burns lookups until it hits the limit and returns a permanent error.',
     fix: 'Break the loop, remove the include that points back up the chain, and list that sender’s IP ranges directly if it is still needed.',
-    rfc: 'RFC 7208 §5.2',
+    rfc: 'RFC 7208 section 5.2',
     vars: ['chain_path'],
   },
   {
@@ -92,7 +92,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF includes a domain with no SPF record',
     why: 'include:{target} expects an SPF record at {target} and there isn’t one. Per the RFC that is a permanent error, and strict receivers fail your mail on it.',
     fix: 'Remove include:{target}, or correct it to the hostname your vendor actually documents.',
-    rfc: 'RFC 7208 §5.2',
+    rfc: 'RFC 7208 section 5.2',
     vars: ['target'],
   },
   {
@@ -103,7 +103,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF never says "no"',
     why: 'The record for {domain} has no all mechanism, so anything you didn’t list comes back neutral, the same result as having no opinion. Spoofed mail passes through untouched.',
     fix: 'End the record with ~all (softfail) or -all (hard fail). It must be the last mechanism.',
-    rfc: 'RFC 7208 §4.7',
+    rfc: 'RFC 7208 section 4.7',
     vars: ['domain'],
   },
   {
@@ -114,7 +114,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF has mechanisms after "all"',
     why: 'Everything after all is never evaluated, including {offending_term}. Senders you believe are authorised are silently not.',
     fix: 'Move all to the very end of the record, after every ip4:, ip6: and include: mechanism.',
-    rfc: 'RFC 7208 §5.1',
+    rfc: 'RFC 7208 section 5.1',
     vars: ['offending_term'],
   },
   {
@@ -125,7 +125,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF uses the deprecated ptr mechanism',
     why: '{offending_term} makes receivers do slow reverse-DNS work that many of them skip entirely. The RFC tells senders not to publish it, and results are unreliable where they do.',
     fix: 'Delete {offending_term} and authorise those servers explicitly with ip4:, ip6: or include:.',
-    rfc: 'RFC 7208 §5.5',
+    rfc: 'RFC 7208 section 5.5',
     vars: ['offending_term'],
   },
   {
@@ -136,7 +136,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF has both redirect= and all',
     why: 'When an all mechanism is present, redirect={target} is ignored completely. Whatever policy lives at {target} never applies, which is rarely what the record intends.',
     fix: 'Keep one: use redirect={target} with no all mechanism, or drop the redirect and list your senders here ending in ~all.',
-    rfc: 'RFC 7208 §6.1',
+    rfc: 'RFC 7208 section 6.1',
     vars: ['target'],
   },
   {
@@ -147,7 +147,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains an invalid IPv4 address',
     why: '{offending_term} is not a valid IPv4 address, so it authorises nothing, and strict receivers treat the malformed term as a permanent error for the whole record.',
     fix: 'Correct {offending_term} to a valid address or range, e.g. ip4:203.0.113.10 or ip4:203.0.113.0/24',
-    rfc: 'RFC 7208 §5.6',
+    rfc: 'RFC 7208 section 5.6',
     vars: ['offending_term'],
   },
   {
@@ -158,7 +158,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains an invalid IPv4 prefix length',
     why: 'The prefix in {offending_term} is outside 0, 32, so the range is meaningless and the term can invalidate the record.',
     fix: 'Use a prefix length between 0 and 32, e.g. ip4:203.0.113.0/24',
-    rfc: 'RFC 7208 §5.6',
+    rfc: 'RFC 7208 section 5.6',
     vars: ['offending_term'],
   },
   {
@@ -169,7 +169,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains an invalid IPv6 address',
     why: '{offending_term} is not a valid IPv6 address, so it authorises nothing, and strict receivers treat the malformed term as a permanent error for the whole record.',
     fix: 'Correct {offending_term} to a valid address or range, e.g. ip6:2001:db8::/32',
-    rfc: 'RFC 7208 §5.6',
+    rfc: 'RFC 7208 section 5.6',
     vars: ['offending_term'],
   },
   {
@@ -180,7 +180,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains an invalid IPv6 prefix length',
     why: 'The prefix in {offending_term} is outside 0, 128, so the range is meaningless and the term can invalidate the record.',
     fix: 'Use a prefix length between 0 and 128, e.g. ip6:2001:db8::/32',
-    rfc: 'RFC 7208 §5.6',
+    rfc: 'RFC 7208 section 5.6',
     vars: ['offending_term'],
   },
   {
@@ -191,7 +191,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains a term receivers can’t parse',
     why: '{offending_term} is neither a valid mechanism nor a valid modifier. An unrecognised mechanism is a permanent error, so the whole record, every sender in it, fails.',
     fix: 'Remove or correct {offending_term}. Valid mechanisms are all, include, a, mx, ptr, ip4, ip6 and exists.',
-    rfc: 'RFC 7208 §4.6.1',
+    rfc: 'RFC 7208 section 4.6.1',
     vars: ['offending_term'],
   },
   {
@@ -202,7 +202,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF includes the same domain more than once',
     why: 'include:{target} appears {count} times. Each copy spends one of your ten DNS lookups and buys nothing, this is usually how records drift over the limit.',
     fix: 'Keep one include:{target} and delete the duplicates.',
-    rfc: 'RFC 7208 §4.6.4',
+    rfc: 'RFC 7208 section 4.6.4',
     vars: ['target', 'count'],
   },
   {
@@ -216,7 +216,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF is one vendor away from breaking',
     why: 'Your record already costs {count} of the 10 permitted DNS lookups. The next tool your team signs up for pushes SPF into permanent error, and nothing will warn you.',
     fix: 'Make room now: remove vendors you no longer use, or flatten a stable include into its ip4:/ip6: ranges.',
-    rfc: 'RFC 7208 §4.6.4',
+    rfc: 'RFC 7208 section 4.6.4',
     vars: ['count'],
   },
   {
@@ -227,7 +227,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF record exceeds a single DNS string',
     why: 'The record is {count} bytes. A DNS text string tops out at 255, so it must be published as several quoted strings, and DNS panels that get this wrong truncate or mangle the record.',
     fix: 'Publish the record as multiple quoted strings inside one TXT record, split on a space between mechanisms, and re-check it after saving.',
-    rfc: 'RFC 7208 §3.3',
+    rfc: 'RFC 7208 section 3.3',
     vars: ['count'],
   },
   {
@@ -238,7 +238,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF record is large enough to be truncated',
     why: 'At {count} bytes the response risks truncation on resolvers without EDNS0. A truncated answer means an incomplete record and inconsistent SPF results.',
     fix: 'Shorten the record, drop unused mechanisms or flatten includes, to keep the response comfortably under 450 bytes.',
-    rfc: 'RFC 7208 §3.4',
+    rfc: 'RFC 7208 section 3.4',
     vars: ['count'],
   },
   {
@@ -249,13 +249,13 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains a malformed macro',
     why: 'The macro in {offending_term} does not parse. Depending on the receiver it expands to something unintended or errors the record out.',
     fix: 'Correct or remove {offending_term}. Macros are rarely needed outside large hosting platforms.',
-    rfc: 'RFC 7208 §7',
+    rfc: 'RFC 7208 section 7',
     vars: ['offending_term'],
   },
   {
     code: 'SPF_UNKNOWN_MODIFIER',
     record: 'SPF',
-    // RFC 7208 §6 requires receivers to ignore unknown modifiers, so this
+    // RFC 7208 section 6 requires receivers to ignore unknown modifiers, so this
     // cannot break anything — but it is nearly always a typo for redirect=
     // that someone believes is working. Advisory, never a deduction that
     // matters.
@@ -264,7 +264,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF contains an unrecognised modifier',
     why: '{offending_term} is not a modifier any receiver acts on. The standard says to ignore it, so it is harmless, and it is usually a typo for redirect= or exp= that someone believes is working.',
     fix: 'Remove {offending_term}, or correct it if you meant redirect= or exp=.',
-    rfc: 'RFC 7208 §6',
+    rfc: 'RFC 7208 section 6',
     dismissible: true,
     vars: ['offending_term'],
   },
@@ -276,7 +276,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF repeats a modifier',
     why: 'The record contains more than one {offending_term} modifier. The standard permits exactly one of each, and receivers return a permanent error, SPF fails for all of your mail.',
     fix: 'Keep a single {offending_term} and delete the duplicate.',
-    rfc: 'RFC 7208 §6',
+    rfc: 'RFC 7208 section 6',
     vars: ['offending_term'],
   },
   {
@@ -287,7 +287,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF mechanism uses = instead of :',
     why: '{offending_term} is written with an equals sign, which makes it a modifier rather than the mechanism you intended. Receivers ignore unknown modifiers, so those senders are silently unauthorised.',
     fix: 'Mechanisms take a colon: write include:example.com, not include=example.com. Only redirect= and exp= use an equals sign.',
-    rfc: 'RFC 7208 §12',
+    rfc: 'RFC 7208 section 12',
     vars: ['offending_term'],
   },
   {
@@ -298,7 +298,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF redirects to a domain with no SPF record',
     why: 'redirect={target} hands your entire policy to {target}, and there is no SPF record there. That is a permanent error, so SPF fails for every message you send.',
     fix: 'Correct the redirect target, or replace the redirect with your own senders ending in ~all.',
-    rfc: 'RFC 7208 §6.1',
+    rfc: 'RFC 7208 section 6.1',
     vars: ['target'],
   },
   {
@@ -309,7 +309,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF redirect points back into its own chain',
     why: 'The redirect chain {chain_path} returns to a domain it already passed through. Evaluation cannot terminate, so receivers return a permanent error.',
     fix: 'Break the loop, one of the domains in that chain should hold the real policy, and the others should point to it or list senders directly.',
-    rfc: 'RFC 7208 §6.1',
+    rfc: 'RFC 7208 section 6.1',
     vars: ['chain_path'],
   },
   {
@@ -320,7 +320,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'An mx mechanism resolves to more than 10 hosts',
     why: '{target} publishes {count} mail exchangers, and an mx mechanism may resolve at most 10. Over that. Receivers return a permanent error, a separate limit from the 10-lookup budget, and one almost nobody checks.',
     fix: 'Reduce the MX records at {target}, or replace the mx mechanism with the ip4:/ip6: ranges of the servers that actually send.',
-    rfc: 'RFC 7208 §4.6.4',
+    rfc: 'RFC 7208 section 4.6.4',
     vars: ['target', 'count'],
   },
   {
@@ -331,7 +331,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'An a mechanism points at a name with no address',
     why: '{target} has no A or AAAA record, so this mechanism authorises nothing and burns one of the two void lookups a record is allowed.',
     fix: 'Give {target} an address record, or remove the mechanism if the host is gone.',
-    rfc: 'RFC 7208 §5.3',
+    rfc: 'RFC 7208 section 5.3',
     vars: ['target'],
   },
   {
@@ -342,7 +342,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'An mx mechanism points at a name with no mail exchangers',
     why: '{target} publishes no MX records, so this mechanism authorises nothing and spends one of the two void lookups a record is allowed.',
     fix: 'Publish MX records for {target}, or remove the mechanism.',
-    rfc: 'RFC 7208 §5.4',
+    rfc: 'RFC 7208 section 5.4',
     vars: ['target'],
   },
   {
@@ -353,7 +353,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'An included record carries an exp= modifier',
     why: '{target} publishes exp=, and the standard says an included record\'s explanation is never used. It is ignored, so the explanation you expect senders to see is not the one they get.',
     fix: 'Nothing to fix on your side. Publish exp= on your own record if you want a custom explanation, or ask {target} to drop it.',
-    rfc: 'RFC 7208 §6.2',
+    rfc: 'RFC 7208 section 6.2',
     dismissible: true,
     vars: ['target'],
   },
@@ -365,7 +365,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF repeats a mechanism',
     why: '{offending_term} appears more than once. Evaluation stops at the first match, so the duplicate never does anything, it is clutter that makes the record harder to keep correct.',
     fix: 'Remove the repeated {offending_term}.',
-    rfc: 'RFC 7208 §4.6.2',
+    rfc: 'RFC 7208 section 4.6.2',
     dismissible: true,
     vars: ['offending_term'],
   },
@@ -377,7 +377,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF uses mixed-case syntax',
     why: '{offending_term} is written with capitals. Mechanism names are case-insensitive so it works, but every tool and every human reading this record has to pause on it.',
     fix: 'Write mechanisms in lowercase: include:, ip4:, mx, a, -all.',
-    rfc: 'RFC 7208 §4.6.1',
+    rfc: 'RFC 7208 section 4.6.1',
     dismissible: true,
     vars: ['offending_term'],
   },
@@ -391,7 +391,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF record has irregular spacing',
     why: 'The record contains repeated or leading spaces. Most parsers tolerate it; some split terms on it and read the record differently from the way you wrote it.',
     fix: 'Separate every term with a single space and remove leading or trailing whitespace.',
-    rfc: 'RFC 7208 §12',
+    rfc: 'RFC 7208 section 12',
     dismissible: true,
     vars: [],
   },
@@ -403,7 +403,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF ends in softfail (~all)',
     why: 'Mail claiming to be from {domain} that fails SPF is marked suspicious rather than rejected. That is the right setting while you confirm who sends your mail. It is not the finish line.',
     fix: 'Once your DMARC reports show only known senders, change ~all to -all.',
-    rfc: 'RFC 7208 §5.1',
+    rfc: 'RFC 7208 section 5.1',
     dismissible: true,
     vars: ['domain'],
   },
@@ -415,7 +415,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     title: 'SPF authorises a private or reserved IP',
     why: '{offending_term} is an address that never appears on the public internet, so it can never match a real delivery. It is wasted space in the record, usually left over from an internal test.',
     fix: 'Remove {offending_term}, or replace it with the public address your mail actually leaves from.',
-    rfc: 'RFC 7208 §5.6',
+    rfc: 'RFC 7208 section 5.6',
     dismissible: true,
     vars: ['offending_term'],
   },

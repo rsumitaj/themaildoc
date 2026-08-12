@@ -51,9 +51,22 @@ const tests = [
     </svg>
 
     <div class="md-wrap">
+      <!--
+        Sourced, and linked, because the whole product is an argument that
+        numbers should be checkable. The figure that was here before was 4%,
+        which came from nowhere: published studies put p=reject adoption
+        between 2.5% and 13% depending on the sample, and none of them say 4.
+      -->
       <p class="pill">
         <span class="dot" aria-hidden="true"></span>
-        Only 4% of domains actually enforce DMARC. Is yours one of them?
+        <a
+          href="https://dmarcguard.io/research/email-authentication/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Across 5.5 million domains, 12.8% enforce a DMARC policy that stops spoofing.
+        </a>{' '}
+        Is yours one of them?
       </p>
 
       <h1>

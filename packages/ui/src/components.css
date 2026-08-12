@@ -1960,3 +1960,22 @@
   color: var(--md-critical-text);
   line-height: 1.4;
 }
+
+/* The score explainer's pillar table: a question under each pillar name, and
+   the codes that moved it, so the arithmetic can be checked rather than
+   believed. */
+.md-scorewhy__q {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--md-muted);
+  font-weight: var(--md-weight-regular);
+}
+
+.md-scorewhy__codes {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--md-faint);
+  overflow-wrap: anywhere;
+}

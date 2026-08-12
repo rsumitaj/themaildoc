@@ -40,12 +40,34 @@ export function validateDomain(raw: string): { domain: string } | { error: strin
   return { domain: normalized.domain };
 }
 
+/**
+ * Tidy what somebody pasted, as they paste it.
+ *
+ * The field already accepted a full URL and cleaned it up on submit, so this
+ * always worked. It just looked as though it would not: the box carries a
+ * static `https://` in front of it, so pasting an address straight out of the
+ * browser bar showed `https:// https://bank.example.com/login` and read as an
+ * error before anyone pressed the button.
+ *
+ * Only the obviously-removable parts go here. Trailing dots, ports, unicode
+ * and the rest are the validator's job, and stripping them mid-keystroke would
+ * fight the person typing.
+ */
+function tidyAsTyped(raw: string): string {
+  return raw
+    .replace(/^\s+/, '')
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    .replace(/^www\.(?=[^.]+\.[^.]+)/i, '')
+    .replace(/^[^/@\s]*@/, '')
+    .replace(/[/?#].*$/, '');
+}
+
 export function DomainForm({ action, note, busy, onExamine }: DomainFormProps) {
   const [value, setValue] = useState('');
 
   useEffect(() => {
     const fromUrl = new URLSearchParams(location.search).get('domain');
-    if (fromUrl) setValue(fromUrl);
+    if (fromUrl) setValue(tidyAsTyped(fromUrl));
   }, []);
 
   const onSubmit = (event: Event) => {
@@ -55,7 +77,7 @@ export function DomainForm({ action, note, busy, onExamine }: DomainFormProps) {
     // ever firing an input event.
     const form = event.currentTarget as HTMLFormElement;
     const typed = new FormData(form).get('domain');
-    const next = typeof typed === 'string' && typed.trim() !== '' ? typed : value;
+    const next = tidyAsTyped(typeof typed === 'string' && typed.trim() !== '' ? typed : value);
     setValue(next);
     onExamine(next);
   };
@@ -80,7 +102,14 @@ export function DomainForm({ action, note, busy, onExamine }: DomainFormProps) {
           spellcheck={false}
           inputMode="url"
           value={value}
-          onInput={(event) => setValue((event.target as HTMLInputElement).value)}
+          onInput={(event) => {
+            const field = event.target as HTMLInputElement;
+            const tidied = tidyAsTyped(field.value);
+            // Only write back when something was actually removed, so the
+            // caret does not jump around while somebody is still typing.
+            if (tidied !== field.value) field.value = tidied;
+            setValue(tidied);
+          }}
         />
         <button class="md-btn" type="submit" disabled={busy}>
           {busy ? 'Examining…' : action}

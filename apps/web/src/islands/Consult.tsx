@@ -117,7 +117,7 @@ export default function Consult() {
           brochure.
         </p>
         <p class="md-consultform__small">
-          in the meantime the prescriptions on your chart are yours to use. Nothing here is held
+          in the meantime the prescriptions on your chart are yours to implement. Nothing here is held
           back for paying clients.
         </p>
       </div>

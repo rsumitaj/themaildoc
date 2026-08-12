@@ -21,21 +21,34 @@ describe('scoreConditions', () => {
     expect(scoreConditions([])).toBe(100);
   });
 
-  it('applies the catalog weights additively', () => {
-    expect(scoreConditions([critical()])).toBe(60);
-    expect(scoreConditions([high()])).toBe(75);
-    expect(scoreConditions([medium()])).toBe(85);
-    expect(scoreConditions([info()])).toBe(98);
-    expect(scoreConditions([critical(), high(), medium(), info()])).toBe(18);
+  it('costs more the more severe the finding is', () => {
+    // These all land in the impersonation pillar, which carries 45 percent, so
+    // a 40 point finding removes 18 from the total rather than 40. The ordering
+    // is what matters and it is preserved exactly.
+    const worst = scoreConditions([critical()]);
+    const bad = scoreConditions([high()]);
+    const middling = scoreConditions([medium()]);
+    const slight = scoreConditions([info()]);
+
+    expect(worst).toBeLessThan(bad);
+    expect(bad).toBeLessThan(middling);
+    expect(middling).toBeLessThan(slight);
+    expect(slight).toBeLessThan(100);
   });
 
-  it('clamps at zero', () => {
+  it('empties the pillar rather than the score', () => {
+    // Three findings worth 120 points between them, all about impersonation.
+    // The pillar bottoms out at zero; the domain still delivers mail and still
+    // has its hardening, and the total says so.
     const distinct = [
       createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
       createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' }),
       createCondition('DKIM_KEY_REVOKED', { selector: 's1', domain: 'a.com' }),
     ];
-    expect(scoreConditions(distinct)).toBe(0);
+    const sum = scoreBreakdown(distinct);
+
+    expect(sum.pillars.find((p) => p.pillar === 'IMPERSONATION')?.score).toBe(0);
+    expect(sum.score).toBe(55);
   });
 
   it('charges the same problem once, however many times it was found', () => {
@@ -45,15 +58,16 @@ describe('scoreConditions', () => {
       createCondition('DKIM_KEY_WEAK_1024', { selector: 's1' }),
       createCondition('DKIM_KEY_WEAK_1024', { selector: 'mandrill' }),
     ];
-    expect(scoreConditions(repeated)).toBe(85);
+    expect(scoreConditions(repeated)).toBe(scoreConditions([repeated[0]!]));
   });
 
   it('still charges genuinely different problems separately', () => {
-    const mixed = [
+    const one = [createCondition('DKIM_KEY_WEAK_1024', { selector: 'google' })];
+    const both = [
       createCondition('DKIM_KEY_WEAK_1024', { selector: 'google' }),
       createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
     ];
-    expect(scoreConditions(mixed)).toBe(77);
+    expect(scoreConditions(both)).toBeLessThan(scoreConditions(one));
   });
 });
 
@@ -111,49 +125,125 @@ describe('dedupeConditions', () => {
   });
 });
 
-describe('optional hardening is capped', () => {
-  it('does not let optional records dominate the score', () => {
-    // MTA-STS, TLS-RPT, BIMI, CAA and DNSSEC gaps together removed more than a
-    // quarter of the score, which put a well-authenticated domain beside one
-    // with nothing.
+describe('the pillars', () => {
+  it('keeps optional hardening away from the rest of the score', () => {
+    // Every optional record missing at once. It is worth telling somebody
+    // about and it is not what decides whether their mail arrives.
     const hardening = [
       createCondition('MTASTS_MISSING', { domain: 'a.com' }),
-      createCondition('TLSRPT_MISSING', { domain: 'a.com' }),
       createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
       createCondition('BIMI_MISSING', { domain: 'a.com' }),
       createCondition('CAA_MISSING', { domain: 'a.com' }),
     ];
-    const raw = hardening.reduce((total, condition) => total + condition.deduction, 0);
 
-    expect(raw).toBeGreaterThan(25);
-    expect(scoreConditions(hardening)).toBe(75);
+    // Hardening carries fifteen percent, so losing all of it cannot cost more
+    // than fifteen points however many gaps there are.
+    expect(scoreConditions(hardening)).toBeGreaterThanOrEqual(85);
   });
 
-  it('still charges authentication problems in full', () => {
-    const core = [
-      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
-      createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' }),
-    ];
-    expect(scoreConditions(core)).toBe(20);
+  it('charges impersonation far harder than tidiness', () => {
+    const impersonation = [createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' })];
+    const tidiness = [createCondition('SPF_EXTRA_WHITESPACE', { domain: 'a.com' })];
+
+    expect(scoreConditions(impersonation)).toBeLessThan(scoreConditions(tidiness) - 10);
   });
 
-  it('keeps a well-authenticated domain clear of one with nothing', () => {
-    const wellRun = [
-      createCondition('SPF_LOOKUP_APPROACHING_LIMIT', { count: 10 }),
-      createCondition('DMARC_P_QUARANTINE', { domain: 'a.com' }),
-      createCondition('MTASTS_MISSING', { domain: 'a.com' }),
-      createCondition('TLSRPT_MISSING', { domain: 'a.com' }),
-      createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
-    ];
-    const nothing = [
-      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
+  it('files each finding under the question it answers', () => {
+    const sum = scoreBreakdown([
       createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' }),
+      createCondition('SPF_LOOKUP_LIMIT_EXCEEDED', { count: 12 }),
+      createCondition('DMARC_RUA_MISSING', { domain: 'a.com' }),
+      createCondition('CAA_MISSING', { domain: 'a.com' }),
+    ]);
+
+    const where = (code: string) =>
+      sum.pillars.find((p) => p.findings.some((f) => f.code === code))?.pillar;
+
+    expect(where('DMARC_RECORD_MISSING')).toBe('IMPERSONATION');
+    expect(where('SPF_LOOKUP_LIMIT_EXCEEDED')).toBe('DELIVERY');
+    expect(where('DMARC_RUA_MISSING')).toBe('VISIBILITY');
+    expect(where('CAA_MISSING')).toBe('HARDENING');
+  });
+
+  it('never lets one catastrophe drag the whole score to nothing', () => {
+    // This is the regression. online.sbi.bank.in scored 0 out of 100 with the
+    // page beside it reading "Protected, your domain can't be easily spoofed",
+    // because four findings summed past 100 in a single pool.
+    const sbi = [
+      createCondition('DMARC_EDV_MISSING', { domain: 'a.com', target: 'x.com' }),
+      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
+      createCondition('DMARC_POLICY_INHERITED', { domain: 'a.com', source_domain: 'b.com' }),
       createCondition('MX_MISSING', { domain: 'a.com' }),
-      createCondition('MTASTS_MISSING', { domain: 'a.com' }),
       createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
+      createCondition('BIMI_MISSING', { domain: 'a.com' }),
+      createCondition('CAA_MISSING', { domain: 'a.com' }),
     ];
 
-    expect(scoreConditions(wellRun)).toBeGreaterThan(scoreConditions(nothing) + 25);
+    expect(scoreConditions(sbi, { spoofability: 'PROTECTED' })).toBeGreaterThan(40);
+  });
+
+  it('a pillar cannot go below zero and take the others with it', () => {
+    const everything = [
+      createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' }),
+      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
+      createCondition('DKIM_KEY_REVOKED', { selector: 's1', domain: 'a.com' }),
+      createCondition('DMARC_V_CASE_INVALID', {}),
+    ];
+    const sum = scoreBreakdown(everything);
+
+    expect(sum.pillars.find((p) => p.pillar === 'IMPERSONATION')?.score).toBe(0);
+    // Delivery, visibility and hardening are untouched, so the total is not 0.
+    expect(sum.score).toBeGreaterThan(0);
+  });
+
+  it('reproduces its own arithmetic', () => {
+    const sum = scoreBreakdown([
+      createCondition('MTASTS_MISSING', { domain: 'a.com' }),
+      createCondition('DMARC_P_QUARANTINE', { domain: 'a.com' }),
+    ]);
+
+    const byHand =
+      sum.pillars.reduce((total, p) => total + p.score * p.weight, 0) /
+      sum.pillars.reduce((total, p) => total + p.weight, 0);
+
+    expect(Math.round(byHand)).toBe(sum.score);
+  });
+});
+
+describe('the score can never contradict the verdict', () => {
+  it('does not call a protected domain critical', () => {
+    // The whole point of the floor. A domain at p=reject refuses unauthenticated
+    // mail whatever else is missing, so an impersonation score in the twenties
+    // would be measuring hygiene and calling it exposure.
+    const messy = [
+      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
+      createCondition('DKIM_KEY_REVOKED', { selector: 's1', domain: 'a.com' }),
+      createCondition('DMARC_POLICY_INHERITED', { domain: 'a.com', source_domain: 'b.com' }),
+    ];
+
+    expect(scoreConditions(messy, { spoofability: 'PROTECTED' })).toBeGreaterThanOrEqual(50);
+  });
+
+  it('does not let a spoofable domain look healthy on hardening alone', () => {
+    const spoofable = [createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' })];
+    const score = scoreConditions(spoofable, { spoofability: 'SPOOFABLE' });
+
+    expect(score).toBeLessThanOrEqual(39);
+  });
+
+  it('caps a spoofable domain that is otherwise spotless', () => {
+    const sum = scoreBreakdown([createCondition('DMARC_P_NONE', { domain: 'a.com' })], {
+      spoofability: 'SPOOFABLE',
+    });
+
+    expect(sum.score).toBeLessThanOrEqual(39);
+  });
+
+  it('keeps quarantine below healthy however clean the rest is', () => {
+    // p=quarantine is genuinely better than nothing and genuinely not the
+    // finish line. A perfect domain sitting at quarantine tops out just under
+    // the healthy band, which is the nudge to reject.
+    expect(scoreConditions([], { spoofability: 'PARTIAL' })).toBe(64);
   });
 });
 
@@ -173,9 +263,10 @@ describe('vitals', () => {
 
   it('assembles the monitor readout', () => {
     const readout = vitals([critical(), high()]);
-    expect(readout.score).toBe(35);
-    expect(readout.band).toBe('CRITICAL');
-    expect(readout.headline).toBe('CRITICAL CONDITION');
+    // Both are impersonation findings: 100 - 65 = 35 on a pillar worth 45
+    // percent, with the other three pillars untouched.
+    expect(readout.score).toBe(71);
+    expect(readout.band).toBe('NEEDS_CARE');
     expect(readout.counts.CRITICAL).toBe(1);
     expect(readout.counts.HIGH).toBe(1);
     expect(readout.counts.LOW).toBe(0);
@@ -183,76 +274,6 @@ describe('vitals', () => {
 });
 
 describe('scoreBreakdown', () => {
-  it('reproduces the score it explains', () => {
-    const conditions = [
-      createCondition('DMARC_OBSOLETE_TAGS', { domain: 'a.com', offending_term: 'pct=100' }),
-      createCondition('DMARC_P_QUARANTINE', { domain: 'a.com' }),
-      createCondition('MTASTS_MISSING', { domain: 'a.com' }),
-      createCondition('TLSRPT_MISSING', { domain: 'a.com' }),
-    ];
-
-    const sum = scoreBreakdown(conditions);
-    // Both DMARC findings are LOW, so they fall under the minor cap rather
-    // than core. Nothing here threatens delivery or lets anyone impersonate.
-    expect(sum.core).toBe(0);
-    expect(sum.minor).toBe(16);
-    expect(sum.minorCharged).toBe(16);
-    expect(sum.hardening).toBe(23);
-    expect(sum.hardeningCharged).toBe(23);
-    expect(100 - sum.core - sum.minorCharged - sum.hardeningCharged).toBe(sum.score);
-    // The arithmetic on screen and the score on screen come from one function.
-    expect(sum.score).toBe(scoreConditions(conditions));
-  });
-
-  it('shows the cap when hardening exceeds it', () => {
-    const conditions = [
-      createCondition('MTASTS_MISSING', { domain: 'a.com' }),
-      createCondition('TLSRPT_MISSING', { domain: 'a.com' }),
-      createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
-      createCondition('BIMI_MISSING', { domain: 'a.com' }),
-      createCondition('CAA_MISSING', { domain: 'a.com' }),
-    ];
-
-    const sum = scoreBreakdown(conditions);
-    expect(sum.hardening).toBeGreaterThan(25);
-    expect(sum.hardeningCharged).toBe(25);
-    expect(sum.score).toBe(scoreConditions(conditions));
-  });
-
-  it('stops tidiness outweighing protection', () => {
-    // Six minor findings is 48 points, which put a p=reject domain with valid
-    // SPF and DKIM into the critical band on hygiene alone.
-    const hygiene = [
-      createCondition('DMARC_STRING_TOO_LONG', { domain: 'a.com', count: 300 }),
-      createCondition('DMARC_TOO_MANY_URIS', { count: 4 }),
-      createCondition('SPF_SOFTFAIL_ADVISORY', { domain: 'a.com' }),
-      createCondition('DMARC_UPPERCASE_TAGS', { offending_term: 'P' }),
-      createCondition('SPF_EXTRA_WHITESPACE', { domain: 'a.com' }),
-    ];
-
-    const sum = scoreBreakdown(hygiene);
-    expect(sum.minor).toBeGreaterThan(20);
-    expect(sum.minorCharged).toBe(20);
-    expect(sum.score).toBe(80);
-    expect(sum.core).toBe(0);
-  });
-
-  it('still charges a real defect in full alongside capped minors', () => {
-    const mixed = [
-      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
-      createCondition('DMARC_STRING_TOO_LONG', { domain: 'a.com', count: 300 }),
-      createCondition('DMARC_TOO_MANY_URIS', { count: 4 }),
-      createCondition('SPF_SOFTFAIL_ADVISORY', { domain: 'a.com' }),
-      createCondition('DMARC_UPPERCASE_TAGS', { offending_term: 'P' }),
-      createCondition('SPF_EXTRA_WHITESPACE', { domain: 'a.com' }),
-    ];
-
-    const sum = scoreBreakdown(mixed);
-    expect(sum.core).toBe(40);
-    expect(sum.minorCharged).toBe(20);
-    expect(sum.score).toBe(40);
-  });
-
   it('agrees with scoreConditions on every shape', () => {
     const samples = [
       [],

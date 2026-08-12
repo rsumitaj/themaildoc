@@ -13,11 +13,22 @@ export interface DohRequestOptions {
   timeoutMs?: number;
   /** Retries *after* the first attempt. One is plenty for a public resolver. */
   retries?: number;
+  /**
+   * Called before every network attempt. Returning false stops us.
+   *
+   * A retry and a failover are each a real subrequest, and Cloudflare gives a
+   * Worker fifty of them. Counting logical queries instead of attempts meant a
+   * chain that hit a couple of slow names quietly blew through the platform
+   * limit, at which point `fetch` itself starts throwing and the whole walk
+   * looks like the customer's DNS is broken. The caller does the counting,
+   * because only the caller knows the budget.
+   */
+  spend?: () => boolean;
 }
 
 export type DohAttempt =
   | { ok: true; json: DohJson }
-  | { ok: false; reason: 'TIMEOUT' | 'HTTP' | 'NETWORK' | 'PARSE'; message: string };
+  | { ok: false; reason: 'TIMEOUT' | 'HTTP' | 'NETWORK' | 'PARSE' | 'BUDGET'; message: string };
 
 export function dohUrl(provider: DohProvider, name: string, type: DnsType): string {
   const endpoint = DOH_ENDPOINTS[provider];
@@ -46,11 +57,20 @@ export async function queryProvider(
   let last: DohAttempt = { ok: false, reason: 'NETWORK', message: 'not attempted' };
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
+    if (options.spend && !options.spend()) {
+      return { ok: false, reason: 'BUDGET', message: 'Out of query budget' };
+    }
+
     last = await attemptOnce(doFetch, url, timeoutMs);
     if (last.ok) return last;
-    // A 4xx is the provider telling us the query itself is wrong — retrying
-    // just burns a subrequest.
-    if (last.reason === 'HTTP' && last.message.startsWith('4')) return last;
+
+    // A 4xx is the provider telling us the query itself is wrong, so retrying
+    // just burns a subrequest. 429 is the exception: that one means "not right
+    // now", which is exactly what a retry is for, and it is what a public
+    // resolver answers when a burst of lookups arrives from one address.
+    if (last.reason === 'HTTP' && last.message.startsWith('4') && last.message !== '429') {
+      return last;
+    }
   }
   return last;
 }

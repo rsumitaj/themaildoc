@@ -8,10 +8,10 @@ import type { Issue } from '../types.js';
  * enough to call out, because most tools (and most blog posts) still have them
  * wrong:
  *
- *   - Only `v` is required (§4.8). A syntactically valid record with no `p` is
+ *   - Only `v` is required (section 4.8). A syntactically valid record with no `p` is
  *     treated as `p=none`. it is NOT discarded.
- *   - `psd` takes `y`, `n` or `u`, defaulting to `u` (§4.7.6).
- *   - Policy discovery is the DNS tree walk (§4.10), not the Public Suffix List.
+ *   - `psd` takes `y`, `n` or `u`, defaulting to `u` (section 4.7.6).
+ *   - Policy discovery is the DNS tree walk (section 4.10), not the Public Suffix List.
  */
 export const DMARC_ISSUES: readonly Issue[] = [
   // --- Discovery & existence ------------------------------------------------
@@ -23,7 +23,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'No DMARC record',
     why: 'Nothing at _dmarc.{domain} tells receivers what to do with mail that fails authentication, so anyone can send phishing that looks exactly like you, and you never find out, because there are no reports either.',
     fix: 'Publish a TXT record at _dmarc.{domain}: v=DMARC1; p=none; rua=mailto:dmarc@{domain}, start at none to collect reports, then move to quarantine and reject.',
-    rfc: 'RFC 9989 §4.5',
+    rfc: 'RFC 9989 section 4.5',
     vars: ['domain'],
   },
   {
@@ -34,7 +34,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Multiple DMARC records',
     why: '{count} DMARC records are published at _dmarc.{domain}. Receivers require exactly one. Finding several. They apply no policy at all, so you have the appearance of DMARC and none of the protection.',
     fix: 'Delete every DMARC record but the one you want enforced. There must be exactly one TXT record at _dmarc.{domain}.',
-    rfc: 'RFC 9989 §4.10',
+    rfc: 'RFC 9989 section 4.10',
     vars: ['domain', 'count'],
   },
   {
@@ -45,7 +45,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record contains no policy',
     why: 'The record at _dmarc.{domain} is just a version tag with nothing after it. It parses, and it does nothing.',
     fix: 'Add a policy and a reporting address: v=DMARC1; p=none; rua=mailto:dmarc@{domain}',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['domain'],
   },
   {
@@ -56,7 +56,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC policy discovery ran out of queries',
     why: 'Receivers walk up the DNS tree looking for your policy and stop after 8 queries. {domain} is deep enough that the walk ends before a record is found, so receivers apply no DMARC at all.',
     fix: 'Publish a DMARC record closer to the sending domain, at {domain} itself, or at its organizational domain.',
-    rfc: 'RFC 9989 §4.10',
+    rfc: 'RFC 9989 section 4.10',
     vars: ['domain'],
   },
   {
@@ -67,7 +67,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC policy is inherited from a parent domain',
     why: '{domain} publishes no DMARC record of its own. Receivers are applying the policy found at {source_domain}, which someone else controls and can change or remove without telling you.',
     fix: 'Publish your own record at _dmarc.{domain} with your own reporting addresses, so you control the policy and can see your own mail.',
-    rfc: 'RFC 9989 §4.10.1',
+    rfc: 'RFC 9989 section 4.10.1',
     vars: ['domain', 'source_domain'],
   },
   {
@@ -78,7 +78,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record is behind a CNAME loop',
     why: 'The CNAME chain at _dmarc.{domain} comes back on itself ({chain_path}), so resolution never terminates and no policy is ever found.',
     fix: 'Remove the circular CNAME and point _dmarc.{domain} at a name that resolves to a real TXT record.',
-    rfc: 'RFC 9989 §4.5',
+    rfc: 'RFC 9989 section 4.5',
     vars: ['domain', 'chain_path'],
   },
   {
@@ -89,7 +89,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC CNAME points nowhere',
     why: '_dmarc.{domain} is a CNAME to {target}, and nothing resolves there. This is the real reason your DMARC looks missing, the delegation is broken, not the policy.',
     fix: 'Fix or remove the CNAME so _dmarc.{domain} reaches a valid DMARC TXT record.',
-    rfc: 'RFC 9989 §4.5',
+    rfc: 'RFC 9989 section 4.5',
     vars: ['domain', 'target'],
   },
 
@@ -102,7 +102,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC version tag is wrong',
     why: 'The version must be exactly v=DMARC1, case included. Anything else and receivers ignore the entire record, every other tag you have set is irrelevant.',
     fix: 'Set the first tag to exactly v=DMARC1 (uppercase DMARC, digit one).',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: [],
   },
   {
@@ -113,7 +113,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC version tag is not first',
     why: 'v=DMARC1 must be the first tag in the record. When it is not, receivers ignore the whole record, including your policy.',
     fix: 'Move v=DMARC1 to the very start: v=DMARC1; p=…; rua=…',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: [],
   },
   {
@@ -124,7 +124,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record repeats a tag',
     why: 'The tag {offending_term} appears more than once. Which value applies is undefined, and strict receivers treat the record as unparseable.',
     fix: 'Keep one instance of {offending_term} and delete the rest.',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['offending_term'],
   },
   {
@@ -135,7 +135,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC tags are not separated correctly',
     why: 'Part of the record ({offending_term}) is not a tag=value pair separated by a semicolon, so parsing stops or produces something you did not intend.',
     fix: 'Separate every tag with a semicolon: v=DMARC1; p=reject; rua=mailto:dmarc@example.com',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['offending_term'],
   },
   {
@@ -146,7 +146,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record cannot be parsed',
     why: 'The record at _dmarc.{domain} does not decompose into tag=value pairs at all, so it provides no protection whatsoever.',
     fix: 'Replace it with a clean record: v=DMARC1; p=none; rua=mailto:dmarc@{domain}',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['domain'],
   },
   {
@@ -157,7 +157,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC tag names use uppercase',
     why: 'Tag names ({offending_term}) should be lowercase. Most receivers cope, but some do not, and it is a needless risk on a record this important.',
     fix: 'Write tag names in lowercase: p, sp, rua, adkim.',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['offending_term'],
   },
   {
@@ -168,7 +168,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record exceeds a single DNS string',
     why: 'The record is {count} bytes, so it must be published as several quoted strings, and DNS panels that get that wrong silently mangle it.',
     fix: 'Shorten the record, usually by reducing reporting addresses, or publish it as multiple quoted strings in one TXT record.',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['count'],
   },
   {
@@ -179,7 +179,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record is large enough to be truncated',
     why: 'At {count} bytes the DNS response risks truncation on resolvers without EDNS0, and a truncated policy is an unread policy.',
     fix: 'Trim the record, the usual cause is a long list of reporting destinations.',
-    rfc: 'RFC 9989 §4.8',
+    rfc: 'RFC 9989 section 4.8',
     vars: ['count'],
   },
 
@@ -192,7 +192,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC record has no policy tag',
     why: 'With no p tag, receivers treat the record as p=none, monitoring only. The record is valid, which is exactly why this goes unnoticed: it looks like protection and blocks nothing.',
     fix: 'State the policy explicitly. Add p=none while you review reports, then move to p=quarantine and p=reject.',
-    rfc: 'RFC 9989 §4.7.5',
+    rfc: 'RFC 9989 section 4.7',
     vars: [],
   },
   {
@@ -203,7 +203,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC policy value is invalid',
     why: 'p={offending_term} is not a policy any receiver recognises. The intended enforcement never happens.',
     fix: 'Use exactly one of p=none, p=quarantine or p=reject.',
-    rfc: 'RFC 9989 §4.7.5',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -214,7 +214,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC is monitoring only (p=none)',
     why: 'p=none tells receivers to deliver mail that fails authentication anyway. You can see spoofing in the reports, but nothing is stopped, {domain} is still fully spoofable today.',
     fix: 'Review your aggregate reports until only known senders pass, then move to p=quarantine, and finally p=reject.',
-    rfc: 'RFC 9989 §4.7.5',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['domain'],
   },
   {
@@ -228,7 +228,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC quarantines instead of rejecting',
     why: 'Mail that fails authentication for {domain} is delivered to spam rather than refused. Better than nothing, and one step short of protection, a spoofed message still reaches the mailbox.',
     fix: 'Once your reports show only legitimate senders passing, change p=quarantine to p=reject.',
-    rfc: 'RFC 9989 §4.7.5',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['domain'],
   },
   {
@@ -239,7 +239,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Subdomain policy value is invalid',
     why: 'sp={offending_term} is not a valid policy, so receivers fall back to your main policy for subdomains, which may be stricter or weaker than you intended.',
     fix: 'Use sp=none, sp=quarantine or sp=reject, or remove the tag to inherit p.',
-    rfc: 'RFC 9989 §4.7.9',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -250,7 +250,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Non-existent subdomain policy value is invalid',
     why: 'np={offending_term} is not a valid policy, so receivers fall back to sp or p for subdomains that do not exist.',
     fix: 'Use np=none, np=quarantine or np=reject, or remove the tag.',
-    rfc: 'RFC 9989 §4.7.4',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -261,7 +261,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Subdomains are less protected than the domain',
     why: 'The domain enforces p={policy} but subdomains only get sp={subdomain_policy}. Attackers know this: they spoof invoices.{domain} precisely because the subdomain policy is the weak one.',
     fix: 'Raise sp to match your domain policy, sp={policy}, unless you have a specific subdomain that genuinely needs the weaker setting.',
-    rfc: 'RFC 9989 §4.7.9',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['domain', 'policy', 'subdomain_policy'],
   },
   {
@@ -272,7 +272,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Non-existent subdomains are less protected',
     why: 'Mail claiming to come from subdomains that do not exist is handled with np={np_policy}, weaker than the sp={subdomain_policy} you apply elsewhere. Invented subdomains are the easiest thing in the world to spoof.',
     fix: 'Set np=reject. No legitimate mail comes from a subdomain that does not exist.',
-    rfc: 'RFC 9989 §4.7.4',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['np_policy', 'subdomain_policy'],
   },
 
@@ -285,7 +285,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC is in test mode while claiming to enforce',
     why: 't=y tells receivers to apply p=none no matter what your policy says. Your record advertises p={policy} and delivers nothing of the sort, this is the single most common way a domain believes it is protected and is not.',
     fix: 'Remove t=y once your rollout is validated. The policy takes effect the moment you do.',
-    rfc: 'RFC 9989 §4.7.10',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['policy'],
   },
   {
@@ -296,7 +296,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Test mode value is invalid',
     why: 't={offending_term} is not valid, so receivers fall back to t=n. If you meant to be in test mode, you are not.',
     fix: 'Use t=y for test mode or t=n (the default) for normal enforcement.',
-    rfc: 'RFC 9989 §4.7.10',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -307,7 +307,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DKIM alignment value is invalid',
     why: 'adkim={offending_term} is not valid, so receivers use relaxed alignment. If you intended strict, you are not getting it.',
     fix: 'Use adkim=r for relaxed or adkim=s for strict.',
-    rfc: 'RFC 9989 §4.7.1',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -318,7 +318,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'SPF alignment value is invalid',
     why: 'aspf={offending_term} is not valid, so receivers use relaxed alignment. If you intended strict, you are not getting it.',
     fix: 'Use aspf=r for relaxed or aspf=s for strict.',
-    rfc: 'RFC 9989 §4.7.2',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -329,7 +329,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Strict DKIM alignment is on',
     why: 'adkim=s requires the DKIM signing domain to match your From domain exactly. Any vendor signing with their own domain, and any subdomain sender, will fail DMARC.',
     fix: 'Confirm every sender signs as {domain} exactly, or switch to adkim=r.',
-    rfc: 'RFC 9989 §4.7.1',
+    rfc: 'RFC 9989 section 4.7',
     dismissible: true,
     // A deliberate tightening, not a defect. The consequence is worth
     // stating; taking points off for choosing the stricter setting is not.
@@ -344,7 +344,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Strict SPF alignment is on',
     why: 'aspf=s requires the SPF-authenticated domain to match your From domain exactly. Subdomain senders and some forwarding paths will fail DMARC as a result.',
     fix: 'Confirm every sender uses {domain} exactly in the envelope sender, or switch to aspf=r.',
-    rfc: 'RFC 9989 §4.7.2',
+    rfc: 'RFC 9989 section 4.7',
     dismissible: true,
     // A deliberate tightening, not a defect. The consequence is worth
     // stating; taking points off for choosing the stricter setting is not.
@@ -359,7 +359,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Public suffix flag value is invalid',
     why: 'psd={offending_term} is not valid. The tag takes y, n or u, and an invalid value falls back to u, leaving receivers to work out for themselves whether this is an organizational domain.',
     fix: 'Use psd=n if this is a normal domain, psd=y only if you operate a public suffix, or remove the tag entirely.',
-    rfc: 'RFC 9989 §4.7.6',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -370,7 +370,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'A normal domain is claiming to be a public suffix',
     why: 'psd=y declares {domain} a registry under which other people register names. On an ordinary domain it distorts policy discovery for you and potentially for others.',
     fix: 'Remove psd=y, or set psd=n to state plainly that {domain} is an organizational domain.',
-    rfc: 'RFC 9989 §4.7.6',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['domain'],
   },
   {
@@ -394,7 +394,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'DMARC has no reporting address',
     why: 'Without rua, no receiver sends you aggregate reports. You cannot see who is sending as {domain}, cannot tell legitimate senders from spoofers, and cannot safely tighten your policy.',
     fix: 'Add a reporting destination: rua=mailto:dmarc@{domain}. Reports start arriving within a day.',
-    rfc: 'RFC 9989 §4.7.7',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['domain'],
   },
   {
@@ -405,7 +405,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Enforcing DMARC with no visibility',
     why: '{domain} is at p={policy} with no rua address. Receivers are refusing or quarantining mail on your behalf and you have no way to see whose mail it was, including your own.',
     fix: 'Add rua=mailto:dmarc@{domain} today. If legitimate mail is being blocked, the reports are the only place that shows it.',
-    rfc: 'RFC 9990 §3',
+    rfc: 'RFC 9990 section 3',
     vars: ['domain', 'policy'],
   },
   {
@@ -416,7 +416,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Reporting destination is missing mailto:',
     why: '{offending_term} is not a usable reporting URI. Receivers discard destinations they cannot parse, so those reports are simply never sent.',
     fix: 'Prefix every destination with mailto:, e.g. Rua=mailto:dmarc@{domain}',
-    rfc: 'RFC 9989 §4.6',
+    rfc: 'RFC 9989 section 4.6',
     vars: ['offending_term', 'domain'],
   },
   {
@@ -427,7 +427,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Reporting address is not a valid email address',
     why: '{offending_term} cannot receive mail as written, so those reports are dropped silently. You would never know the difference between this and nobody spoofing you.',
     fix: 'Correct the address in the rua tag to a mailbox that exists and is monitored.',
-    rfc: 'RFC 9989 §4.6',
+    rfc: 'RFC 9989 section 4.6',
     vars: ['offending_term'],
   },
   {
@@ -438,7 +438,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Reporting URI contains unencoded characters',
     why: 'The commas or exclamation marks inside {offending_term} are structural in a DMARC record. Unencoded. They split the URI into fragments and the reports go nowhere.',
     fix: 'Percent-encode reserved characters inside the address: , becomes %2C and ! becomes %21.',
-    rfc: 'RFC 9989 §4.6',
+    rfc: 'RFC 9989 section 4.6',
     vars: ['offending_term'],
   },
   {
@@ -449,7 +449,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Report size limit is malformed',
     why: 'The size modifier {offending_term} is not valid, so receivers may ignore the whole destination rather than just the limit.',
     fix: 'Write the limit as a number with an optional unit, e.g. Mailto:dmarc@example.com!10m, or drop it entirely.',
-    rfc: 'RFC 9989 §4.6',
+    rfc: 'RFC 9989 section 4.6',
     vars: ['offending_term'],
   },
   {
@@ -460,7 +460,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Reporting destinations separated by spaces',
     why: 'Multiple destinations must be comma-separated. Written with spaces, everything after the first address is misread and those reports never arrive.',
     fix: 'Separate destinations with commas only: rua=mailto:a@example.com,mailto:b@example.com',
-    rfc: 'RFC 9989 §4.6',
+    rfc: 'RFC 9989 section 4.6',
     vars: [],
   },
   {
@@ -471,7 +471,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Too many reporting destinations',
     why: '{count} destinations are configured. Receivers are permitted to send to fewer than you list, so past a small number the receiver decides which of your addresses actually get a copy.',
     fix: 'Keep two or three destinations and forward from there if more people need the data.',
-    rfc: 'RFC 9989 §4.6',
+    rfc: 'RFC 9989 section 4.6',
     vars: ['count'],
   },
   {
@@ -482,7 +482,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Failure reporting options are invalid',
     why: 'fo={offending_term} is not valid, so receivers fall back to fo=0, failure reports only when everything fails, which is rarely what people intend.',
     fix: 'Use fo=1 to get a report whenever any check fails, or combine values with colons, e.g. fo=d:s',
-    rfc: 'RFC 9989 §4.7.3',
+    rfc: 'RFC 9989 section 4.7',
     vars: ['offending_term'],
   },
   {
@@ -493,7 +493,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Failure report destination is missing mailto:',
     why: '{offending_term} is not a usable URI, so failure reports for {domain} are discarded before they are sent.',
     fix: 'Prefix the destination with mailto:, or remove the ruf tag if you do not want per-message reports.',
-    rfc: 'RFC 9991 §2',
+    rfc: 'RFC 9991 section 2',
     vars: ['offending_term', 'domain'],
   },
   {
@@ -504,11 +504,11 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'Failure report address is not a valid email address',
     why: '{offending_term} cannot receive mail as written, so failure reports are dropped.',
     fix: 'Correct the address in the ruf tag, or remove the tag.',
-    rfc: 'RFC 9991 §2',
+    rfc: 'RFC 9991 section 2',
     vars: ['offending_term'],
   },
 
-  // --- External destination verification (RFC 9990 §4 / RFC 9991 §5) --------
+  // --- External destination verification (RFC 9990 section 4 / RFC 9991 section 5) --------
   {
     code: 'DMARC_EDV_MISSING',
     record: 'DMARC',
@@ -517,7 +517,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'External report destination has not authorised you',
     why: 'Reports for {domain} are addressed to {target}, a different domain. Receivers only send them if {target} publishes permission, and it does not, so those reports are being dropped by every receiver, silently.',
     fix: 'Ask {target} to publish a TXT record at {domain}._report._dmarc.{target} containing v=DMARC1',
-    rfc: 'RFC 9990 §4',
+    rfc: 'RFC 9990 section 4',
     vars: ['domain', 'target'],
   },
   {
@@ -528,7 +528,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'External authorisation record is invalid',
     why: 'The record at {domain}._report._dmarc.{target} exists but is not a valid authorisation, so receivers treat it as no permission at all and drop the reports.',
     fix: 'The record must contain v=DMARC1. Ask {target} to republish it in that exact form.',
-    rfc: 'RFC 9990 §4',
+    rfc: 'RFC 9990 section 4',
     vars: ['domain', 'target'],
   },
   {
@@ -539,7 +539,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'External authorisation could not be checked',
     why: 'The authorisation lookup for {target} did not answer, so we cannot say whether your reports are being delivered there. This is usually a temporary DNS problem at {target}, not a fault in your record.',
     fix: 'Re-run the checkup shortly. If it keeps failing, ask {target} whether their nameservers are healthy.',
-    rfc: 'RFC 9990 §4',
+    rfc: 'RFC 9990 section 4',
     dismissible: true,
     vars: ['target'],
   },
@@ -556,7 +556,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: '{target} is not authorised to receive your reports',
     why: 'Reports addressed to {target} are dropped, because {target} has not published the record that authorises it to receive reports about {domain}. You still get reports at your own address, so you are not blind, but whoever expected a copy at {target} is getting nothing and probably does not know.',
     fix: 'Ask {target} to publish a TXT record at {domain}._report._dmarc.{target} containing v=DMARC1. If that address belongs to a vendor you no longer use, remove it from your rua tag instead.',
-    rfc: 'RFC 9990 §4',
+    rfc: 'RFC 9990 section 4',
     vars: ['domain', 'target'],
   },
   {
@@ -567,7 +567,7 @@ export const DMARC_ISSUES: readonly Issue[] = [
     title: 'One reporting destination has a malformed authorisation record',
     why: 'The authorisation record at {domain}._report._dmarc.{target} exists but does not start with v=DMARC1, so receivers treat it as absent and drop reports addressed to {target}. Your own address still receives, so this costs you a copy rather than the whole picture.',
     fix: 'Ask {target} to republish that TXT record containing exactly v=DMARC1, with nothing before it.',
-    rfc: 'RFC 9990 §4',
+    rfc: 'RFC 9990 section 4',
     vars: ['domain', 'target'],
   },
 ];

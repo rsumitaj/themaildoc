@@ -117,7 +117,7 @@ export function ConditionCard({ condition }: ConditionCardProps) {
       </div>
 
       <div class="md-condition__foot">
-        <span>{condition.rfc}</span>
+        <RfcLink citation={condition.rfc} />
         <a href={`/library/checks/${condition.code.toLowerCase().replace(/_/g, '-')}`}>
           {condition.code}
         </a>
@@ -138,5 +138,35 @@ export function CleanBill() {
         is rarer than it should be.
       </p>
     </article>
+  );
+}
+
+/**
+ * The citation, as a link to the exact section it names.
+ *
+ * People who care whether a finding is real want to check it, and asking them
+ * to search for "RFC 9989 section 4.7" themselves is a small insult to the
+ * only audience that will ever look. The anchor format is the one the RFC
+ * Editor publishes, so these land on the paragraph rather than the top of a
+ * hundred-page document.
+ *
+ * BIMI has no RFC. It is still an Internet-Draft, and drafts move, so that one
+ * is left as plain text rather than pointed at a URL that will rot.
+ */
+function RfcLink({ citation }: { citation: string }) {
+  const match = /^RFC (\d+) (?:section ([\d.]+)|Appendix ([A-Z](?:\.\d+)*))$/.exec(citation);
+  if (!match) return <span>{citation}</span>;
+
+  const anchor = match[2] ? `section-${match[2]}` : `appendix-${match[3]}`;
+
+  return (
+    <a
+      class="md-condition__rfc"
+      href={`https://www.rfc-editor.org/rfc/rfc${match[1]}#${anchor}`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {citation}
+    </a>
   );
 }

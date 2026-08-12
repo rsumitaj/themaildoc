@@ -105,7 +105,10 @@ describe('healthCheck — a domain with nothing', () => {
     expect(codes).toContain('SPF_RECORD_MISSING');
     expect(codes).toContain('DMARC_RECORD_MISSING');
     expect(codes).toContain('MX_MISSING');
-    expect(result.vitals.score).toBeLessThan(40);
+    // Anyone can send as this domain, so it is capped into the critical band
+    // however tidy the rest of its DNS is.
+    expect(result.spoofability.verdict).toBe('SPOOFABLE');
+    expect(result.vitals.score).toBeLessThanOrEqual(39);
     expect(result.vitals.band).toBe('CRITICAL');
   });
 

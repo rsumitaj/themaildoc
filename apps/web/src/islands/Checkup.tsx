@@ -188,7 +188,7 @@ export default function Checkup() {
           <div class="md-chart">
             <div>
               <VitalsMonitor vitals={scored} />
-              <ScoreExplainer conditions={conditions} />
+              <ScoreExplainer conditions={conditions} spoofability={core.spoofability.verdict} />
             </div>
 
             <div>
@@ -209,6 +209,7 @@ export default function Checkup() {
                 <SpfTree
                   chain={core.detail.spf.chain}
                   lookupCount={core.detail.spf.lookupCount}
+                  exact={core.detail.spf.lookupCountExact}
                 />
               )}
             </div>

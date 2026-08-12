@@ -82,7 +82,9 @@ describe('SPF — missing record', () => {
     expect(analysis.found).toBe(false);
     expect(codes).toEqual(['SPF_RECORD_MISSING']);
     expect(analysis.status).toBe('CRITICAL');
-    expect(vitals(analysis.conditions).score).toBe(60);
+    // Impersonation is the pillar that carries this, and it carries 45 percent
+    // of the score, so a 40 point finding removes 18 rather than 40.
+    expect(vitals(analysis.conditions).score).toBe(82);
     expect(analysis.conditions[0]?.why).toContain('example.com');
   });
 
@@ -149,7 +151,7 @@ describe('SPF — the "all" policy', () => {
     expect(analysis.status).toBe('HEALTHY');
     expect(analysis.conditions[0]?.severity).toBe('INFO');
     expect(analysis.conditions[0]?.dismissible).toBe(true);
-    expect(vitals(analysis.conditions).score).toBe(98);
+    expect(vitals(analysis.conditions).score).toBe(99);
   });
 
   it('says nothing about -all', async () => {

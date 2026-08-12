@@ -40,7 +40,19 @@ import type { AddressAnalysis, DnssecAnalysis } from './address/analyze.js';
  * fit beside SPF's chain walk, so it has its own endpoint.
  */
 
-export const DEFAULT_HEALTH_CHECK_BUDGET = 46;
+/**
+ * DNS attempts one checkup may spend.
+ *
+ * Cloudflare allows fifty subrequests per request, and this is not the only
+ * thing spending them: the MTA-STS policy file is one HTTPS fetch on top. The
+ * budget now counts real network attempts rather than names we wanted to look
+ * up, which is what it always claimed to count. Under the old accounting a
+ * retry and a failover were free, so a chain with two slow names walked
+ * straight past fifty, at which point the platform makes `fetch` throw and
+ * every remaining lookup fails at once. That is what made a healthy record
+ * look like broken DNS.
+ */
+export const DEFAULT_HEALTH_CHECK_BUDGET = 44;
 
 export interface HealthCheckOptions {
   fetchImpl?: FetchLike;
@@ -170,11 +182,17 @@ export async function healthCheck(
     ...ptr.notes,
   ]);
 
+  // The verdict is computed from the policy receivers actually apply, so it is
+  // the ground truth for the impersonation pillar. Handing it to the scorer is
+  // what stops a page reading "0 out of 100" above "your domain can't be
+  // easily spoofed".
+  const spoofability = assessSpoofability(name, dmarc, spf);
+
   return {
     domain: name,
     checkedAt: new Date(started).toISOString(),
-    vitals: vitals(conditions),
-    spoofability: assessSpoofability(name, dmarc, spf),
+    vitals: vitals(conditions, { spoofability: spoofability.verdict }),
+    spoofability,
     records: summarize(narrowed),
     conditions,
     ...narrowed,
@@ -409,7 +427,7 @@ function summarize({
         ? mtasts.policy?.mode
           ? `Policy in ${mtasts.policy.mode} mode`
           : 'Announced, but the policy could not be read'
-        : mx.acceptsNoMail
+        : mx.hosts.length === 0
           ? 'Not published, and not needed, this domain receives no mail'
           : 'Not published, inbound TLS can be stripped',
       conditionCount: mtasts.conditions.length,
@@ -421,7 +439,7 @@ function summarize({
       found: tlsrpt.found,
       summary: tlsrpt.found
         ? `${tlsrpt.destinations.length} reporting destination${tlsrpt.destinations.length === 1 ? '' : 's'}`
-        : mx.acceptsNoMail
+        : mx.hosts.length === 0
           ? 'Not published, and not needed, this domain receives no mail'
           : 'Not published, no visibility into TLS failures',
       conditionCount: tlsrpt.conditions.length,

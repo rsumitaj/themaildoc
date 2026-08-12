@@ -18,13 +18,19 @@ import { Explain } from './Explain';
  * goes through text nodes.
  */
 
+/**
+ * `UNRESOLVED` used to read "DNS did not answer", which blamed the customer
+ * for our own failure. The names it appeared on answered instantly to dig and
+ * to the same DoH endpoints we use; we had simply run out of budget mid-walk.
+ * Saying whose problem it is, accurately, is the whole point of this product.
+ */
 const STATUS_LABEL: Record<string, string> = {
   OK: '',
   NO_RECORD: 'no SPF record here',
   MULTIPLE: 'more than one SPF record, a permanent error',
   VOID: 'does not exist',
   CIRCULAR: 'already visited in this chain',
-  UNRESOLVED: 'DNS did not answer',
+  UNRESOLVED: 'we could not finish this lookup, not a fault in your record',
   TRUNCATED: 'we stopped walking here',
 };
 
@@ -75,10 +81,30 @@ export function walkChain(root: SpfChainNode): {
   return { entries, total: running };
 }
 
-export function SpfTree({ chain, lookupCount }: { chain: SpfChainNode; lookupCount: number }) {
+export function SpfTree({
+  chain,
+  lookupCount,
+  exact = true,
+}: {
+  chain: SpfChainNode;
+  lookupCount: number;
+  /** False when a branch went unwalked, so the count is a floor, not a total. */
+  exact?: boolean;
+}) {
   const { entries, total } = walkChain(chain);
   const over = lookupCount > LOOKUP_LIMIT;
-  const tone = over ? 'is-critical' : lookupCount >= 9 ? 'is-attention' : 'is-healthy';
+
+  // An incomplete walk cannot claim the domain is inside the limit. It can
+  // only claim it is at least this far along, so the chip says "at least" and
+  // stays neutral rather than showing a green pass the evidence does not
+  // support.
+  const tone = over
+    ? 'is-critical'
+    : !exact
+      ? 'is-attention'
+      : lookupCount >= 9
+        ? 'is-attention'
+        : 'is-healthy';
 
   return (
     <section class="md-tree" aria-label="SPF chain">
@@ -94,6 +120,7 @@ export function SpfTree({ chain, lookupCount }: { chain: SpfChainNode; lookupCou
           </Explain>
         </h3>
         <span class={`md-chip ${tone}`}>
+          {exact ? '' : 'at least '}
           {lookupCount} of {LOOKUP_LIMIT} lookups
         </span>
       </div>
@@ -108,7 +135,15 @@ export function SpfTree({ chain, lookupCount }: { chain: SpfChainNode; lookupCou
         <Node node={chain} entries={entries} depth={0} />
       </ol>
 
-      {total !== lookupCount && (
+      {!exact && (
+        <p class="md-tree__note">
+          One or more branches could not be walked to the end, so this is the smallest the count can
+          be, not the count. Nothing here says your record is wrong. Run the checkup again and it
+          usually completes.
+        </p>
+      )}
+
+      {exact && total !== lookupCount && (
         <p class="md-tree__note">
           The rows above add up to {total}. The count in the chip is {lookupCount}, which includes
           terms from a branch we could not finish walking.

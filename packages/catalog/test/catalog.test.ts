@@ -35,9 +35,22 @@ describe('catalog integrity', () => {
   });
 
   it('cites an RFC for every issue', () => {
+    // Spelled "section", not "§". The sign is correct typography and is not
+    // something most people asking whether their email is broken can read.
     for (const issue of ALL_ISSUES) {
       expect(issue.rfc, issue.code).toMatch(
-        /^(RFC \d+ (§[\d.]+|Appendix [A-Z](\.\d+)*)|BIMI draft-\d+ §[\d.]+)$/,
+        /^(RFC \d+ (section [\d.]+|Appendix [A-Z](\.\d+)*)|BIMI draft \d+, section [\d.]+)$/,
+      );
+    }
+  });
+
+  it('cites no section that does not exist in the RFC', () => {
+    // RFC 9989 section 4.7 lists the record tags inline; it has no numbered
+    // subsections at all. Nine issues cited 4.7.1 through 4.7.10, which read as
+    // precise and pointed at nothing.
+    for (const issue of ALL_ISSUES) {
+      expect(issue.rfc, `${issue.code} cites a section RFC 9989 does not have`).not.toMatch(
+        /RFC 9989 section 4\.7\.\d/,
       );
     }
   });
@@ -148,7 +161,13 @@ describe('Bloodwork findings', () => {
 
     expect(findings[0]?.severity).toBe('CRITICAL');
     expect(scoreConditions(findings)).toBe(100);
-    expect(scoreConditions([...findings, createCondition('SPF_ALL_MISSING', { domain: 'a.com' })])).toBe(75);
+    // Adding one real DNS finding moves the score; the report findings beside
+    // it still move nothing.
+    const withReal = [...findings, createCondition('SPF_ALL_MISSING', { domain: 'a.com' })];
+    expect(scoreConditions(withReal)).toBe(
+      scoreConditions([createCondition('SPF_ALL_MISSING', { domain: 'a.com' })]),
+    );
+    expect(scoreConditions(withReal)).toBeLessThan(100);
   });
 });
 

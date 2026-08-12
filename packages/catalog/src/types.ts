@@ -34,7 +34,7 @@ export interface Issue {
   readonly why: string;
   /** The prescription — exact and copy-paste oriented. */
   readonly fix: string;
-  /** e.g. `RFC 7208 §4.6.4`. */
+  /** e.g. `RFC 7208 section 4.6.4`. */
   readonly rfc: string;
   /** Patient may dismiss it (advisories only). */
   readonly dismissible?: boolean;

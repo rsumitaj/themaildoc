@@ -31,10 +31,22 @@ export {
   countBySeverity,
   vitals,
   scoreBreakdown,
-  HARDENING_RECORDS,
-  HARDENING_DEDUCTION_CAP,
-  MINOR_DEDUCTION_CAP,
 } from './score.js';
 
-export type { Vitals, ScoreBreakdown } from './score.js';
+export type {
+  Vitals,
+  ScoreBreakdown,
+  PillarBreakdown,
+  ChargedFinding,
+  ScoreOptions,
+  SpoofVerdict,
+} from './score.js';
+export {
+  PILLAR_WEIGHT,
+  PILLAR_LABEL,
+  PILLAR_QUESTION,
+  PILLAR_ORDER,
+  pillarFor,
+} from './pillars.js';
+export type { Pillar } from './pillars.js';
 export type { Condition, IssueCategory } from './types.js';

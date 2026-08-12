@@ -21,7 +21,16 @@ const links = [
   { href: '/practice', label: 'The Practice' },
 ];
 
-const { pathname } = Astro.url;
+/**
+ * `build.format: 'file'` means this runs with a pathname of `/practice.html`,
+ * never `/practice`, so comparing it to a link's href matched nothing and only
+ * The Lab lit up, because that one tests `startsWith('/lab')` and `/lab.html`
+ * happens to start with `/lab`. Normalise once and every section behaves.
+ */
+const pathname = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
+
+const isCurrent = (href: string): boolean =>
+  href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 ---
 
 <header class="header">
@@ -42,7 +51,7 @@ const { pathname } = Astro.url;
               <li class="hasmenu">
                 <a
                   href="/lab"
-                  aria-current={pathname.startsWith('/lab') ? 'page' : undefined}
+                  aria-current={isCurrent('/lab') ? 'page' : undefined}
                   aria-haspopup="true"
                 >
                   The Lab <span class="caret" aria-hidden="true">▾</span>
@@ -67,7 +76,7 @@ const { pathname } = Astro.url;
               </li>
             ) : (
               <li>
-                <a href={link.href} aria-current={pathname === link.href ? 'page' : undefined}>
+                <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
                   {link.label}
                 </a>
               </li>
@@ -90,7 +99,7 @@ const { pathname } = Astro.url;
         {
           links.map((link, index) => (
             <li style={`--i:${index}`}>
-              <a href={link.href} aria-current={pathname === link.href ? 'page' : undefined}>
+              <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
                 {link.label}
               </a>
             </li>

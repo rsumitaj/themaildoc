@@ -188,6 +188,7 @@ export default function RecordCheck({ record, label, action, endpoint = 'check' 
             <SpfTree
               chain={result.detail.spf.chain}
               lookupCount={result.detail.spf.lookupCount}
+              exact={result.detail.spf.lookupCountExact}
             />
           )}
 

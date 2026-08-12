@@ -218,12 +218,26 @@ export class DohResolver {
       this.budgetExhausted = true;
       return 'BUDGET';
     }
-    this.queriesIssued += 1;
-    return queryProvider(provider, qname, type, {
+
+    // Every retry and every failover inside queryProvider is another
+    // subrequest, so the counter lives here, called once per network attempt
+    // rather than once per name we wanted to know about.
+    const result = await queryProvider(provider, qname, type, {
       ...(this.fetchImpl ? { fetchImpl: this.fetchImpl } : {}),
       timeoutMs: this.timeoutMs,
       retries: this.retries,
+      spend: () => {
+        if (this.queriesIssued >= this.budget) {
+          this.budgetExhausted = true;
+          return false;
+        }
+        this.queriesIssued += 1;
+        return true;
+      },
     });
+
+    if (!result.ok && result.reason === 'BUDGET') return 'BUDGET';
+    return result;
   }
 }
 

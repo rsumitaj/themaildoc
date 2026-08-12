@@ -1,5 +1,5 @@
 import { useId, useState } from 'preact/hooks';
-import { scoreBreakdown } from '@maildoc/catalog/scoring';
+import { scoreBreakdown, type SpoofVerdict } from '@maildoc/catalog/scoring';
 import type { Condition } from '../lib/types';
 
 /**
@@ -68,11 +68,18 @@ const BANDS: ReadonlyArray<{ range: string; name: string; meaning: string }> = [
  * How the score was produced, in full.
  *
  * Collapsed by default because most people want the number. Open, it is the
- * whole model: nothing here is weighted by anything except the table below.
+ * entire model with this domain's own arithmetic in it, so anybody can check
+ * the result rather than take it on trust.
  */
-export function ScoreExplainer({ conditions }: { conditions: readonly Condition[] }) {
+export function ScoreExplainer({
+  conditions,
+  spoofability,
+}: {
+  conditions: readonly Condition[];
+  spoofability?: SpoofVerdict;
+}) {
   const [open, setOpen] = useState(false);
-  const sum = scoreBreakdown(conditions);
+  const sum = scoreBreakdown(conditions, spoofability ? { spoofability } : {});
 
   return (
     <div class="md-scorewhy">
@@ -83,67 +90,95 @@ export function ScoreExplainer({ conditions }: { conditions: readonly Condition[
         onClick={() => setOpen(!open)}
       >
         How this score works
-        <span aria-hidden="true">{open ? '−' : '+'}</span>
+        <span aria-hidden="true">{open ? '\u2212' : '+'}</span>
       </button>
 
       {open && (
         <div class="md-scorewhy__body">
           <p>
-            Every domain starts at 100. Each condition below subtracts a fixed amount, set by how
-            much damage it does. Nothing is weighted by anything else, so the same problem costs the
-            same on every domain.
+            The score is four questions, not one list. Each is answered out of 100 from the findings
+            that belong to it, then counted by how much it matters. A domain can be excellent at one
+            and poor at another, and a single bad answer can no longer drag the whole number to
+            nothing.
           </p>
 
           <h4>This domain, in full</h4>
           <table class="md-scorewhy__table">
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Score</th>
+                <th>Counts for</th>
+                <th>Contributes</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr>
-                <td>Starting score</td>
-                <td class="md-mono">100</td>
-              </tr>
-              <tr>
-                <td>
-                  {sum.charged.filter((entry) => !entry.hardening && !entry.minor).length}{' '}
-                  authentication and delivery conditions
-                </td>
-                <td class="md-mono">−{sum.core}</td>
-              </tr>
-              {sum.charged.some((entry) => entry.minor && !entry.hardening) && (
-                <tr>
+              {sum.pillars.map((pillar) => (
+                <tr key={pillar.pillar}>
                   <td>
-                    {sum.charged.filter((entry) => entry.minor && !entry.hardening).length} minor
-                    findings
-                    {sum.minor > sum.minorCharged
-                      ? ` (worth ${sum.minor}, capped at ${sum.minorCharged})`
-                      : ''}
+                    <strong>{pillar.label}</strong>
+                    <span class="md-scorewhy__q">{pillar.question}</span>
+                    {pillar.findings.length > 0 && (
+                      <span class="md-scorewhy__codes md-mono">
+                        {pillar.findings
+                          .map((finding) => `${finding.code} \u2212${finding.deduction}`)
+                          .join(', ')}
+                      </span>
+                    )}
+                    {pillar.floored && (
+                      <span class="md-scorewhy__q">
+                        Raised to {pillar.score}: your DMARC policy stops impersonation whatever else
+                        is missing.
+                      </span>
+                    )}
                   </td>
-                  <td class="md-mono">−{sum.minorCharged}</td>
-                </tr>
-              )}
-              {sum.charged.some((entry) => entry.hardening) && (
-                <tr>
-                  <td>
-                    {sum.charged.filter((entry) => entry.hardening).length} optional hardening gaps
-                    {sum.hardening > sum.hardeningCharged
-                      ? ` (worth ${sum.hardening}, capped at ${sum.hardeningCharged})`
-                      : ''}
+                  <td class="md-mono">{pillar.score}</td>
+                  <td class="md-mono">{pillar.weight}%</td>
+                  <td class="md-mono">
+                    {Math.round((pillar.score * pillar.weight) / 100)}
                   </td>
-                  <td class="md-mono">−{sum.hardeningCharged}</td>
                 </tr>
-              )}
+              ))}
               <tr>
                 <td>
                   <strong>Your Vitals</strong>
+                  {sum.capped && (
+                    <span class="md-scorewhy__q">
+                      Held at {sum.score} because the domain can still be sent as. The weighted total
+                      was {sum.weighted}.
+                    </span>
+                  )}
                 </td>
                 <td class="md-mono">
                   <strong>{sum.score}</strong>
                 </td>
+                <td />
+                <td />
               </tr>
             </tbody>
           </table>
 
-          <h4>What each condition costs</h4>
+          <h4>Why these four, and why those weights</h4>
+          <ul>
+            <li>
+              <strong>Impersonation defence counts for 45.</strong> It is the one that ends up in a
+              news story, and it is the only question a DMARC policy actually answers. RFC 9989.
+            </li>
+            <li>
+              <strong>Delivery integrity counts for 25.</strong> Blowing the ten-lookup limit or
+              publishing an unreachable mail server costs you real mail. RFC 7208 section 4.6.4.
+            </li>
+            <li>
+              <strong>Visibility counts for 15.</strong> Reporting is how you find out about both of
+              the above before somebody tells you. RFC 9990.
+            </li>
+            <li>
+              <strong>Hardening counts for 15.</strong> MTA-STS, DNSSEC, CAA and BIMI make a domain
+              better and no receiver requires any of them.
+            </li>
+          </ul>
 
+          <h4>What each finding costs its own pillar</h4>
           <table class="md-scorewhy__table">
             <thead>
               <tr>
@@ -158,7 +193,7 @@ export function ScoreExplainer({ conditions }: { conditions: readonly Condition[
                   <td>
                     <span class={`md-chip ${row.tone}`}>{row.triage}</span>
                   </td>
-                  <td class="md-mono">−{row.deduction}</td>
+                  <td class="md-mono">\u2212{row.deduction}</td>
                   <td>{row.meaning}</td>
                 </tr>
               ))}
@@ -180,21 +215,25 @@ export function ScoreExplainer({ conditions }: { conditions: readonly Condition[
             </tbody>
           </table>
 
-          <h4>Three rules that stop the number lying</h4>
+          <h4>Four rules that stop the number lying</h4>
           <ul>
             <li>
               <strong>Each problem is charged once.</strong> Three selectors carrying the same weak
               key is one fix, not three. The chart still lists every instance.
             </li>
             <li>
-              <strong>Minor findings are capped at 20 points between all of them.</strong> Six
-              small things is 48 points otherwise, which put a domain enforcing p=reject with valid
-              SPF and DKIM into the critical band on tidiness alone.
+              <strong>A pillar stops at zero.</strong> It cannot go negative and borrow against the
+              others, which is how a protected domain used to end up scoring nothing at all.
             </li>
             <li>
-              <strong>Optional hardening is capped at 25 points between all of it.</strong> MTA-STS,
-              TLS-RPT, BIMI, CAA, DNSSEC and IPv6 make a domain better and no receiver requires
-              them. Uncapped, they pushed well-run domains down beside domains with nothing.
+              <strong>The score can never contradict the verdict.</strong> If your DMARC policy
+              refuses unauthenticated mail, the impersonation score cannot read as though it does
+              not. If anyone can send as you, no amount of tidy hardening lifts you out of critical.
+            </li>
+            <li>
+              <strong>Nothing that is correct costs anything.</strong> A null MX on a domain that
+              receives no mail, or strict alignment you chose on purpose, is reported and charged
+              nothing.
             </li>
           </ul>
 

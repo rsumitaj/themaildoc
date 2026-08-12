@@ -14,7 +14,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'No MTA-STS policy',
     why: 'Nothing tells sending servers that mail to {domain} must be delivered over TLS. An attacker positioned on the network can strip the encryption, and the sender will deliver the message in the clear rather than fail.',
     fix: 'Publish a TXT record at _mta-sts.{domain}, v=STSv1; id=20260101000000, and serve a policy file at https://mta-sts.{domain}/.well-known/mta-sts.txt listing your MX hosts. Start in testing mode.',
-    rfc: 'RFC 8461 §3.1',
+    rfc: 'RFC 8461 section 3.1',
     vars: ['domain'],
   },
   {
@@ -25,7 +25,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS DNS record is malformed',
     why: 'The record at _mta-sts.{domain} is not a valid announcement, so senders never look for your policy file. The policy you are hosting is being ignored.',
     fix: 'Publish exactly: v=STSv1; id=<a value you change on every policy edit>. The id must be 1, 32 alphanumeric characters.',
-    rfc: 'RFC 8461 §3.1',
+    rfc: 'RFC 8461 section 3.1',
     vars: ['domain'],
   },
   {
@@ -36,7 +36,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS policy file cannot be fetched',
     why: 'You announce a policy in DNS, but https://mta-sts.{domain}/.well-known/mta-sts.txt did not return it ({offending_term}). Senders that look for it find nothing, so the announcement buys you no protection at all.',
     fix: 'Serve the policy file at that exact URL over HTTPS with a valid certificate, returning 200 and Content-Type text/plain.',
-    rfc: 'RFC 8461 §3.3',
+    rfc: 'RFC 8461 section 3.3',
     vars: ['domain', 'offending_term'],
   },
   {
@@ -47,7 +47,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS policy file redirects',
     why: 'The policy URL answers with a redirect, and senders must not follow redirects when fetching a policy. To every sending server, your policy simply does not exist.',
     fix: 'Serve the policy directly at https://mta-sts.{domain}/.well-known/mta-sts.txt, no redirect, not even from http to https on that path.',
-    rfc: 'RFC 8461 §3.3',
+    rfc: 'RFC 8461 section 3.3',
     vars: ['domain'],
   },
   {
@@ -58,7 +58,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS policy file is malformed',
     why: 'The policy file is served but does not parse ({offending_term}). Senders discard a policy they cannot read, so TLS is not enforced despite everything being in place.',
     fix: 'The file needs version: STSv1, a mode:, one mx: line per mail host, and max_age:. Each on its own line, no leading spaces.',
-    rfc: 'RFC 8461 §3.2',
+    rfc: 'RFC 8461 section 3.2',
     vars: ['offending_term'],
   },
   {
@@ -69,7 +69,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS is in testing mode',
     why: 'mode: testing means senders report TLS failures but deliver anyway. That is the correct first step, and it protects nothing on its own.',
     fix: 'Once your TLS reports come back clean for a couple of weeks, change the policy to mode: enforce.',
-    rfc: 'RFC 8461 §5',
+    rfc: 'RFC 8461 section 5',
     dismissible: true,
     vars: [],
   },
@@ -81,7 +81,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS policy is switched off',
     why: 'mode: none tells senders to disregard any policy for {domain}. It exists so you can withdraw a policy cleanly, leaving it there permanently means you have the DNS record, the file and the certificate, and none of the protection.',
     fix: 'Set mode: testing while you validate, then mode: enforce.',
-    rfc: 'RFC 8461 §5',
+    rfc: 'RFC 8461 section 5',
     vars: ['domain'],
   },
   {
@@ -92,7 +92,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS policy does not list your mail servers',
     why: 'Your policy omits {offending_term}, which is a live MX host for {domain}. Under enforce. Senders refuse to deliver to a host the policy does not cover, this configuration rejects your own inbound mail.',
     fix: 'Add an mx: line for every host in your MX records. A wildcard may only replace the leftmost label, e.g. mx: *.mail.{domain}',
-    rfc: 'RFC 8461 §4.1',
+    rfc: 'RFC 8461 section 4.1',
     vars: ['domain', 'offending_term'],
   },
   {
@@ -103,7 +103,7 @@ export const MTASTS_ISSUES: readonly Issue[] = [
     title: 'MTA-STS max_age is outside the sensible range',
     why: 'max_age is {offending_term}. Too short and senders re-fetch constantly while caching too little to protect you; above the one-year ceiling the policy is invalid.',
     fix: 'Use 604800 (one week) while testing and 1209600 (two weeks) or more once enforcing. The maximum permitted is 31557600.',
-    rfc: 'RFC 8461 §3.2',
+    rfc: 'RFC 8461 section 3.2',
     vars: ['offending_term'],
   },
 ];
@@ -117,7 +117,7 @@ export const TLSRPT_ISSUES: readonly Issue[] = [
     title: 'No TLS reporting configured',
     why: 'Without a TLS-RPT record. Nobody tells you when delivery to {domain} fails on TLS. That is the feedback you need before turning MTA-STS from testing to enforce, without it you are enforcing blind.',
     fix: 'Publish a TXT record at _smtp._tls.{domain}: v=TLSRPTv1; rua=mailto:tlsrpt@{domain}',
-    rfc: 'RFC 8460 §3',
+    rfc: 'RFC 8460 section 3',
     vars: ['domain'],
   },
   {
@@ -128,7 +128,7 @@ export const TLSRPT_ISSUES: readonly Issue[] = [
     title: 'TLS reporting record is malformed',
     why: 'The record at _smtp._tls.{domain} does not start with v=TLSRPTv1 or has no usable rua, so reporting servers discard it and no reports are sent.',
     fix: 'Publish exactly: v=TLSRPTv1; rua=mailto:tlsrpt@{domain}. the version string is case-sensitive.',
-    rfc: 'RFC 8460 §3',
+    rfc: 'RFC 8460 section 3',
     vars: ['domain'],
   },
   {
@@ -139,7 +139,7 @@ export const TLSRPT_ISSUES: readonly Issue[] = [
     title: 'TLS report destination is not usable',
     why: '{offending_term} is neither a mailto: address nor an https: endpoint, so the reports have nowhere to go.',
     fix: 'Use rua=mailto:tlsrpt@{domain}, or an https: endpoint if your provider collects reports that way.',
-    rfc: 'RFC 8460 §3',
+    rfc: 'RFC 8460 section 3',
     vars: ['offending_term', 'domain'],
   },
 ];
