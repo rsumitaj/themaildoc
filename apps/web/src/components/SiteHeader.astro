@@ -6,6 +6,13 @@ import { LAB_GROUPS } from '../data/tests';
  * Minimal by construction: a hairline rule, a flat button, and an underline
  * that appears on hover. No shadow, no glow, no drop-down until the Lab pages
  * exist to fill one.
+ *
+ * Below 860px the row of links cannot fit, so the brand doubles as the menu
+ * control and the whole nav drops into a panel. The brand stays a real link to
+ * `/` in the markup: with JavaScript off, or on a wide screen, tapping it goes
+ * home exactly as it always did. The script only takes the click over once the
+ * panel is the better answer, and the panel's first entry is the same home
+ * link, so nothing is lost either way.
  */
 const links = [
   { href: '/', label: 'Checkup' },
@@ -20,9 +27,12 @@ const { pathname } = Astro.url;
 <header class="header">
   <div class="md-wrap">
     <nav class="nav" aria-label="Primary">
-      <a class="brand" href="/">
+      <a class="brand" href="/" data-brand aria-controls="mobile-nav">
         <Logo size={30} class="mark" />
         <span class="wordmark">The MailDoc<span class="tld">.co</span></span>
+        <span class="tap" aria-hidden="true">
+          <span class="caret">▾</span>
+        </span>
       </a>
 
       <ul class="links">
@@ -67,6 +77,44 @@ const { pathname } = Astro.url;
       </ul>
 
     </nav>
+  </div>
+
+  <!--
+    The mobile panel. Rendered with the page and `hidden` until opened, so it
+    costs no request and a tap before the script loads simply follows the brand
+    link home.
+  -->
+  <div class="sheet" id="mobile-nav" data-sheet hidden>
+    <div class="md-wrap sheet__inner">
+      <ul class="sheet__primary">
+        {
+          links.map((link, index) => (
+            <li style={`--i:${index}`}>
+              <a href={link.href} aria-current={pathname === link.href ? 'page' : undefined}>
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      {
+        LAB_GROUPS.map((group, groupIndex) => (
+          <section class="sheet__group" style={`--i:${links.length + groupIndex}`}>
+            <h2 class="md-eyebrow">{group.heading}</h2>
+            <ul>
+              {group.tests
+                .filter((test) => test.href)
+                .map((test) => (
+                  <li>
+                    <a href={test.href}>{test.name}</a>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
   </div>
 </header>
 
@@ -207,9 +255,166 @@ const { pathname } = Astro.url;
     margin-bottom: var(--md-space-2);
   }
 
+  /* The mobile panel -------------------------------------------------------
+     Hidden entirely above 860px, where the real nav fits. */
+
+  .tap {
+    display: none;
+  }
+
+  .sheet {
+    display: none;
+  }
+
   @media (max-width: 860px) {
     .links {
       display: none;
+    }
+
+    .nav {
+      justify-content: space-between;
+    }
+
+    /* The affordance: without it the logo looks like a logo and nobody taps
+       it. A caret, matching the one the Lab item already uses. */
+    .tap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      margin-left: 0.1rem;
+      border: var(--md-hairline) solid var(--md-line);
+      border-radius: 50%;
+      color: var(--md-muted);
+    }
+
+    .tap .caret {
+      font-size: 0.8rem;
+      line-height: 1;
+      color: inherit;
+      transition: transform var(--md-duration-base) var(--md-ease);
+    }
+
+    .brand[aria-expanded='true'] .tap {
+      border-color: var(--md-red);
+      color: var(--md-red);
+    }
+
+    .brand[aria-expanded='true'] .tap .caret {
+      transform: rotate(180deg);
+    }
+
+    /* The pulse line traces once as the panel opens. The mark is already an
+       EKG; this is the only place it gets to actually beat. */
+    .brand[aria-expanded='true'] .mark :global(path:last-of-type) {
+      stroke-dasharray: 120;
+      animation: trace var(--md-duration-slow) var(--md-ease);
+    }
+
+    .sheet {
+      display: block;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      max-height: calc(100dvh - var(--md-header-height) - var(--md-statusbar-height));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: var(--md-card);
+      border-top: var(--md-hairline) solid var(--md-line);
+      border-bottom: var(--md-hairline) solid var(--md-line);
+      box-shadow: var(--md-shadow-mega);
+    }
+
+    .sheet[hidden] {
+      display: none;
+    }
+
+    .sheet__inner {
+      padding-block: var(--md-space-5) var(--md-space-7);
+    }
+
+    /* Each row arrives on its own beat. `--i` is set per item in the markup. */
+    .sheet__primary li,
+    .sheet__group {
+      opacity: 0;
+      transform: translateY(-6px);
+      animation: arrive var(--md-duration-base) var(--md-ease) forwards;
+      animation-delay: calc(var(--i) * 40ms);
+    }
+
+    .sheet__primary {
+      list-style: none;
+      margin-bottom: var(--md-space-6);
+    }
+
+    .sheet__primary a {
+      display: block;
+      padding: 0.7rem 0;
+      font-size: 1.05rem;
+      font-weight: var(--md-weight-medium);
+      color: var(--md-ink);
+      border-bottom: var(--md-hairline) solid var(--md-line-soft);
+    }
+
+    .sheet__primary a[aria-current='page'] {
+      color: var(--md-red);
+    }
+
+    .sheet__group {
+      margin-top: var(--md-space-5);
+    }
+
+    .sheet__group h2 {
+      margin-bottom: var(--md-space-2);
+    }
+
+    .sheet__group ul {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 var(--md-space-5);
+      list-style: none;
+    }
+
+    .sheet__group a {
+      display: block;
+      padding: 0.4rem 0;
+      font-size: 0.85rem;
+      color: var(--md-muted);
+      border-bottom: var(--md-hairline) solid var(--md-line-soft);
+    }
+
+    .sheet__group a:hover,
+    .sheet__group a:active {
+      color: var(--md-red);
+    }
+  }
+
+  @keyframes arrive {
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes trace {
+    from {
+      stroke-dashoffset: 120;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* base.css already honours prefers-reduced-motion globally, but these run on
+     open rather than on load, so make the end state unconditional. */
+  @media (prefers-reduced-motion: reduce) {
+    .sheet__primary li,
+    .sheet__group {
+      opacity: 1;
+      transform: none;
+      animation: none;
     }
   }
 
@@ -222,4 +427,77 @@ const { pathname } = Astro.url;
       font-size: 0.78rem;
     }
   }
+
+  /* The Lab names are short enough to hold two columns right down to the
+     narrowest phone, and two columns is what stops the panel turning into a
+     long scroll. Only give up below that. */
+  @media (max-width: 340px) {
+    .sheet__group ul {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
+
+<script>
+  /**
+   * The brand is a link first and a menu control second.
+   *
+   * Above the breakpoint the click is left alone, so the logo goes home the way
+   * every logo on the web does. Below it, the click opens the panel instead and
+   * the panel carries the same home link at the top. A modifier-clicked or
+   * middle-clicked brand always navigates, because stealing "open in new tab"
+   * from someone is worse than any menu.
+   */
+  const MOBILE = '(max-width: 860px)';
+
+  const brand = document.querySelector<HTMLAnchorElement>('[data-brand]');
+  const sheet = document.querySelector<HTMLElement>('[data-sheet]');
+
+  if (brand && sheet) {
+    const narrow = window.matchMedia(MOBILE);
+
+    const setOpen = (open: boolean) => {
+      sheet.hidden = !open;
+      brand.setAttribute('aria-expanded', String(open));
+    };
+
+    const close = (returnFocus = false) => {
+      if (sheet.hidden) return;
+      setOpen(false);
+      if (returnFocus) brand.focus();
+    };
+
+    // Only becomes a control once it can be one; the attribute is what tells a
+    // screen reader this is expandable, so it must not be there on desktop.
+    const applyBreakpoint = () => {
+      if (narrow.matches) {
+        brand.setAttribute('aria-expanded', String(!sheet.hidden));
+      } else {
+        brand.removeAttribute('aria-expanded');
+        sheet.hidden = true;
+      }
+    };
+
+    applyBreakpoint();
+    narrow.addEventListener('change', applyBreakpoint);
+
+    brand.addEventListener('click', (event) => {
+      if (!narrow.matches) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+
+      event.preventDefault();
+      setOpen(sheet.hidden);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close(true);
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target as Node;
+      if (sheet.hidden) return;
+      if (sheet.contains(target) || brand.contains(target)) return;
+      close();
+    });
+  }
+</script>
