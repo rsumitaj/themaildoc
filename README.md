@@ -73,6 +73,9 @@ pnpm build
 cd apps/web && npx wrangler dev
 ```
 
+Deploy with `pnpm --filter @maildoc/web ship`. Not `deploy`: pnpm reserves
+that name for its own workspace command.
+
 Always check the production build before shipping. The dev server and the built
 Worker have diverged on this project before, and only the build caught it.
 

@@ -13,7 +13,8 @@
     "clean": "rm -rf dist .astro .wrangler",
     "leads": "wrangler d1 execute maildoc-leads --remote --command \"SELECT id, created_at, name, email, company, domain, help_with, vitals_score, spoofable, status FROM leads ORDER BY id DESC LIMIT 50;\"",
     "leads:new": "wrangler d1 execute maildoc-leads --remote --command \"SELECT id, created_at, name, email, domain, help_with, message FROM leads WHERE status='new' ORDER BY id DESC;\"",
-    "db:migrate": "wrangler d1 execute maildoc-leads --remote --file=migrations/0001_create_leads.sql"
+    "db:migrate": "wrangler d1 execute maildoc-leads --remote --file=migrations/0001_create_leads.sql",
+    "ship": "astro build && wrangler deploy"
   },
   "dependencies": {
     "@maildoc/catalog": "workspace:*",

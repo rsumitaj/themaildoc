@@ -13,7 +13,7 @@ npx wrangler d1 create maildoc-leads     # copy the database_id it prints
 #   paste it over PLACEHOLDER_RUN_WRANGLER_D1_CREATE in wrangler.jsonc
 
 pnpm db:migrate                          # creates the leads table remotely
-pnpm deploy                              # builds and pushes
+pnpm ship                                # builds and pushes
 ```
 
 The deploy prints a `*.workers.dev` URL. Smoke test that before attaching the
@@ -31,6 +31,9 @@ Add to `wrangler.jsonc` once the zone exists in the same Cloudflare account:
 ```
 
 Cloudflare creates the DNS records itself. Redeploy after adding them.
+
+Use `pnpm ship`, not `pnpm deploy`: the second is a built-in pnpm command for
+deploying a workspace package and never reaches the script.
 
 ## Rate limiting, the durable control
 
