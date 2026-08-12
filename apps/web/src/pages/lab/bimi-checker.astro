@@ -1,5 +1,6 @@
 ---
-import LabTest from '../../layouts/LabTest.astro';
+import ToolPage from '../../layouts/ToolPage.astro';
+import Bimi from '../../islands/Bimi';
 
 const faqs = [
   { q: 'Is BIMI an RFC?', a: 'No, and this matters when you are reading other checkers. BIMI is an Internet-Draft, draft-brand-indicators-for-message-identification. It is widely implemented and not a published standard, so tools citing an RFC number for it are citing something that does not exist.' },
@@ -9,21 +10,18 @@ const faqs = [
 ];
 ---
 
-<LabTest
-  record="BIMI"
-  label="Brand indicator"
-  action="Check my BIMI"
+<ToolPage
   title="BIMI Checker: free BIMI record and logo test | The MailDoc"
   description="Free BIMI record check: version, logo location, certificate, and the DMARC enforcement BIMI depends on. Cites the actual draft, not an imaginary RFC."
   eyebrow="BIMI Test"
   heading="BIMI record check"
-  intro="Checks your brand indicator record and, more usefully, whether your DMARC policy is strong enough for any receiver to display it."
+  intro="Reads the record, then fetches the logo and the certificate the way a mailbox does. Most checkers stop at the record, which is why a domain whose certificate lapsed months ago still gets a green tick elsewhere."
   spec="draft-brand-indicators-for-message-identification §4.3"
   faqs={faqs}
   related={[
     { href: '/lab/dmarc-checker', label: 'DMARC checker, what BIMI depends on' },
     { href: '/lab/dkim-checker', label: 'DKIM checker, half of what DMARC needs' },
-    { href: '/', label: 'Full checkup, every record at once' },
+    { href: '/health-library', label: 'Full checkup, every record at once' },
   ]}
 >
   <h2>Symptoms</h2>
@@ -52,4 +50,5 @@ const faqs = [
     <li><strong>Obtain a VMC</strong> if Gmail and Apple Mail matter to you.</li>
     <li><strong>Publish</strong> <code>v=BIMI1; l=…; a=…</code> at <code>default._bimi</code> and re-check.</li>
   </ol>
-</LabTest>
+  <Bimi slot="tool" client:load />
+</ToolPage>

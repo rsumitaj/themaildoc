@@ -23,6 +23,8 @@ export default function Consult() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  /** Which field the error belongs to, so it is shown where the fix is. */
+  const [badField, setBadField] = useState('');
   const [prefill, setPrefill] = useState<Prefill>({
     domain: '',
     score: '',
@@ -52,6 +54,7 @@ export default function Consult() {
 
     setBusy(true);
     setError('');
+    setBadField('');
 
     try {
       const response = await fetch('/api/consult', {
@@ -72,8 +75,21 @@ export default function Consult() {
         }),
       });
 
-      const result = (await response.json()) as { ok: boolean; error?: { message: string } };
-      if (!result.ok) throw new Error(result.error?.message ?? 'That didn’t send.');
+      const result = (await response.json()) as {
+        ok: boolean;
+        error?: { message: string; field?: string };
+      };
+
+      if (!result.ok) {
+        // Put the message next to the input that has to change, and move the
+        // cursor there. An error under the button makes people hunt.
+        const field = result.error?.field ?? '';
+        setBadField(field);
+        setError(result.error?.message ?? 'That didn’t send.');
+        const input = form.elements.namedItem(field);
+        if (input instanceof HTMLElement) input.focus();
+        return;
+      }
 
       setDone(true);
       form.reset();
@@ -125,13 +141,39 @@ export default function Consult() {
       )}
 
       <div class="md-consultform__row">
-        <label class="md-field">
+        <label class={`md-field ${badField === 'name' ? 'is-bad' : ''}`}>
           <span>Your name</span>
-          <input name="name" type="text" required autocomplete="name" maxLength={120} />
+          <input
+            name="name"
+            type="text"
+            required
+            autocomplete="name"
+            maxLength={120}
+            aria-invalid={badField === 'name'}
+            aria-describedby={badField === 'name' ? 'name-error' : undefined}
+          />
+          {badField === 'name' && (
+            <span class="md-field__error" id="name-error">
+              {error}
+            </span>
+          )}
         </label>
-        <label class="md-field">
+        <label class={`md-field ${badField === 'email' ? 'is-bad' : ''}`}>
           <span>Email</span>
-          <input name="email" type="email" required autocomplete="email" maxLength={254} />
+          <input
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            maxLength={254}
+            aria-invalid={badField === 'email'}
+            aria-describedby={badField === 'email' ? 'email-error' : undefined}
+          />
+          {badField === 'email' && (
+            <span class="md-field__error" id="email-error">
+              {error}
+            </span>
+          )}
         </label>
       </div>
 
@@ -187,7 +229,7 @@ export default function Consult() {
         </label>
       </div>
 
-      {error && (
+      {error && badField !== 'name' && badField !== 'email' && (
         <p class="md-error" role="alert">
           {error}
         </p>

@@ -7,6 +7,13 @@ import {
   type IssueVars,
 } from '@maildoc/catalog';
 import type { DohResolver, ResolverNote } from '@maildoc/resolver';
+import {
+  fetchCertificate,
+  fetchLogo,
+  type CertReport,
+  type FetchLike,
+  type LogoReport,
+} from '../bimi/assets.js';
 import type { RecordStatus } from '@maildoc/shared';
 
 /** TLS-RPT (RFC 8460), BIMI (Internet-Draft) and CAA (RFC 8659). */
@@ -35,6 +42,9 @@ export interface BimiAnalysis extends BaseAnalysis {
   logo: string | null;
   authority: string | null;
   declined: boolean;
+  /** What the logo URL actually served. Null when we did not fetch it. */
+  logoReport: LogoReport | null;
+  certReport: CertReport | null;
 }
 
 export interface CaaAnalysis extends BaseAnalysis {
@@ -102,7 +112,11 @@ export async function analyzeTlsRpt(
 export async function analyzeBimi(
   domain: string,
   resolver: DohResolver,
-  options: { dmarcPolicy?: 'none' | 'quarantine' | 'reject' } = {},
+  options: {
+    dmarcPolicy?: 'none' | 'quarantine' | 'reject';
+    /** Absent means DNS only, which is what the full checkup uses. */
+    fetchImpl?: FetchLike;
+  } = {},
 ): Promise<BimiAnalysis> {
   const startQueries = resolver.queriesIssued;
   const name = domain.trim().replace(/\.$/, '').toLowerCase();
@@ -120,6 +134,8 @@ export async function analyzeBimi(
       logo: null,
       authority: null,
       declined: false,
+      logoReport: null,
+      certReport: null,
     };
   }
 
@@ -147,12 +163,68 @@ export async function analyzeBimi(
     emit(ctx, 'BIMI_VMC_MISSING', { domain: name });
   }
 
+  // The record is two URLs. Whether a mailbox shows the logo depends entirely
+  // on what they serve, so saying the record is fine without looking is the
+  // one claim this tool must never make.
+  let logoReport: LogoReport | null = null;
+  let certReport: CertReport | null = null;
+
+  if (options.fetchImpl && !declined) {
+    if (logo && /^https:\/\//i.test(logo)) {
+      logoReport = await fetchLogo(logo, options.fetchImpl);
+      judgeLogo(ctx, name, logo, logoReport);
+    }
+    if (authority && /^https:\/\//i.test(authority)) {
+      certReport = await fetchCertificate(authority, options.fetchImpl);
+      judgeCertificate(ctx, name, authority, certReport);
+    }
+  }
+
   return {
     ...base(ctx, name, true, record, resolver, startQueries),
     logo,
     authority,
     declined,
+    logoReport,
+    certReport,
   };
+}
+
+function judgeLogo(ctx: Ctx, domain: string, url: string, report: LogoReport): void {
+  if (!report.ok) {
+    emit(ctx, 'BIMI_LOGO_UNREACHABLE', { domain, offending_term: report.detail ?? 'no response' }, url);
+    return;
+  }
+  if (report.tinyPs !== true) {
+    emit(ctx, 'BIMI_LOGO_WRONG_PROFILE', { domain }, url);
+  }
+  if (report.hasTitle !== true) {
+    emit(ctx, 'BIMI_LOGO_NO_TITLE', { domain }, url);
+  }
+  if (report.square !== true) {
+    emit(ctx, 'BIMI_LOGO_NOT_SQUARE', { offending_term: report.viewBox ?? 'no viewBox' }, url);
+  }
+  if (report.forbidden && report.forbidden.length > 0) {
+    emit(ctx, 'BIMI_LOGO_FORBIDDEN_CONTENT', { offending_term: report.forbidden.join(', ') }, url);
+  }
+}
+
+/** Renewal takes weeks, so the warning has to arrive well before the date. */
+const CERT_EXPIRY_WARNING_DAYS = 45;
+
+function judgeCertificate(ctx: Ctx, domain: string, url: string, report: CertReport): void {
+  if (!report.ok) {
+    emit(ctx, 'BIMI_VMC_UNREACHABLE', { domain, offending_term: report.detail ?? 'no response' }, url);
+    return;
+  }
+  const days = report.daysRemaining;
+  if (days === null || days === undefined) return;
+
+  if (days < 0) {
+    emit(ctx, 'BIMI_VMC_EXPIRED', { domain, count: Math.abs(days) }, url);
+  } else if (days <= CERT_EXPIRY_WARNING_DAYS) {
+    emit(ctx, 'BIMI_VMC_EXPIRING', { domain, count: days }, url);
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -59,6 +59,9 @@ export type { CidrBlock } from './spf/cidr.js';
 export { healthCheck, DEFAULT_HEALTH_CHECK_BUDGET } from './healthCheck.js';
 export type { HealthCheck, HealthCheckOptions, RecordSummary } from './healthCheck.js';
 
+export { fetchLogo, fetchCertificate, LOGO_MAX_BYTES, CERT_MAX_BYTES } from './bimi/assets.js';
+export type { LogoReport, CertReport, AssetFailure } from './bimi/assets.js';
+
 export { assessSpoofability } from './spoofability.js';
 export { assessReadiness } from './readiness.js';
 export type { Readiness, Requirement, RequirementStatus, ReadinessInput } from './readiness.js';

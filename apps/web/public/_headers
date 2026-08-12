@@ -1,5 +1,10 @@
 # Security headers for every response Cloudflare serves.
 #
+# `img-src https:` is deliberate and is the one loosening here: the BIMI test
+# renders the logo the domain under test publishes, which is by definition on
+# somebody else's host. Images cannot execute, and `script-src` stays locked to
+# self.
+#
 # The whole product renders DNS records published by other people, so the
 # script boundary matters more here than on a normal marketing site. The CSP
 # below allows exactly what the site uses and nothing else.
@@ -8,7 +13,7 @@
 # them, so the `/_astro/*` cache rule lives there and the policy lives here.
 
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflare-dns.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cloudflare-dns.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

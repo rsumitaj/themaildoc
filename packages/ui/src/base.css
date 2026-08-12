@@ -15,6 +15,7 @@
 }
 
 html {
+  scroll-padding-top: calc(var(--md-header-height) + var(--md-statusbar-height) + var(--md-space-4));
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }

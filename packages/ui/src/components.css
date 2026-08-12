@@ -863,7 +863,9 @@
 
 /* The header is sticky, so anything we scroll to must clear it. */
 .md-result {
-  scroll-margin-top: calc(var(--md-header-height) + var(--md-space-5));
+  scroll-margin-top: calc(
+    var(--md-header-height) + var(--md-statusbar-height) + var(--md-space-4)
+  );
 }
 
 .md-chart__head {
@@ -1850,4 +1852,111 @@
 .md-condition__foot a:hover {
   color: var(--md-red);
   border-bottom-color: currentColor;
+}
+
+/* ---- BIMI detail -------------------------------------------------------- */
+
+.md-bimi {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--md-space-4);
+  margin-top: var(--md-space-5);
+}
+
+.md-bimi__panel {
+  border: var(--md-hairline) solid var(--md-line);
+  border-radius: var(--md-radius-md);
+  background: var(--md-card);
+  padding: var(--md-space-4);
+}
+
+.md-bimi__panel h3 {
+  font-size: var(--md-text-sm);
+  font-family: var(--md-font-mono);
+  letter-spacing: var(--md-tracking-mono);
+  color: var(--md-faint);
+  text-transform: uppercase;
+}
+
+.md-bimi__previews {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--md-space-4);
+  margin-top: var(--md-space-4);
+}
+
+.md-bimi__previews figure { margin: 0; text-align: center; }
+
+.md-bimi__previews img {
+  border-radius: 50%;
+  border: var(--md-hairline) solid var(--md-line);
+  background: #fff;
+  display: block;
+}
+
+.md-bimi__previews figcaption {
+  font-size: var(--md-text-xs);
+  color: var(--md-faint);
+  margin-top: 0.3rem;
+}
+
+.md-bimi__facts {
+  margin-top: var(--md-space-4);
+  display: grid;
+  gap: var(--md-space-2);
+}
+
+.md-bimi__fact dt {
+  font-size: var(--md-text-xs);
+  color: var(--md-faint);
+}
+
+.md-bimi__fact dd {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: var(--md-text-sm);
+  margin-top: 0.1rem;
+  overflow-wrap: anywhere;
+}
+
+.md-bimi__fact.is-ok dd { color: var(--md-ink); }
+.md-bimi__fact.is-ok svg { color: var(--md-healthy); flex: none; }
+.md-bimi__fact.is-bad dd { color: var(--md-critical-text); }
+.md-bimi__fact.is-bad svg { color: var(--md-critical); flex: none; }
+
+.md-bimi__days { color: var(--md-faint); }
+.md-bimi__fact.is-bad .md-bimi__days { color: var(--md-critical-text); }
+
+.md-bimi__fail {
+  margin-top: var(--md-space-3);
+  font-size: var(--md-text-sm);
+  color: var(--md-critical-text);
+  line-height: 1.5;
+}
+
+.md-bimi__policy {
+  margin-top: var(--md-space-4);
+  font-size: var(--md-text-sm);
+  color: var(--md-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .md-bimi { grid-template-columns: 1fr; }
+}
+
+.md-field.is-bad input,
+.md-field.is-bad select,
+.md-field.is-bad textarea {
+  border-color: var(--md-red);
+  background: var(--md-red-tint);
+}
+
+.md-field__error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--md-text-xs);
+  color: var(--md-critical-text);
+  line-height: 1.4;
 }
