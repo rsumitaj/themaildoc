@@ -7,22 +7,20 @@
     "enabled": true
   },
 
-  // The Astro adapter generates `main` and `assets` itself — prerendered pages
-  // are served as free static assets, and only /api/* invokes the Worker.
+  // The Astro adapter generates `main` and `assets` itself. Prerendered pages
+  // are served as free static assets and only /api/* invokes the Worker.
   //
-  // The only stored data in the product: consultation requests from /practice.
-  // Everything else reads public DNS and forgets. Create and migrate with:
+  // The only stored data in the product is consultation requests from
+  // /practice. Everything else reads public DNS and forgets.
   //
-  //   wrangler d1 create maildoc-leads          (paste the id below)
-  //   wrangler d1 execute maildoc-leads --remote --file=migrations/0001_create_leads.sql
-  //
-  // `wrangler dev` ignores the id and uses a local SQLite file, so the form
-  // works offline without touching the real database.
+  // `remote` is deliberately absent: `wrangler dev` uses a local SQLite file,
+  // so testing the form does not write rows into the real database. Read the
+  // live table with `pnpm leads`.
   "d1_databases": [
     {
       "binding": "LEADS",
       "database_name": "maildoc-leads",
-      "database_id": "PLACEHOLDER_RUN_WRANGLER_D1_CREATE"
+      "database_id": "9994252c-b742-4a48-bf89-b341821d87af"
     }
   ]
 
