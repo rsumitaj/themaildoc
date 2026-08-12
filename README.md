@@ -98,6 +98,7 @@ anything.
 | [`docs/SCORING.md`](docs/SCORING.md) | the Vitals model in full, including every deviation from the plain additive score and why |
 | [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) | voice, code and design rules, and the lint that enforces them |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cloudflare setup, D1, WAF rate limits, headers, going live |
+| [`docs/RFC-NOTES.md`](docs/RFC-NOTES.md) | how citations are verified, the current specs, and the traps that have cost us time |
 
 ## Fonts
 

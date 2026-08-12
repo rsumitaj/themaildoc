@@ -21,6 +21,9 @@ apps/web/worker-configuration.d.ts
 .env.*
 !.env.example
 
+# Local editor and assistant configuration
+.claude/
+
 # Editor and OS
 .DS_Store
 .idea/
