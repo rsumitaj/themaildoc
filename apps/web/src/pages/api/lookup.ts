@@ -62,7 +62,7 @@ async function handle(request: Request): Promise<Response> {
           status: result.status,
           ttl: result.records[0]?.ttl ?? null,
           // Raw DNS content — the client escapes it on render.
-          Records:
+          records:
             type === 'TXT'
               ? result.txt.map((record) => record.value)
               : result.records.map((record) => record.data),

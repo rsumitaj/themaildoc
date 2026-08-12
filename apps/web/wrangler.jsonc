@@ -1,32 +1,33 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "maildoc",
-  "compatibility_date": "2025-09-23",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "enabled": true
-  },
-
-  // The Astro adapter generates `main` and `assets` itself. Prerendered pages
-  // are served as free static assets and only /api/* invokes the Worker.
-  //
-  // The only stored data in the product is consultation requests from
-  // /practice. Everything else reads public DNS and forgets.
-  //
-  // `remote` is deliberately absent: `wrangler dev` uses a local SQLite file,
-  // so testing the form does not write rows into the real database. Read the
-  // live table with `pnpm leads`.
-  "d1_databases": [
-    {
-      "binding": "LEADS",
-      "database_name": "maildoc-leads",
-      "database_id": "9994252c-b742-4a48-bf89-b341821d87af"
-    }
-  ]
-
-  // Phase 2, once created with `wrangler r2 bucket create maildoc-geo`:
-  //
-  // "r2_buckets": [
-  //   { "binding": "GEO", "bucket_name": "maildoc-geo" }
-  // ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "maildoc",
+	"compatibility_date": "2025-09-23",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"observability": {
+		"enabled": true
+	},
+	// The Astro adapter generates `main` and `assets` itself. Prerendered pages
+	// are served as free static assets and only /api/* invokes the Worker.
+	//
+	// The only stored data in the product is consultation requests from
+	// /practice. Everything else reads public DNS and forgets.
+	//
+	// `remote` is deliberately absent: `wrangler dev` uses a local SQLite file,
+	// so testing the form does not write rows into the real database. Read the
+	// live table with `pnpm leads`.
+	"d1_databases": [
+		{
+			"binding": "LEADS",
+			"database_name": "maildoc-leads",
+			"database_id": "9994252c-b742-4a48-bf89-b341821d87af",
+			"migrations_dir": "../../migrations"
+		}
+	]
+	// Phase 2, once created with `wrangler r2 bucket create maildoc-geo`:
+	//
+	// "r2_buckets": [
+	//   { "binding": "GEO", "bucket_name": "maildoc-geo" }
+	// ]
 }
