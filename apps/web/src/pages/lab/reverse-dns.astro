@@ -1,0 +1,61 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  { q: 'What is forward-confirmed reverse DNS?', a: 'The IP has a PTR record naming a host, and that host has an A record pointing back to the same IP. Both directions must agree. Strict receivers treat a reverse record that does not round-trip as no reverse record at all.' },
+  { q: 'Who sets a PTR record?', a: 'Whoever controls the IP address, your hosting or cloud provider, not your DNS registrar. It is the one email record you usually cannot set yourself.' },
+  { q: 'Why does this test say there is nothing to check?', a: 'Because every server you publish belongs to someone else. If your MX points at a provider, their reverse DNS is their responsibility and they get it right. We only judge machines inside your own zone.' },
+  { q: 'Does a generic PTR hurt deliverability?', a: 'Mildly, and consistently. A hostname like ec2-203-0-113-10.compute.amazonaws.com resolves fine and tells filters that nobody configured this machine deliberately. Naming it after your own domain costs nothing.' },
+];
+---
+
+<LabTest
+  record="PTR"
+  label="Reverse DNS"
+  action="Check reverse DNS"
+  title="Reverse DNS Lookup: free PTR record and FCrDNS check | The MailDoc"
+  description="Free reverse DNS check: does your mail server IP have a PTR record, and does that hostname resolve back to the same address? Catches the FCrDNS failures that get mail rejected."
+  eyebrow="Reverse DNS"
+  heading="Reverse DNS check"
+  intro="Checks the PTR records of the mail servers you publish, and confirms they resolve back again, which is what receivers actually test."
+  spec="RFC 1912 §2.1"
+  faqs={faqs}
+  related={[
+    { href: '/lab/mx-lookup', label: 'MX lookup, the hosts this checks' },
+    { href: '/lab/sender-readiness', label: 'Sender readiness, where reverse DNS is required' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    Mail from your own server gets rejected outright with a message about reverse DNS, or lands in
+    spam no matter how clean your SPF and DKIM are. The rejections often name it explicitly, Gmail
+    returns a 550 that says so, which makes this one of the few email faults that tells you exactly
+    what is wrong.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    When your server connects to deliver mail, the receiver sees an IP address before it sees
+    anything else. The first thing it does is ask what that address is called, and then check that
+    the name agrees.
+  </p>
+  <ul>
+    <li><strong>No PTR at all</strong>, the address has no name. Many receivers stop there.</li>
+    <li><strong>PTR that does not round-trip</strong>, the name exists but points somewhere else, which reads as misconfiguration or forgery.</li>
+    <li><strong>A generic provider name.</strong> It resolves correctly, and it signals an unmanaged machine.</li>
+  </ul>
+  <p>
+    We only judge addresses you publish as your own: MX hosts inside your zone, and your apex
+    address when your SPF names it with an <code>a</code> mechanism. If you send through a provider,
+    their IPs are their business and we say so rather than inventing a problem.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li><strong>Find who controls the IP.</strong> Usually your cloud or hosting provider, in a panel labelled reverse DNS or PTR.</li>
+    <li><strong>Set it to a hostname you own</strong>, such as <code>mail.yourdomain.com</code>.</li>
+    <li><strong>Publish an A record for that hostname</strong> pointing back at the same IP. Both halves, or the check still fails.</li>
+    <li><strong>Use the same name your server introduces itself as</strong> in its SMTP greeting, so everything agrees.</li>
+  </ol>
+</LabTest>

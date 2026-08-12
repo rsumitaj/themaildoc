@@ -1,0 +1,175 @@
+---
+import Logo from './Logo.astro';
+
+/**
+ * The footer's top border is a flat EKG line that beats once at the left —
+ * the one decorative flourish on the page, at 1px, and the only place the
+ * pulse motif repeats.
+ */
+const year = new Date().getFullYear();
+
+const columns = [
+  {
+    heading: 'Diagnose',
+    links: [
+      { label: 'Full checkup', href: '/health-library' },
+      { label: 'Every test', href: '/lab' },
+      { label: 'DMARC reports', href: '/bloodwork' },
+      { label: 'Every condition', href: '/library/checks' },
+    ],
+  },
+  {
+    heading: 'Clinic',
+    links: [
+      { label: 'Who runs this', href: '/practice' },
+      { label: 'support@themaildoc.co', href: 'mailto:support@themaildoc.co' },
+      { label: 'Privacy', href: '/privacy' },
+      { label: 'Terms', href: '/terms' },
+    ],
+  },
+];
+---
+
+<footer class="footer">
+  <svg class="pulse" viewBox="0 0 1200 12" preserveAspectRatio="none" aria-hidden="true">
+    <path
+      d="M0 6 H120 L130 6 L140 1 L150 11 L158 6 H1200"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1"
+    />
+  </svg>
+
+  <div class="md-wrap inner">
+    <div class="brandcol">
+      <a class="brand" href="/">
+        <Logo size={26} class="mark" />
+        <span>The MailDoc<span class="tld">.co</span></span>
+      </a>
+      <p class="tagline">The doctor for your domain's email. Free diagnosis, honest prescriptions.</p>
+      <a class="mail md-mono" href="mailto:support@themaildoc.co">support@themaildoc.co</a>
+    </div>
+
+    {
+      columns.map((column) => (
+        <nav class="col" aria-label={column.heading}>
+          <h2 class="md-eyebrow">{column.heading}</h2>
+          <ul>
+            {column.links.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+
+  <div class="md-wrap bottom">
+    <span class="md-mono panel">SPF · DKIM · DMARC · MX · DNSSEC · MTA-STS</span>
+    <span class="md-mono">© {year} The MailDoc</span>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    position: relative;
+    margin-top: var(--md-space-16);
+    padding-top: var(--md-space-10);
+    color: var(--md-muted);
+    font-size: var(--md-text-sm);
+  }
+
+  .pulse {
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 12px;
+    color: var(--md-red);
+    opacity: 0.55;
+  }
+
+  .inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: var(--md-space-8);
+    padding-bottom: var(--md-space-8);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-space-2);
+    font-weight: var(--md-weight-bold);
+    font-size: 1rem;
+    color: var(--md-ink);
+  }
+
+  .brand .mark {
+    color: var(--md-red);
+  }
+
+  .tld {
+    color: var(--md-faint);
+    font-weight: var(--md-weight-medium);
+  }
+
+  .tagline {
+    margin-top: var(--md-space-3);
+    max-width: 34ch;
+    line-height: 1.55;
+  }
+
+  .mail {
+    display: inline-block;
+    margin-top: var(--md-space-3);
+    font-size: var(--md-text-xs);
+    color: var(--md-muted);
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    padding-bottom: 2px;
+  }
+
+  .mail:hover {
+    color: var(--md-red);
+    border-color: var(--md-red);
+  }
+
+  .col ul {
+    list-style: none;
+    margin-top: var(--md-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .col a:hover {
+    color: var(--md-red);
+  }
+
+  .bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--md-space-3);
+    padding-block: var(--md-space-5);
+    border-top: var(--md-hairline) solid var(--md-line);
+    color: var(--md-faint);
+    font-size: var(--md-text-xs);
+  }
+
+  @media (max-width: 720px) {
+    .inner {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .brandcol {
+      grid-column: 1 / -1;
+    }
+
+    .panel {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,111 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'How many DNS lookups is my SPF record allowed?',
+    a: 'Ten. Every include:, a, mx, ptr, exists and redirect= counts, and the count is cumulative across everything those records pull in. At eleven, receivers return a permanent error and SPF fails for all of your mail, including mail from your own servers.',
+  },
+  {
+    q: 'What does an SPF PermError actually do to my email?',
+    a: 'It makes SPF authentication fail rather than simply not pass. Mail that would otherwise have been accepted starts landing in spam, and if you rely on SPF for DMARC alignment, DMARC fails too.',
+  },
+  {
+    q: 'Is ~all or -all better?',
+    a: 'Both are real answers; ?all and +all are not. Use ~all while you are still confirming which services send your mail, then move to -all once your DMARC reports show only senders you recognise.',
+  },
+  {
+    q: 'Can I have two SPF records?',
+    a: 'No. More than one v=spf1 record at the same domain is a permanent error and SPF fails completely. Merge them into a single record.',
+  },
+  {
+    q: 'Does SPF stop someone spoofing my domain?',
+    a: 'On its own, no. SPF authenticates the envelope sender, not the From address a recipient sees. DMARC is what turns SPF and DKIM into protection against spoofing.',
+  },
+];
+---
+
+<LabTest
+  record="SPF"
+  label="SPF authentication"
+  action="Check my SPF"
+  title="SPF Record Checker: free SPF lookup with exact DNS count | The MailDoc"
+  description="Free SPF record check: full chain walk, the exact 10-lookup count, void lookups, syntax and policy, with the fix for anything wrong."
+  eyebrow="SPF Test"
+  heading="SPF record check"
+  intro="Walks your entire include chain, counts the DNS lookups exactly as a receiving server does, and tells you what to fix. Most checkers stop at the first record."
+  spec="RFC 7208"
+  faqs={faqs}
+  related={[
+    { href: '/lab/dmarc-checker', label: 'DMARC checker, is your policy actually applied?' },
+    { href: '/lab/dkim-checker', label: 'DKIM checker, selector discovery and key strength' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    SPF fails quietly. Nothing in your mail client changes, no bounce arrives, and the record still
+    looks fine when you read it. What you notice instead is that mail to some recipients starts
+    landing in spam, a vendor's newsletters stop arriving, or DMARC reports show failures for mail
+    you definitely sent.
+  </p>
+  <p>The usual causes, in the order we find them:</p>
+  <ul>
+    <li>The record grew past ten DNS lookups when somebody signed up for one more tool.</li>
+    <li>Two SPF records exist because a provider added one without removing the old.</li>
+    <li>The record ends in <code>?all</code> or has no <code>all</code> at all, so nothing is ever refused.</li>
+    <li>An old vendor's <code>include:</code> now points at a domain that no longer publishes SPF.</li>
+  </ul>
+
+  <h2>Diagnosis</h2>
+  <p>
+    SPF is a list of who may send mail using your domain on the envelope. A receiving server reads
+    your record, follows every <code>include:</code> it contains, and builds the full set of
+    authorised addresses. That expansion is the expensive part, and the specification caps it.
+  </p>
+  <h3>The ten-lookup limit</h3>
+  <p>
+    <strong>Ten</strong> DNS-lookup-consuming terms, total, across the whole chain, <code>include</code>, <code>a</code>, <code>mx</code>, <code>ptr</code>, <code>exists</code> and
+    <code>redirect=</code>. <code>ip4:</code> and <code>ip6:</code> are free, which is why flattening
+    works. Exceed the limit and the result is a permanent error: not "fail", not "unknown", but a
+    record receivers stop trusting entirely.
+  </p>
+  <h3>Void lookups</h3>
+  <p>
+    A lookup that returns nothing counts too, and you are allowed only two. Three dead vendor
+    includes will break a record that is otherwise well inside the ten-lookup budget, this is the
+    check almost nothing else performs.
+  </p>
+  <h3>The closing mechanism</h3>
+  <p>
+    The last mechanism decides what happens to everyone not on the list. <code>-all</code> says
+    refuse, <code>~all</code> says treat as suspicious, <code>?all</code> and <code>+all</code> say
+    nothing at all, and <code>+all</code> authorises the entire internet to send as you.
+  </p>
+
+  <h2>Cure</h2>
+  <p>Depending on what the test found:</p>
+  <ol>
+    <li>
+      <strong>Over ten lookups</strong>, remove services you no longer use first, since that is
+      free. Then replace a stable vendor's <code>include:</code> with the <code>ip4:</code> ranges it
+      resolves to, and re-check whenever that vendor changes infrastructure.
+    </li>
+    <li>
+      <strong>Two records</strong>, merge every mechanism into one <code>v=spf1</code> record and
+      delete the rest.
+    </li>
+    <li>
+      <strong>No enforcing rule</strong>, end the record with <code>~all</code>, then
+      <code>-all</code> once your reports are clean.
+    </li>
+    <li>
+      <strong>Dead includes.</strong> Remove them. They cost a lookup and a void lookup, and buy
+      nothing.
+    </li>
+  </ol>
+  <p>
+    A healthy record for a domain sending through one provider looks like this, and rarely needs to
+    be more complicated: <code>v=spf1 include:_spf.yourprovider.com -all</code>
+  </p>
+</LabTest>

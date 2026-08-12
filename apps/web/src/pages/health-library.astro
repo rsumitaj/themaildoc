@@ -1,0 +1,63 @@
+---
+import Base from '../layouts/Base.astro';
+import Checkup from '../islands/Checkup';
+import ConsultLine from '../components/ConsultLine.astro';
+
+const title = 'Email Health Check: free SPF, DKIM and DMARC test | The MailDoc';
+const description =
+  'Enter a domain and read the full diagnosis: SPF, DKIM, DMARC, MX, DNSSEC, MTA-STS and more, each with the exact fix. Free, no signup, every finding cites its RFC.';
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'The MailDoc', item: site.href },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Health Library',
+        item: new URL('/health-library', site).href,
+      },
+    ],
+  },
+];
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="page">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red)">Health Library</p>
+      <h1>What is wrong with your email, and how to fix it.</h1>
+      <p class="lead">
+        Every record a receiving mail server reads, checked against the specification it is judged
+        by. You get a score, the conditions behind it, and the exact line to publish for each one.
+      </p>
+
+      <Checkup client:load />
+    </div>
+  </section>
+  <ConsultLine />
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--md-space-10) var(--md-space-12);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+    max-width: 20ch;
+  }
+
+  .lead {
+    color: var(--md-muted);
+    max-width: 60ch;
+    margin: var(--md-space-4) 0 var(--md-space-6);
+    font-size: var(--md-text-md);
+    line-height: 1.6;
+  }
+</style>

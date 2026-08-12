@@ -1,0 +1,93 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'What does MTA-STS actually protect against?',
+    a: 'Downgrade attacks. SMTP negotiates TLS in the open, so anyone on the network path can strip the offer and the sending server will happily deliver in plain text rather than fail. MTA-STS tells senders that TLS is required for your domain, so stripping it makes delivery fail instead of succeeding insecurely.',
+  },
+  {
+    q: 'Why does my policy have to be on a web server?',
+    a: 'Because DNS alone cannot be trusted for this without DNSSEC. The policy is fetched over HTTPS, and the certificate is what proves it is really yours. That is also why the fetch must not follow redirects, a redirect would let somebody else answer for you.',
+  },
+  {
+    q: 'Is testing mode worth publishing?',
+    a: 'Yes, and it is where you should start. In testing mode senders report failures without changing delivery, so you find out whether enforcement would break anything before it does. Pair it with TLS-RPT and move to enforce once the reports are clean.',
+  },
+  {
+    q: 'What happens if my policy misses one of my MX hosts?',
+    a: 'Under enforce, senders refuse to deliver to a host the policy does not cover. A policy that omits a live mail server rejects your own inbound mail, which is why this test checks the policy against your real MX records rather than reading it in isolation.',
+  },
+];
+---
+
+<LabTest
+  record="MTASTS"
+  label="MTA-STS"
+  action="Check my MTA-STS"
+  title="MTA-STS Checker: free MTA-STS policy test | The MailDoc"
+  description="Free MTA-STS checker: reads the DNS record, fetches the policy file over HTTPS without following redirects, and checks it against your real MX hosts."
+  eyebrow="MTA-STS Test"
+  heading="MTA-STS policy check"
+  intro="Fetches your policy the way a sending server does, HTTPS, no redirects, certificate validated, then checks it lists every mail host you actually run."
+  spec="RFC 8461"
+  faqs={faqs}
+  related={[
+    { href: '/lab/mx-lookup', label: 'MX lookup, the hosts your policy must cover' },
+    { href: '/lab/dnssec-checker', label: 'DNSSEC check, the other half of DNS trust' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    There is no symptom. That is the point of this one: a downgrade attack leaves no trace in your
+    mail, no bounce, no warning. The only visible failure mode is the opposite, an enforcing policy
+    that omits one of your own mail servers, at which point inbound mail starts being refused by
+    senders who are following your instructions correctly.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    MTA-STS is two things that must agree: a short DNS record announcing that you have a policy, and
+    the policy itself, served over HTTPS at a fixed location.
+  </p>
+  <h3>The announcement</h3>
+  <p>
+    A TXT record at <code>_mta-sts.yourdomain.com</code> containing
+    <code>v=STSv1; id=…</code>. The id changes every time you edit the policy, that is how senders
+    know to re-fetch rather than use what they cached.
+  </p>
+  <h3>The policy</h3>
+  <p>
+    A plain text file at
+    <code>https://mta-sts.yourdomain.com/.well-known/mta-sts.txt</code> listing a mode, your mail
+    hosts and a lifetime. Three rules decide whether senders accept it: it must be HTTPS with a valid
+    certificate, it must return 200, and it <strong>must not redirect</strong>. A policy behind a
+    redirect does not exist as far as any sending server is concerned, which is the failure we find
+    most often, usually a web host quietly forcing every path through a canonical redirect.
+  </p>
+  <h3>The modes</h3>
+  <ul>
+    <li><code>testing</code>, failures are reported, mail is delivered anyway. Start here.</li>
+    <li><code>enforce</code>, TLS is required, and delivery fails without it. The goal.</li>
+    <li><code>none</code>, withdraws a policy cleanly. Not a place to stay.</li>
+  </ul>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>Publish the policy file first</strong>, in testing mode, listing every host from your
+      MX records. Confirm it loads in a browser with no redirect.
+    </li>
+    <li>
+      <strong>Then publish the DNS record</strong> with an id you will change on every future edit.
+    </li>
+    <li>
+      <strong>Turn on TLS-RPT</strong> so failures are reported to you rather than discovered later.
+    </li>
+    <li>
+      <strong>Move to enforce</strong> once a couple of weeks of reports are clean, and remember to
+      update the policy, and the id, whenever your MX records change.
+    </li>
+  </ol>
+</LabTest>

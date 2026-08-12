@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="1460" viewBox="0 0 1040 1460" font-family="'Helvetica Neue',Arial,sans-serif">
+  <rect width="1040" height="1460" fill="#FBFBFC"/>
+
+  <!-- HEADER / LOGO -->
+  <svg x="40" y="34" width="66" height="66" viewBox="0 0 100 100">
+    <rect x="16" y="28" width="68" height="46" rx="6" fill="#fff" stroke="#E5322D" stroke-width="6"/>
+    <path d="M16 33 L50 55 L84 33" fill="none" stroke="#E5322D" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M20 62 H38 L43 62 L49 48 L55 76 L60 62 H80" fill="none" stroke="#E5322D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <text x="118" y="72" font-size="34" font-weight="800" fill="#14171A" letter-spacing="-0.5">Mail<tspan fill="#E5322D">Doc</tspan></text>
+  <text x="120" y="94" font-size="14" fill="#6B7280" font-family="ui-monospace,Menlo,monospace">the doctor for your domain’s email</text>
+  <line x1="40" y1="116" x2="1000" y2="116" stroke="#E7E9ED"/>
+
+  <!-- SECTION 1 — LOGO FORMS -->
+  <text x="40" y="150" fill="#E5322D" font-size="13" font-weight="700" letter-spacing="3" font-family="ui-monospace,Menlo,monospace">01 · IDENTITY</text>
+
+  <!-- horizontal lockup -->
+  <rect x="40" y="166" width="300" height="150" rx="10" fill="#fff" stroke="#E7E9ED"/>
+  <svg x="66" y="212" width="58" height="58" viewBox="0 0 100 100">
+    <rect x="16" y="28" width="68" height="46" rx="6" fill="#fff" stroke="#E5322D" stroke-width="6"/>
+    <path d="M16 33 L50 55 L84 33" fill="none" stroke="#E5322D" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M20 62 H38 L43 62 L49 48 L55 76 L60 62 H80" fill="none" stroke="#E5322D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <text x="132" y="252" font-size="27" font-weight="800" fill="#14171A">Mail<tspan fill="#E5322D">Doc</tspan></text>
+  <text x="190" y="300" font-size="12" fill="#9AA3AE" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">horizontal lockup</text>
+
+  <!-- app icon -->
+  <rect x="370" y="166" width="300" height="150" rx="10" fill="#fff" stroke="#E7E9ED"/>
+  <rect x="474" y="196" width="92" height="92" rx="20" fill="#E5322D"/>
+  <svg x="486" y="208" width="68" height="68" viewBox="0 0 100 100">
+    <rect x="16" y="28" width="68" height="46" rx="6" fill="none" stroke="#fff" stroke-width="6"/>
+    <path d="M16 33 L50 55 L84 33" fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M20 62 H38 L43 62 L49 48 L55 76 L60 62 H80" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <text x="520" y="300" font-size="12" fill="#9AA3AE" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">app icon / favicon</text>
+
+  <!-- monochrome ink -->
+  <rect x="700" y="166" width="300" height="150" rx="10" fill="#14171A"/>
+  <svg x="726" y="212" width="58" height="58" viewBox="0 0 100 100">
+    <rect x="16" y="28" width="68" height="46" rx="6" fill="none" stroke="#fff" stroke-width="6"/>
+    <path d="M16 33 L50 55 L84 33" fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M20 62 H38 L43 62 L49 48 L55 76 L60 62 H80" fill="none" stroke="#E5322D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <text x="792" y="252" font-size="27" font-weight="800" fill="#fff">Mail<tspan fill="#E5322D">Doc</tspan></text>
+  <text x="850" y="300" font-size="12" fill="#6B7280" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">dark / monitor mode</text>
+
+  <!-- SECTION 2 — TRIAGE -->
+  <text x="40" y="360" fill="#E5322D" font-size="13" font-weight="700" letter-spacing="3" font-family="ui-monospace,Menlo,monospace">02 · TRIAGE — how every finding is graded</text>
+
+  <!-- rows -->
+  <g font-size="15">
+    <!-- critical -->
+    <rect x="40" y="376" width="960" height="60" rx="8" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="40" y="376" width="5" height="60" rx="2" fill="#E5322D"/>
+    <circle cx="76" cy="406" r="10" fill="#E5322D"/>
+    <text x="102" y="401" font-weight="800" fill="#14171A">CRITICAL</text>
+    <text x="102" y="420" font-size="12" fill="#9AA3AE" font-family="ui-monospace,Menlo,monospace">Code Red · Emergency</text>
+    <text x="300" y="411" fill="#4B5563">Life-threatening — domain spoofable or mail failing. Treat immediately.</text>
+    <!-- urgent -->
+    <rect x="40" y="444" width="960" height="60" rx="8" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="40" y="444" width="5" height="60" rx="2" fill="#F5811F"/>
+    <circle cx="76" cy="474" r="10" fill="#F5811F"/>
+    <text x="102" y="469" font-weight="800" fill="#14171A">URGENT</text>
+    <text x="102" y="488" font-size="12" fill="#9AA3AE" font-family="ui-monospace,Menlo,monospace">Urgent care</text>
+    <text x="300" y="479" fill="#4B5563">Serious — fix soon or deliverability degrades.</text>
+    <!-- attention -->
+    <rect x="40" y="512" width="960" height="60" rx="8" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="40" y="512" width="5" height="60" rx="2" fill="#F5B60D"/>
+    <circle cx="76" cy="542" r="10" fill="#F5B60D"/>
+    <text x="102" y="537" font-weight="800" fill="#14171A">NEEDS ATTENTION</text>
+    <text x="102" y="556" font-size="12" fill="#9AA3AE" font-family="ui-monospace,Menlo,monospace">Observation</text>
+    <text x="300" y="547" fill="#4B5563">Not critical, but should be treated.</text>
+    <!-- minor -->
+    <rect x="40" y="580" width="960" height="60" rx="8" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="40" y="580" width="5" height="60" rx="2" fill="#2E7CF6"/>
+    <circle cx="76" cy="610" r="10" fill="#2E7CF6"/>
+    <text x="102" y="605" font-weight="800" fill="#14171A">MINOR</text>
+    <text x="102" y="624" font-size="12" fill="#9AA3AE" font-family="ui-monospace,Menlo,monospace">Advisory</text>
+    <text x="300" y="615" fill="#4B5563">Low impact — optional improvement.</text>
+    <!-- healthy -->
+    <rect x="40" y="648" width="960" height="60" rx="8" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="40" y="648" width="5" height="60" rx="2" fill="#1FB56A"/>
+    <circle cx="76" cy="678" r="10" fill="#1FB56A"/>
+    <text x="102" y="673" font-weight="800" fill="#14171A">HEALTHY</text>
+    <text x="102" y="692" font-size="12" fill="#9AA3AE" font-family="ui-monospace,Menlo,monospace">Clean bill of health</text>
+    <text x="300" y="683" fill="#4B5563">Stable — no action needed.</text>
+  </g>
+
+  <!-- SECTION 3 — PALETTE -->
+  <text x="40" y="748" fill="#E5322D" font-size="13" font-weight="700" letter-spacing="3" font-family="ui-monospace,Menlo,monospace">03 · PALETTE</text>
+  <g font-family="ui-monospace,Menlo,monospace" font-size="11">
+    <rect x="40" y="762" width="150" height="70" rx="8" fill="#E5322D"/><text x="52" y="812" fill="#fff">Ambulance Red</text><text x="52" y="826" fill="#ffd9d7">#E5322D</text>
+    <rect x="200" y="762" width="150" height="70" rx="8" fill="#14171A"/><text x="212" y="812" fill="#fff">Ink</text><text x="212" y="826" fill="#9AA3AE">#14171A</text>
+    <rect x="360" y="762" width="150" height="70" rx="8" fill="#fff" stroke="#E7E9ED"/><text x="372" y="812" fill="#14171A">Clinical White</text><text x="372" y="826" fill="#9AA3AE">#FBFBFC</text>
+    <rect x="520" y="762" width="115" height="70" rx="8" fill="#F5811F"/><text x="532" y="826" fill="#fff">#F5811F</text>
+    <rect x="645" y="762" width="115" height="70" rx="8" fill="#F5B60D"/><text x="657" y="826" fill="#fff">#F5B60D</text>
+    <rect x="770" y="762" width="110" height="70" rx="8" fill="#1FB56A"/><text x="782" y="826" fill="#fff">#1FB56A</text>
+    <rect x="890" y="762" width="110" height="70" rx="8" fill="#2E7CF6"/><text x="902" y="826" fill="#fff">#2E7CF6</text>
+  </g>
+
+  <!-- SECTION 4 — SAMPLE DIAGNOSIS -->
+  <text x="40" y="878" fill="#E5322D" font-size="13" font-weight="700" letter-spacing="3" font-family="ui-monospace,Menlo,monospace">04 · SAMPLE DIAGNOSIS (health-check result UI)</text>
+
+  <rect x="40" y="894" width="960" height="500" rx="14" fill="#fff" stroke="#E7E9ED"/>
+  <rect x="40" y="894" width="960" height="6" rx="3" fill="#E5322D"/>
+  <text x="72" y="936" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#E5322D">DIAGNOSIS</text>
+  <text x="170" y="937" font-size="18" font-weight="700" fill="#14171A">yourcompany.com</text>
+  <text x="72" y="962" font-size="13" fill="#9AA3AE">Checked just now · 3 conditions found</text>
+
+  <!-- vitals block -->
+  <rect x="72" y="984" width="300" height="360" rx="12" fill="#FFF5F5" stroke="#F3C9C7"/>
+  <text x="222" y="1018" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#B5322D">VITALS</text>
+  <text x="222" y="1110" text-anchor="middle" font-size="92" font-weight="800" fill="#E5322D">42</text>
+  <text x="222" y="1136" text-anchor="middle" font-size="15" fill="#9AA3AE">/ 100</text>
+  <!-- ekg line -->
+  <path d="M92 1180 H150 L162 1180 L172 1150 L186 1210 L198 1180 H352" fill="none" stroke="#E5322D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="132" y="1210" width="180" height="34" rx="17" fill="#E5322D"/>
+  <text x="222" y="1232" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">CRITICAL CONDITION</text>
+  <text x="222" y="1288" text-anchor="middle" font-size="13" fill="#8A5350">Your domain can be impersonated</text>
+  <text x="222" y="1308" text-anchor="middle" font-size="13" fill="#8A5350">right now. Let’s treat it.</text>
+
+  <!-- conditions -->
+  <g>
+    <rect x="396" y="984" width="576" height="104" rx="10" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="396" y="984" width="5" height="104" rx="2" fill="#E5322D"/>
+    <circle cx="422" cy="1012" r="6" fill="#E5322D"/>
+    <text x="440" y="1017" font-size="16" font-weight="700" fill="#14171A">No DMARC enforcement</text>
+    <rect x="852" y="1000" width="104" height="24" rx="12" fill="#FDECEC"/><text x="904" y="1017" text-anchor="middle" font-size="11" font-weight="800" fill="#E5322D">CODE RED</text>
+    <text x="440" y="1040" font-size="13" fill="#6B7280">Anyone can send email as your domain — the #1 spoofing risk.</text>
+    <rect x="440" y="1052" width="516" height="26" rx="6" fill="#F7FBF9"/>
+    <text x="452" y="1069" font-size="12" fill="#1F7A50" font-family="ui-monospace,Menlo,monospace">Rx  publish  v=DMARC1; p=reject; rua=mailto:…</text>
+
+    <rect x="396" y="1100" width="576" height="104" rx="10" fill="#fff" stroke="#E7E9ED"/>
+    <rect x="396" y="1100" width="5" height="104" rx="2" fill="#F5811F"/>
+    <circle cx="422" cy="1128" r="6" fill="#F5811F"/>
+    <text x="440" y="1133" font-size="16" font-weight="700" fill="#14171A">SPF over the 10-lookup limit</text>
+    <rect x="866" y="1116" width="90" height="24" rx="12" fill="#FDF0E6"/><text x="911" y="1133" text-anchor="middle" font-size="11" font-weight="800" fill="#F5811F">URGENT</text>
+    <text x="440" y="1156" font-size="13" fill="#6B7280">SPF returns PermError — receivers stop trusting your mail.</text>
+    <rect x="440" y="1168" width="516" height="26" rx="6" fill="#F7FBF9"/>
+    <text x="452" y="1185" font-size="12" fill="#1F7A50" font-family="ui-monospace,Menlo,monospace">Rx  flatten your SPF record  →  free tool</text>
+
+    <!-- CTA -->
+    <rect x="396" y="1224" width="576" height="60" rx="10" fill="#E5322D"/>
+    <text x="684" y="1253" text-anchor="middle" font-size="17" font-weight="800" fill="#fff">See the specialist → Dr. Sumit on Upwork</text>
+    <text x="684" y="1272" text-anchor="middle" font-size="12" fill="#ffd9d7">Built a DMARC platform for 3,000+ domains · fixed in 2 days</text>
+    <text x="396" y="1318" font-size="12" fill="#9AA3AE">Or grab your free prescription and self-treat — your call.</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="40" y1="1414" x2="1000" y2="1414" stroke="#E7E9ED"/>
+  <text x="40" y="1440" font-size="12.5" fill="#6B7280" font-family="ui-monospace,Menlo,monospace">Language: Diagnose · Vitals · Triage · Prescription · The Lab (tests) · Book a consult · See the specialist.  No Red-Cross emblem. Caring, not morbid.</text>
+</svg>

@@ -1,0 +1,189 @@
+---
+import Base from './Base.astro';
+import ConsultLine from '../components/ConsultLine.astro';
+import RecordCheck from '../islands/RecordCheck';
+
+/**
+ * One Lab test page.
+ *
+ * The tool sits above the fold; the explainer below it is what earns the
+ * ranking, and it follows the same clinical arc every time — symptoms, then
+ * diagnosis, then cure. Structured data is emitted here so every test page
+ * gets it without anyone remembering to.
+ */
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+interface Props {
+  record: string;
+  label: string;
+  action: string;
+  endpoint?: 'check' | 'dkim';
+  title: string;
+  description: string;
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  spec: string;
+  faqs: FaqItem[];
+  related: Array<{ href: string; label: string }>;
+}
+
+const {
+  record,
+  label,
+  action,
+  endpoint = 'check',
+  title,
+  description,
+  eyebrow,
+  heading,
+  intro,
+  spec,
+  faqs,
+  related,
+} = Astro.props;
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+const url = new URL(Astro.url.pathname, site).href;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: `${label}. The MailDoc`,
+    applicationCategory: 'SecurityApplication',
+    operatingSystem: 'Any',
+    url,
+    description,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    provider: { '@type': 'Organization', name: 'The MailDoc', url: site.href },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: `How to fix ${eyebrow.toLowerCase()} problems`,
+    description,
+    totalTime: 'PT15M',
+    estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
+    tool: [{ '@type': 'HowToTool', name: 'Access to your domain DNS' }],
+    step: [
+      { '@type': 'HowToStep', name: 'Check', text: `Run the ${eyebrow} test on this page to see what your domain publishes today.`, url },
+      { '@type': 'HowToStep', name: 'Read the diagnosis', text: 'Each finding says what is wrong and cites the specification it comes from.', url },
+      { '@type': 'HowToStep', name: 'Publish the fix', text: 'Copy the prescription into your DNS, one change at a time.', url },
+      { '@type': 'HowToStep', name: 'Verify', text: 'Re-run the test after DNS propagates, usually within an hour.', url },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'The MailDoc', item: site.href },
+      { '@type': 'ListItem', position: 2, name: 'The Lab', item: new URL('/lab', site).href },
+      { '@type': 'ListItem', position: 3, name: label, item: url },
+    ],
+  },
+];
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="test">
+    <div class="md-wrap">
+      <nav class="crumbs md-mono" aria-label="Breadcrumb">
+        <a href="/health-library">Checkup</a> <span aria-hidden="true">/</span> <a href="/lab">The Lab</a>
+        <span aria-hidden="true">/</span> <span>{eyebrow}</span>
+      </nav>
+
+      <h1>{heading}</h1>
+      <p class="intro">{intro}</p>
+      <p class="spec md-mono">Judged against {spec}</p>
+
+      <RecordCheck record={record} label={label} action={action} endpoint={endpoint} client:load />
+    </div>
+  </section>
+
+  <section class="body">
+    <div class="md-wrap">
+      <div class="md-prose">
+      <slot />
+
+      <h2 id="faq">Questions people actually ask</h2>
+      {
+        faqs.map((faq) => (
+          <details class="md-faq">
+            <summary>{faq.q}</summary>
+            <p>{faq.a}</p>
+          </details>
+        ))
+      }
+
+        <h2>Related tests</h2>
+        <ul>
+          {
+            related.map((item) => (
+              <li>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+  <ConsultLine />
+</Base>
+
+<style>
+  .test {
+    padding-block: var(--md-space-8) var(--md-space-10);
+  }
+
+  .crumbs {
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+    display: flex;
+    gap: var(--md-space-2);
+    flex-wrap: wrap;
+  }
+
+  .crumbs a:hover {
+    color: var(--md-red);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-4);
+    letter-spacing: var(--md-tracking-tight);
+    max-width: 20ch;
+  }
+
+  .intro {
+    color: var(--md-muted);
+    max-width: 60ch;
+    margin-top: var(--md-space-4);
+    font-size: var(--md-text-md);
+    line-height: 1.6;
+  }
+
+  .spec {
+    margin-top: var(--md-space-3);
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+  }
+
+  .body {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-8) var(--md-space-12);
+  }
+</style>

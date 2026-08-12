@@ -1,0 +1,157 @@
+/**
+ * MailDoc "Clinical" design tokens.
+ *
+ * Clinical white + ambulance red, triage colour used for meaning only (always
+ * paired with an icon and a label), hairline rules, low radii, generous space.
+ *
+ * Banned by the design system and absent here on purpose: Inter/Roboto,
+ * purple→blue gradients, 16px radius everywhere, glassmorphism, emoji.
+ */
+
+:root {
+  /* ---- Brand ---------------------------------------------------------- */
+  --md-red: #e5322d;
+  --md-red-deep: #c62828;
+  --md-red-tint: #fff5f5;
+  --md-red-line: #f3c9c7;
+
+  /* ---- Clinical surfaces ---------------------------------------------- */
+  --md-bg: #fbfbfc;
+  --md-card: #ffffff;
+  --md-surface: #f4f5f7;
+  --md-line: #e7e9ed;
+  --md-line-soft: #f1f2f4;
+
+  /* ---- Ink ------------------------------------------------------------ */
+  --md-ink: #14171a;
+  --md-muted: #5b6470;
+  --md-faint: #9aa3ae;
+  --md-inverse: #ffffff;
+
+  /* ---- Triage (meaning only — always with icon + label, WCAG AA) ------- */
+  --md-critical: #e5322d;
+  --md-urgent: #f5811f;
+  --md-attention: #f5b60d;
+  --md-minor: #2e7cf6;
+  --md-healthy: #1fb56a;
+
+  /* Tints for chips and cards. Text tokens are the AA-contrast pairs. */
+  --md-critical-bg: #fdecec;
+  --md-critical-text: #b32521;
+  --md-urgent-bg: #fdf0e6;
+  --md-urgent-text: #9a4a06;
+  --md-attention-bg: #fbf3da;
+  --md-attention-text: #7d5c00;
+  --md-minor-bg: #e9f1fe;
+  --md-minor-text: #1a5ac2;
+  --md-healthy-bg: #e7f7ef;
+  --md-healthy-text: #0f7a4a;
+  --md-healthy-tint: #f1faf5;
+  --md-healthy-line: #bfe9d3;
+
+  /* ---- Type ----------------------------------------------------------- */
+  --md-font-display: 'Space Grotesk', ui-sans-serif, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --md-font-body: var(--md-font-display);
+  /* Monospace is first-class: every record, IP, code and RFC reference. */
+  --md-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  --md-text-xs: 0.75rem; /* 12px  — chips, tags */
+  --md-text-sm: 0.8125rem; /* 13px  — microcopy */
+  --md-text-base: 0.9375rem; /* 15px  — body */
+  --md-text-md: 1rem; /* 16px  — card titles */
+  --md-text-lg: 1.1875rem; /* 19px  — lead */
+  --md-text-xl: 1.375rem; /* 22px  — section titles */
+  --md-text-2xl: clamp(1.625rem, 3.4vw, 2.25rem);
+  --md-text-hero: clamp(2.0625rem, 6vw, 3.875rem);
+  --md-text-vitals: clamp(3.5rem, 9vw, 5.5rem);
+
+  --md-weight-regular: 400;
+  --md-weight-medium: 500;
+  --md-weight-semibold: 600;
+  --md-weight-bold: 700;
+
+  --md-leading-tight: 1.05;
+  --md-leading-snug: 1.3;
+  --md-leading-body: 1.55;
+
+  --md-tracking-hero: -0.03em;
+  --md-tracking-tight: -0.015em;
+  --md-tracking-mono: 0.12em; /* eyebrows, clinic labels */
+
+  /* ---- Space (4px base) ----------------------------------------------- */
+  --md-space-1: 0.25rem;
+  --md-space-2: 0.5rem;
+  --md-space-3: 0.75rem;
+  --md-space-4: 1rem;
+  --md-space-5: 1.375rem;
+  --md-space-6: 1.75rem;
+  --md-space-8: 2.25rem;
+  --md-space-10: 3rem;
+  --md-space-12: 4rem;
+  --md-space-16: 5.5rem;
+
+  /* ---- Geometry: low radii, hairline rules ---------------------------- */
+  --md-radius-sm: 4px;
+  --md-radius-md: 8px;
+  --md-radius-lg: 12px;
+  --md-radius-pill: 100px;
+  --md-hairline: 1px;
+  /* The colored left border that carries a card's triage level. */
+  --md-triage-border: 4px;
+
+  /* ---- Elevation: used sparingly, never as decoration ------------------ */
+  --md-shadow-card: 0 10px 26px rgba(20, 23, 26, 0.06);
+  --md-shadow-input: 0 10px 40px rgba(20, 23, 26, 0.06);
+  --md-shadow-red: 0 4px 16px rgba(229, 50, 45, 0.24);
+  --md-shadow-red-hover: 0 8px 22px rgba(229, 50, 45, 0.32);
+  --md-shadow-mega: 0 24px 44px rgba(20, 23, 26, 0.09);
+
+  /* ---- Motion: purposeful only ---------------------------------------- */
+  --md-duration-fast: 120ms;
+  --md-duration-base: 180ms;
+  --md-duration-slow: 320ms;
+  --md-ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --md-pulse-duration: 1.6s;
+
+  /* ---- Layout --------------------------------------------------------- */
+  --md-container: 1080px;
+  --md-gutter: 1.375rem;
+  --md-header-height: 66px;
+  --md-statusbar-height: 34px;
+
+  --md-focus-ring: 2px solid var(--md-red);
+  --md-focus-offset: 2px;
+}
+
+/**
+ * Secondary "vitals monitor" mode — the dark hospital readout. Opt in with
+ * `data-theme="monitor"` on a container; the light clinic is the default.
+ */
+[data-theme='monitor'] {
+  --md-bg: #0d0f11;
+  --md-card: #14171a;
+  --md-surface: #1b1f23;
+  --md-line: #262b31;
+  --md-line-soft: #1f242a;
+  --md-ink: #f2f4f6;
+  --md-muted: #9aa3ae;
+  --md-faint: #6b7480;
+  --md-inverse: #14171a;
+  --md-red-tint: #1b1113;
+  --md-red-line: #3a1f22;
+  --md-critical-bg: #2a1415;
+  --md-critical-text: #ff6b66;
+  --md-urgent-bg: #2a1c0f;
+  --md-urgent-text: #ffa252;
+  --md-attention-bg: #2a2410;
+  --md-attention-text: #ffd24a;
+  --md-minor-bg: #14203a;
+  --md-minor-text: #7cadff;
+  --md-healthy-bg: #10241b;
+  --md-healthy-text: #4ad699;
+  --md-healthy-tint: #10241b;
+  --md-healthy-line: #1d4534;
+  --md-shadow-card: 0 10px 26px rgba(0, 0, 0, 0.5);
+}

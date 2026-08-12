@@ -1,0 +1,84 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'What is a null MX record?',
+    a: 'A single MX with priority 0 and a target of "." It states that the domain accepts no mail at all, so senders fail immediately instead of retrying for days. For a send-only or parked domain it is the correct configuration, not a fault.',
+  },
+  {
+    q: 'Can an MX record point at an IP address?',
+    a: 'No. An MX must name a host, and that host needs its own A or AAAA record. Strict senders reject an MX containing an IP outright.',
+  },
+  {
+    q: 'Should my MX hosts have equal priorities?',
+    a: 'Only if you want senders to choose between them at random, which is a valid way to share load. If you meant one to be a backup, give it a higher number, 10 and 20 rather than 10 and 10.',
+  },
+  {
+    q: 'Do I need more than one MX record?',
+    a: 'It depends what is behind it. One hostname resolving to several addresses is how the large providers do it and is perfectly resilient. One hostname resolving to one machine means a maintenance window turns into returned mail.',
+  },
+];
+---
+
+<LabTest
+  record="MX"
+  label="Mail servers"
+  action="Look up my MX"
+  title="MX Lookup: free MX record checker for any domain | The MailDoc"
+  description="Free MX lookup: mail exchangers with priorities, whether each target actually resolves, null MX detection and the problems that stop inbound mail."
+  eyebrow="MX Lookup"
+  heading="MX record lookup"
+  intro="Reads the mail exchangers for a domain, resolves each one, and tells you whether mail can actually be delivered, not just what is published."
+  spec="RFC 5321, with null MX from RFC 7505"
+  faqs={faqs}
+  related={[
+    { href: '/lab/mta-sts-checker', label: 'MTA-STS checker, is inbound mail forced onto TLS?' },
+    { href: '/lab/spf-checker', label: 'SPF checker, who may send as you' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    MX problems are the loud kind: mail to you bounces, or stops arriving from one particular sender
+    while everything else looks normal. The quieter version is a backup server nobody has tested in
+    three years, which turns out not to resolve on the day the primary goes down.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    An MX record tells the world where to deliver mail for your domain, and in what order to try. A
+    sender takes the lowest priority number first, resolves that hostname to an address, and
+    connects. Every step in that chain can be published correctly and still fail.
+  </p>
+  <ul>
+    <li>
+      <strong>The target must be a hostname</strong>, not an IP address, and not an alias. The
+      standard forbids pointing an MX at a CNAME.
+    </li>
+    <li>
+      <strong>The target must resolve.</strong> A host with no A or AAAA record silently drops you to
+      the next priority, or to nothing.
+    </li>
+    <li>
+      <strong>Priority is preference, not importance.</strong> Lower is tried first; equal numbers
+      mean the sender chooses.
+    </li>
+  </ul>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>No MX at all.</strong> If the domain should receive mail, add the records your provider
+      documents. If it should not, publish a null MX so senders fail fast and spammers stop trying.
+    </li>
+    <li>
+      <strong>A target that does not resolve.</strong> Add the address record, or remove the MX entry
+      if the server is retired.
+    </li>
+    <li>
+      <strong>A single machine.</strong> Add a second exchanger at a higher priority number. Most
+      providers include one.
+    </li>
+  </ol>
+</LabTest>

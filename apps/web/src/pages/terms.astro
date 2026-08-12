@@ -1,0 +1,88 @@
+---
+import Base from '../layouts/Base.astro';
+import ConsultLine from '../components/ConsultLine.astro';
+
+const updated = 'August 2026';
+---
+
+<Base
+  title="Terms | The MailDoc"
+  description="The tools are free to use, for any domain you are allowed to check. What we promise about accuracy, and what we do not."
+>
+  <section class="page">
+    <div class="md-wrap md-prose">
+      <p class="md-eyebrow" style="color: var(--md-red)">Terms</p>
+      <h1>Short version: use them, they are free.</h1>
+      <p class="lead">Last updated {updated}.</p>
+
+      <h2>Using the tools</h2>
+      <p>
+        Everything on this site is free to use, including commercially, with no account and no
+        attribution required. Check any domain you own, administer, or are otherwise allowed to
+        look up. Every record we read is already public: anyone can query the same DNS from a
+        terminal, and we do nothing you could not do yourself with <code>dig</code>.
+      </p>
+      <p>
+        Please do not automate the tools against the site. There are rate limits, and hitting them
+        hard enough to affect other people will get the traffic blocked. If you want this
+        programmatically, write to us and we will talk about it.
+      </p>
+
+      <h2>What we promise about accuracy</h2>
+      <p>
+        Every finding cites the specification it comes from, and the engines are unit tested against
+        recorded DNS responses. We take being right seriously, because it is the only reason to
+        trust anything else here.
+      </p>
+      <p>
+        That said, DNS is a live system read from one place at one moment. Records propagate,
+        resolvers disagree, and a result can be a few minutes behind reality. We show the disagreement
+        rather than hide it when we see one, but you should confirm anything critical against your
+        own DNS before you act.
+      </p>
+
+      <h2>What we do not promise</h2>
+      <p>
+        We do not guarantee that following a prescription will fix your delivery, and we are not
+        liable for what happens when you change your DNS. Authentication records affect whether your
+        mail arrives. Read each change, understand it, and if you are not sure, ask somebody who
+        does this for a living. That is the whole reason the consultation form exists.
+      </p>
+
+      <h2>Consultation work</h2>
+      <p>
+        Asking for a consultation creates no obligation on either side. Paid work is agreed
+        separately in writing before anything starts, with scope and price fixed up front.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        If these terms change, the date at the top changes with them. Nothing here is retroactive.
+      </p>
+
+      <p>
+        Questions: <a href="mailto:support@themaildoc.co">support@themaildoc.co</a>.
+      </p>
+    </div>
+  </section>
+
+  <ConsultLine />
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--md-space-10) var(--md-space-12);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .lead {
+    color: var(--md-faint);
+    font-size: var(--md-text-sm);
+    margin-top: var(--md-space-2);
+  }
+</style>

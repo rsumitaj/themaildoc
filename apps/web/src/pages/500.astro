@@ -1,0 +1,54 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Something went wrong | The MailDoc"
+  description="Something went wrong on our side. Try the checkup again in a moment."
+>
+  <section class="empty">
+    <div class="md-wrap">
+      <p class="md-eyebrow">Error 500</p>
+      <h1>The clinic is briefly offline.</h1>
+      <p class="lead">
+        This one is ours, not yours. Your domain is fine and nothing you did caused it. Give it a
+        moment and run the checkup again.
+      </p>
+      <a class="md-btn" href="/">Back to the checkup &rarr;</a>
+      <p class="contact">
+        Still broken? <a href="mailto:support@themaildoc.co">support@themaildoc.co</a>
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .empty {
+    padding-block: var(--md-space-16);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .lead {
+    color: var(--md-muted);
+    max-width: 52ch;
+    margin: var(--md-space-4) 0 var(--md-space-6);
+    font-size: var(--md-text-md);
+    line-height: 1.6;
+  }
+
+  .contact {
+    margin-top: var(--md-space-5);
+    font-size: var(--md-text-sm);
+    color: var(--md-faint);
+  }
+
+  .contact a {
+    color: var(--md-red);
+    border-bottom: var(--md-hairline) solid currentColor;
+  }
+</style>

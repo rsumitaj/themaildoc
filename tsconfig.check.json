@@ -1,0 +1,24 @@
+{
+  "//": "Whole-repo typecheck (src + tests) in one pass, resolving @maildoc/* to source so no build is required.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@maildoc/shared": ["packages/shared/src/index.ts"],
+      "@maildoc/catalog": ["packages/catalog/src/index.ts"],
+      "@maildoc/catalog/scoring": ["packages/catalog/src/scoring.ts"],
+      "@maildoc/resolver": ["packages/resolver/src/index.ts"],
+      "@maildoc/resolver/testing": ["packages/resolver/src/testing/index.ts"],
+      "@maildoc/engines": ["packages/engines/src/index.ts"],
+      "@maildoc/engines/readiness": ["packages/engines/src/readiness.ts"],
+      "@maildoc/report-parsers": ["packages/report-parsers/src/index.ts"],
+      "@maildoc/geo": ["packages/geo/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "vitest.shared.ts"]
+}

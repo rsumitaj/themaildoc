@@ -1,0 +1,33 @@
+{
+  "name": "maildoc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The MailDoc — the doctor for your domain's email",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@maildoc/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:watch": "pnpm --filter @maildoc/engines exec vitest",
+    "typecheck": "tsc -p tsconfig.check.json && turbo run typecheck",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules/.cache .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "turbo": "^2.5.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "sharp"
+    ]
+  }
+}

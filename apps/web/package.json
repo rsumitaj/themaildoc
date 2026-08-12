@@ -1,0 +1,37 @@
+{
+  "name": "@maildoc/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "deploy": "astro build && wrangler deploy",
+    "typecheck": "wrangler types && astro check",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist .astro .wrangler",
+    "leads": "wrangler d1 execute maildoc-leads --remote --command \"SELECT id, created_at, name, email, company, domain, help_with, vitals_score, spoofable, status FROM leads ORDER BY id DESC LIMIT 50;\"",
+    "leads:new": "wrangler d1 execute maildoc-leads --remote --command \"SELECT id, created_at, name, email, domain, help_with, message FROM leads WHERE status='new' ORDER BY id DESC;\"",
+    "db:migrate": "wrangler d1 execute maildoc-leads --remote --file=migrations/0001_create_leads.sql"
+  },
+  "dependencies": {
+    "@maildoc/catalog": "workspace:*",
+    "@maildoc/engines": "workspace:*",
+    "@maildoc/report-parsers": "workspace:*",
+    "@maildoc/resolver": "workspace:*",
+    "@maildoc/shared": "workspace:*",
+    "@maildoc/ui": "workspace:*",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/cloudflare": "^14.2.1",
+    "@astrojs/preact": "^6.0.2",
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^7.2.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.121.0"
+  }
+}

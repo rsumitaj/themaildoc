@@ -1,0 +1,107 @@
+---
+import Base from '../layouts/Base.astro';
+import { LAB_GROUPS } from '../data/tests';
+
+const title = 'Email Authentication Tools: SPF, DKIM and DMARC | The MailDoc';
+const description =
+  'Every email authentication test on its own page: SPF checker, DMARC checker, DKIM checker, MX lookup, DNSSEC, MTA-STS and more. Free, no signup, RFC-cited.';
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'The MailDoc', item: site.href },
+      { '@type': 'ListItem', position: 2, name: 'The Lab', item: new URL('/lab', site).href },
+    ],
+  },
+];
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="intro">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red)">The Lab</p>
+      <h1>Run a single test.</h1>
+      <p class="lead">
+        The full checkup examines every record at once. The Lab gives each one its own room: what
+        it does, what breaks when it is wrong, and the exact fix. Every test reads your live DNS
+        and cites the specification it judges you against.
+      </p>
+    </div>
+  </section>
+
+  <section class="groups">
+    <div class="md-wrap">
+      {
+        LAB_GROUPS.map((group) => (
+          <div class="md-labgroup">
+            <h2>{group.heading} <span class="count md-mono">{group.tests.filter((test) => test.href).length}</span></h2>
+            <div class="md-labgrid">
+              {group.tests
+                .filter((test) => test.href)
+                .map((test) => (
+                  <a class="md-labcard" href={test.href}>
+                    <h3>{test.name}</h3>
+                    <p>{test.blurb}</p>
+                    <p class="tag md-mono">{test.tag}</p>
+                  </a>
+                ))}
+            </div>
+          </div>
+        ))
+      }
+
+      <div class="cta">
+        <a class="md-btn" href="/health-library">Run the full checkup &rarr;</a>
+        <a class="md-btn is-ghost" href="/library/checks">Every condition we check</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro {
+    padding-block: var(--md-space-12) var(--md-space-6);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .lead {
+    color: var(--md-muted);
+    max-width: 62ch;
+    margin-top: var(--md-space-4);
+    font-size: var(--md-text-md);
+    line-height: 1.65;
+  }
+
+  .groups {
+    padding-bottom: var(--md-space-12);
+  }
+
+  .count {
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+    font-weight: var(--md-weight-regular);
+  }
+
+  .tag {
+    color: var(--md-faint);
+    font-size: var(--md-text-xs);
+    margin-top: var(--md-space-3);
+    padding-top: var(--md-space-2);
+    border-top: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--md-space-3);
+    margin-top: var(--md-space-6);
+  }
+</style>

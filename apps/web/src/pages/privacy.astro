@@ -1,0 +1,95 @@
+---
+import Base from '../layouts/Base.astro';
+import ConsultLine from '../components/ConsultLine.astro';
+
+const updated = 'August 2026';
+---
+
+<Base
+  title="Privacy | The MailDoc"
+  description="What The MailDoc stores, what it does not, and how long anything is kept. The tools store nothing. The consultation form stores what you type, so we can reply."
+>
+  <section class="page">
+    <div class="md-wrap md-prose">
+      <p class="md-eyebrow" style="color: var(--md-red)">Privacy</p>
+      <h1>What we keep, and what we do not.</h1>
+      <p class="lead">Last updated {updated}.</p>
+
+      <h2>The tools store nothing</h2>
+      <p>
+        Every checker on this site reads public DNS and answers. We do not keep the domain you
+        typed, we do not build a history against your IP address, and there is no account to
+        create. Results are cached for a minute at the edge so a popular domain does not get looked
+        up a thousand times, and that cache holds the DNS answer, not you.
+      </p>
+
+      <h2>Your DMARC reports never leave your browser</h2>
+      <p>
+        Bloodwork decompresses, parses and analyses report files in the tab you have open. The file
+        is never uploaded. You can disconnect from the internet after the page loads and it still
+        works, which is the easiest way to check that claim yourself.
+      </p>
+      <p>
+        One thing on that page does leave: if you press <strong>Identify these senders</strong>, the
+        sending IP addresses from your report are sent to Cloudflare's public DNS resolver to look
+        up their names. Only the addresses go, never the report, and only when you press the button.
+      </p>
+
+      <h2>The consultation form</h2>
+      <p>
+        If you ask for a consultation we store what you typed, because we cannot reply otherwise:
+        your name, email address, and optionally your company, domain and message. Alongside it we
+        store the page you came from, the country your request came from, and your browser's user
+        agent string, which help us answer sensibly and spot automated submissions.
+      </p>
+      <p>
+        We use it to reply to you and for nothing else. It is not added to a mailing list, not sold,
+        and not shared with any third party. It is stored in Cloudflare D1 in encrypted form at
+        rest, and deleted within <strong>24 months</strong> of our last exchange, or sooner if you
+        ask.
+      </p>
+
+      <h2>What we never collect</h2>
+      <ul>
+        <li>No analytics scripts, no tracking pixels, no advertising network.</li>
+        <li>No cookies. The site sets none at all.</li>
+        <li>No email content. We read DNS records and files you choose to open locally.</li>
+        <li>No passwords or DNS credentials. We never ask for access to anything.</li>
+      </ul>
+
+      <h2>Your rights</h2>
+      <p>
+        Write to <a href="mailto:support@themaildoc.co">support@themaildoc.co</a> and we will tell
+        you what we hold about you, correct it, or delete it. There is no form to fill in and no
+        verification hoop. Under the UK and EU GDPR and India's DPDP Act you have those rights by
+        law; we would do it anyway.
+      </p>
+
+      <h2>Who runs this</h2>
+      <p>
+        The MailDoc is run by Sumit Raj. Hosting is Cloudflare, which processes requests on our
+        behalf and holds the consultation database. No other processor is involved.
+      </p>
+    </div>
+  </section>
+
+  <ConsultLine />
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--md-space-10) var(--md-space-12);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .lead {
+    color: var(--md-faint);
+    font-size: var(--md-text-sm);
+    margin-top: var(--md-space-2);
+  }
+</style>

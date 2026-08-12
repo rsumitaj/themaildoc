@@ -1,0 +1,98 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'How do I find my DKIM selector?',
+    a: 'Open a message you sent, view its full headers, and look at the DKIM-Signature line. The s= value is the selector and the d= value is the signing domain. That is the only reliable way, DNS gives no index of selectors.',
+  },
+  {
+    q: 'Is a 1024-bit DKIM key still acceptable?',
+    a: 'It verifies, and it is the bare minimum receivers will accept. The standard asks for 2048 bits, and most providers rotate with one click. There is no reason to stay at 1024.',
+  },
+  {
+    q: 'What does an empty p= mean?',
+    a: 'It is a revocation. Publishing p= with nothing after it formally withdraws the key, and every signature made with it fails. If that was not deliberate, the key was truncated when it was pasted.',
+  },
+  {
+    q: 'Why does this test say no key found when I have DKIM?',
+    a: 'Because we probe the selectors common providers use, and yours may be custom. That result means "we guessed and missed", not "you have no DKIM", check your DKIM-Signature header and enter the selector directly.',
+  },
+  {
+    q: 'Do I need DKIM if I already have SPF?',
+    a: 'Yes. SPF breaks when mail is forwarded; DKIM survives it, because the signature travels with the message. DMARC passes if either aligns, so having both is what keeps legitimate mail delivering.',
+  },
+];
+---
+
+<LabTest
+  record="DKIM"
+  label="DKIM signing"
+  action="Check my DKIM"
+  endpoint="dkim"
+  title="DKIM Checker: free DKIM record and key strength test | The MailDoc"
+  description="Free DKIM checker: discovers your selectors, reads the real key length from the published key, and flags revoked, weak or malformed records."
+  eyebrow="DKIM Test"
+  heading="DKIM record check"
+  intro="Probes the selectors real providers use, then measures the actual key, not just whether a record exists. Weak keys fail silently for years."
+  spec="RFC 6376, with key requirements from RFC 8301 and Ed25519 from RFC 8463"
+  faqs={faqs}
+  related={[
+    { href: '/lab/dmarc-checker', label: 'DMARC checker, the policy that uses this signature' },
+    { href: '/lab/spf-checker', label: 'SPF checker, chain walk and lookup count' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    DKIM problems show up as deliverability that slowly gets worse, or as DMARC failures for mail
+    that plainly came from you. Because a broken signature is treated as no signature, nothing
+    bounces and nothing warns you, the mail simply carries less trust than it should.
+  </p>
+  <ul>
+    <li>A key published years ago at 1024 bits and never rotated.</li>
+    <li>A key truncated when it was pasted into a DNS panel that split the value.</li>
+    <li>An old selector left behind after a provider migration, next to the working one.</li>
+    <li>A record with <code>t=y</code> still set from the week DKIM was rolled out.</li>
+  </ul>
+
+  <h2>Diagnosis</h2>
+  <p>
+    DKIM signs your message with a private key your provider holds, and publishes the matching public
+    key in DNS at <code>selector._domainkey.yourdomain.com</code>. A receiver reads the signature,
+    fetches the key, and checks that the message has not changed in transit.
+  </p>
+  <h3>Why the key size matters</h3>
+  <p>
+    Verifiers must not accept RSA keys below 1024 bits, so a 512-bit key is not weak protection, it
+    is none. At exactly 1024 the signature verifies, while the standard asks for 2048. This test
+    decodes the published key and measures the modulus rather than guessing from the record's length.
+  </p>
+  <h3>Why we have to probe</h3>
+  <p>
+    There is no way to list a domain's selectors from DNS. Every checker guesses, and so do we, we
+    try the selectors Google Workspace, Microsoft 365, Zoho, Mailchimp, SendGrid and the other common
+    platforms use. If none answer, we say we did not find one, rather than telling you that you have
+    no DKIM.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>No key found.</strong> Turn on DKIM signing in your mail provider, every major one
+      offers it, and publish the record it gives you.
+    </li>
+    <li>
+      <strong>Key under 2048 bits.</strong> Generate a new key at 2048, publish it on a new selector,
+      switch signing over, and remove the old selector a few days later.
+    </li>
+    <li>
+      <strong>Record unreadable.</strong> Republish it exactly as issued. Most failures are a DNS
+      panel inserting spaces or line breaks into the key.
+    </li>
+    <li>
+      <strong>Testing mode.</strong> Remove <code>t=y</code> once you have confirmed your mail
+      verifies.
+    </li>
+  </ol>
+</LabTest>

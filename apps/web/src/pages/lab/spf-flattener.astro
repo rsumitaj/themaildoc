@@ -1,0 +1,104 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Flatten from '../../islands/Flatten';
+
+const faqs = [
+  {
+    q: 'What is the ten lookup limit?',
+    a: 'RFC 7208 §4.6.4 caps an SPF evaluation at ten DNS-lookup-consuming terms. include, a, mx, ptr and exists each cost one, and the includes inside your includes count too. Cross the limit and the receiver returns PermError, which most treat as an SPF failure for every message you send.',
+  },
+  {
+    q: 'Does flattening break anything?',
+    a: 'It removes the lookups by replacing them with the addresses they resolved to right now. That is the whole risk. Your providers change IPs without telling you, and a flattened record does not follow them. The mail that used to pass starts failing SPF with nothing in your DNS having changed.',
+  },
+  {
+    q: 'How often should I regenerate it?',
+    a: 'Whenever you add or remove a sender, and on a schedule otherwise. Monthly is sensible, quarterly is the minimum. Large providers publish their ranges precisely so you do not have to hard-code them, so you are taking on the maintenance they were doing for you.',
+  },
+  {
+    q: 'Is there a better fix than flattening?',
+    a: 'Usually. Most records over the limit are carrying vendors nobody uses any more. Removing three dead includes is free, permanent and does not go stale. Look at the chain first and flatten only what is left.',
+  },
+  {
+    q: 'Why did some terms stay in the record?',
+    a: 'exists: and ptr are evaluated against the connecting IP for every individual message, so there is no fixed set of addresses to substitute. Anything containing a macro expands differently per message for the same reason. Those are left exactly as they were, and they still cost their lookup.',
+  },
+  {
+    q: 'My record is longer than 255 characters. Is that a problem?',
+    a: 'No, as long as it is published correctly. A TXT record is made of character-strings of at most 255 characters each, and a receiver joins them with nothing in between. We split it for you on term boundaries. Most DNS panels handle this automatically when you paste the whole record.',
+  },
+];
+---
+
+<ToolPage
+  title="SPF Flattener: fix the 10 lookup limit, free | The MailDoc"
+  description="Free SPF flattener. Expands every include, a and mx into the addresses behind them, merges them into the fewest CIDR blocks, and tells you honestly what flattening costs you."
+  eyebrow="SPF Flattener"
+  heading="Over the ten lookup limit? Get a record that fits."
+  intro="Expands your whole include chain into the addresses behind it and merges them into the fewest blocks that authorise exactly the same senders. Nothing is widened, and nothing you cannot resolve is quietly dropped."
+  spec="RFC 7208 §4.6.4 for the lookup limit and §5.6 for address mechanisms"
+  faqs={faqs}
+  related={[
+    { href: '/lab/spf-checker', label: 'SPF checker to see the chain before you flatten it' },
+    { href: '/lab/spf-generator', label: 'SPF generator to build a record from scratch' },
+    { href: '/lab/dkim-checker', label: 'DKIM checker, because DKIM survives forwarding and SPF does not' },
+  ]}
+>
+  <Flatten slot="tool" client:load />
+
+  <h2>Symptoms</h2>
+  <p>
+    Mail from one particular service stops authenticating, or DMARC reports show SPF failing for
+    senders you know are yours. Nothing changed in your DNS. What changed is that somebody added one
+    more vendor, and the record crossed a limit that has no warning attached to it.
+  </p>
+  <p>
+    The failure is all or nothing. Past ten lookups the receiver stops evaluating and returns
+    PermError, so SPF fails for <em>every</em> message from the domain, not just the sender that
+    tipped it over.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    SPF is evaluated by the receiver, at delivery time, by following your record. Every
+    <code>include</code>, <code>a</code>, <code>mx</code>, <code>ptr</code> and <code>exists</code>
+    costs one DNS lookup, and the ones inside your includes count against the same budget. Ten is
+    the ceiling for the whole evaluation.
+  </p>
+  <p>
+    A single <code>include:_spf.google.com</code> is three lookups on its own, because it includes
+    two more records inside it. Add a marketing platform, a helpdesk and a billing service and you
+    are at the limit without having written ten of anything.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>Remove what you do not use.</strong> Most records over the limit carry vendors that
+      were replaced years ago. This is the only fix that stays fixed.
+    </li>
+    <li>
+      <strong>Use subdomains for bulk senders.</strong> Marketing mail from
+      <code>news.yourdomain.com</code> gets its own record and its own ten lookups.
+    </li>
+    <li>
+      <strong>Then flatten what is left.</strong> Take the record above, publish it, and put a
+      reminder in your calendar to regenerate it.
+    </li>
+    <li>
+      <strong>Check DKIM is signing.</strong> A flattened record that goes stale is survivable if
+      your mail is also DKIM signed, because DMARC passes on either one.
+    </li>
+  </ol>
+
+  <h2>What this tool will not do</h2>
+  <p>
+    It will not widen a range to make the record shorter. Two addresses that are not neighbours stay
+    two entries rather than becoming one block that also authorises somebody else's server.
+  </p>
+  <p>
+    It will not hand you a record built from a chain it could not fully resolve. If an include
+    fails to answer, you get the failure instead of a record that silently drops a sender you
+    believe is authorised.
+  </p>
+</ToolPage>

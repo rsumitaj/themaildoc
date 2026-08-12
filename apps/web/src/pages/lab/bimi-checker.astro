@@ -1,0 +1,55 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  { q: 'Is BIMI an RFC?', a: 'No, and this matters when you are reading other checkers. BIMI is an Internet-Draft, draft-brand-indicators-for-message-identification. It is widely implemented and not a published standard, so tools citing an RFC number for it are citing something that does not exist.' },
+  { q: 'Why is my logo not showing?', a: 'Almost always DMARC. BIMI requires enforcement at quarantine or reject; at p=none no receiver will display an indicator no matter how correct the record is. After that, the usual cause is a missing VMC.' },
+  { q: 'Do I need a VMC?', a: 'For Gmail and Apple Mail, yes. A Verified Mark Certificate proves the logo is yours and is issued by a handful of authorities at real annual cost. Some receivers display without one.' },
+  { q: 'What image format does BIMI need?', a: 'SVG Tiny Portable/Secure, a restricted SVG profile with no scripts, no external references and a square aspect ratio. An ordinary SVG export will be rejected.' },
+];
+---
+
+<LabTest
+  record="BIMI"
+  label="Brand indicator"
+  action="Check my BIMI"
+  title="BIMI Checker: free BIMI record and logo test | The MailDoc"
+  description="Free BIMI record check: version, logo location, certificate, and the DMARC enforcement BIMI depends on. Cites the actual draft, not an imaginary RFC."
+  eyebrow="BIMI Test"
+  heading="BIMI record check"
+  intro="Checks your brand indicator record and, more usefully, whether your DMARC policy is strong enough for any receiver to display it."
+  spec="draft-brand-indicators-for-message-identification §4.3"
+  faqs={faqs}
+  related={[
+    { href: '/lab/dmarc-checker', label: 'DMARC checker, what BIMI depends on' },
+    { href: '/lab/dkim-checker', label: 'DKIM checker, half of what DMARC needs' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    You published a BIMI record, paid for a certificate, and no logo appears anywhere. The record
+    validates in every syntax checker you try, which makes it look like a receiver problem. It is
+    almost never a receiver problem.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    BIMI is the last step of an authentication chain, not a feature you can switch on independently.
+    Receivers display an indicator only when they already trust the mail, and that trust is DMARC.
+  </p>
+  <ul>
+    <li><strong>DMARC must be enforcing</strong>, quarantine or reject. At p=none, nothing displays.</li>
+    <li><strong>The logo must be SVG Tiny PS</strong> over HTTPS, square, with no scripts.</li>
+    <li><strong>Gmail and Apple require a VMC</strong>, referenced in the <code>a=</code> tag.</li>
+    <li><strong>The record is read literally.</strong> Receivers are told not to correct syntax or capitalisation on your behalf.</li>
+  </ul>
+
+  <h2>Cure</h2>
+  <ol>
+    <li><strong>Get DMARC to quarantine or reject first.</strong> Everything else here is wasted effort until that is true.</li>
+    <li><strong>Export the logo as SVG Tiny PS</strong> and host it over HTTPS.</li>
+    <li><strong>Obtain a VMC</strong> if Gmail and Apple Mail matter to you.</li>
+    <li><strong>Publish</strong> <code>v=BIMI1; l=…; a=…</code> at <code>default._bimi</code> and re-check.</li>
+  </ol>
+</LabTest>

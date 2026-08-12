@@ -1,0 +1,55 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  { q: 'What does a CAA record do?', a: 'It names which certificate authorities may issue certificates for your domain. Every CA is required to check it before issuing, so it turns "any CA on earth" into a list you chose.' },
+  { q: 'Does CAA affect email?', a: 'Indirectly, and increasingly. MTA-STS depends on a valid certificate on your policy host, and DANE depends on certificates directly. CAA is what stops somebody obtaining a certificate for your name from a CA you have never used.' },
+  { q: 'Will a CAA record break my certificate renewals?', a: 'Only if you forget a CA you actually use. List every issuer in your stack, including the one your CDN or hosting provider renews on your behalf, before relying on it.' },
+  { q: 'What does issue ";" mean?', a: 'It forbids all issuance for that name. It is a deliberate lock for domains that should never have a certificate, and it stops your own renewals too.' },
+];
+---
+
+<LabTest
+  record="CAA"
+  label="Certificate authority"
+  action="Check my CAA"
+  title="CAA Record Checker: free certificate authority test | The MailDoc"
+  description="Free CAA record check: which certificate authorities may issue for your domain, wildcard rules, and whether the properties you published are ones a CA acts on."
+  eyebrow="CAA Test"
+  heading="CAA record check"
+  intro="Shows which certificate authorities are allowed to issue for your domain, and whether the record you published says what you think it says."
+  spec="RFC 8659 §4"
+  faqs={faqs}
+  related={[
+    { href: '/lab/mta-sts-checker', label: 'MTA-STS checker, where your certificate matters for mail' },
+    { href: '/lab/dnssec-checker', label: 'DNSSEC check, the other half of DNS trust' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    There is no symptom, until there is an incident. CAA is preventive: the failure it stops is
+    somebody obtaining a valid certificate for your domain from a CA you have never dealt with, and
+    using it to impersonate you convincingly.
+  </p>
+  <p>
+    The one visible failure mode is the opposite, a certificate renewal that suddenly fails because
+    the CAA record omits the CA your provider actually uses.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    A CAA record is a short list of properties. <code>issue</code> names an authority that may issue
+    ordinary certificates, <code>issuewild</code> covers wildcards, and <code>iodef</code> gives a
+    contact for reporting attempts. Anything else is ignored by every CA, so a typo here produces a
+    record that looks protective and is not.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li><strong>List every CA you use.</strong> Include the ones your CDN, load balancer or host renews for you. That is the one people forget.</li>
+    <li><strong>Publish them</strong>, e.g. <code>yourdomain.com. CAA 0 issue "letsencrypt.org"</code>.</li>
+    <li><strong>Add an iodef contact</strong> so you hear about refused attempts.</li>
+    <li><strong>Re-check after your next renewal</strong> to confirm nothing was quietly blocked.</li>
+  </ol>
+</LabTest>

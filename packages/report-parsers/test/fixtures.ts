@@ -1,0 +1,225 @@
+/**
+ * Real report shapes, kept as the receivers actually send them.
+ *
+ * SAMPLE is the file a patient is most likely to open first: a Google report
+ * carrying one clean source, one third-party sender, one forged source that
+ * was rejected, one forwarded message whose signature broke, and one mailing
+ * list. Every branch in the analyzer is exercised by it, which is exactly why
+ * it is also the sample the site offers.
+ */
+export const SAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
+<feedback>
+  <report_metadata>
+    <org_name>Google Inc.</org_name>
+    <email>noreply-dmarc-support@google.com</email>
+    <extra_contact_info>https://support.google.com/a/answer/2466580</extra_contact_info>
+    <report_id>12345678901234567890</report_id>
+    <date_range>
+      <begin>1706745600</begin>
+      <end>1706832000</end>
+    </date_range>
+  </report_metadata>
+  <policy_published>
+    <domain>example.com</domain>
+    <adkim>r</adkim>
+    <aspf>r</aspf>
+    <p>reject</p>
+    <sp>reject</sp>
+    <pct>100</pct>
+  </policy_published>
+  <record>
+    <row>
+      <source_ip>209.85.220.41</source_ip>
+      <count>1523</count>
+      <policy_evaluated>
+        <disposition>none</disposition>
+        <dkim>pass</dkim>
+        <spf>pass</spf>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example.com</header_from>
+    </identifiers>
+    <auth_results>
+      <dkim>
+        <domain>example.com</domain>
+        <selector>google</selector>
+        <result>pass</result>
+      </dkim>
+      <spf>
+        <domain>example.com</domain>
+        <result>pass</result>
+      </spf>
+    </auth_results>
+  </record>
+  <record>
+    <row>
+      <source_ip>198.51.100.42</source_ip>
+      <count>87</count>
+      <policy_evaluated>
+        <disposition>none</disposition>
+        <dkim>pass</dkim>
+        <spf>pass</spf>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example.com</header_from>
+    </identifiers>
+    <auth_results>
+      <dkim>
+        <domain>example.com</domain>
+        <selector>resend</selector>
+        <result>pass</result>
+      </dkim>
+      <spf>
+        <domain>example.com</domain>
+        <result>pass</result>
+      </spf>
+    </auth_results>
+  </record>
+  <record>
+    <row>
+      <source_ip>203.0.113.99</source_ip>
+      <count>42</count>
+      <policy_evaluated>
+        <disposition>reject</disposition>
+        <dkim>fail</dkim>
+        <spf>fail</spf>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example.com</header_from>
+    </identifiers>
+    <auth_results>
+      <dkim>
+        <domain>malicious.com</domain>
+        <result>fail</result>
+      </dkim>
+      <spf>
+        <domain>malicious.com</domain>
+        <result>fail</result>
+      </spf>
+    </auth_results>
+  </record>
+  <record>
+    <row>
+      <source_ip>192.0.2.50</source_ip>
+      <count>15</count>
+      <policy_evaluated>
+        <disposition>quarantine</disposition>
+        <dkim>fail</dkim>
+        <spf>pass</spf>
+        <reason>
+          <type>forwarded</type>
+          <comment>Message was forwarded by known forwarder</comment>
+        </reason>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example.com</header_from>
+      <envelope_to>recipient.com</envelope_to>
+    </identifiers>
+    <auth_results>
+      <dkim>
+        <domain>example.com</domain>
+        <selector>google</selector>
+        <result>fail</result>
+        <human_result>signature verification failed</human_result>
+      </dkim>
+      <spf>
+        <domain>forwarder.com</domain>
+        <result>pass</result>
+      </spf>
+    </auth_results>
+  </record>
+  <record>
+    <row>
+      <source_ip>10.0.0.1</source_ip>
+      <count>5</count>
+      <policy_evaluated>
+        <disposition>none</disposition>
+        <dkim>pass</dkim>
+        <spf>fail</spf>
+        <reason>
+          <type>mailing_list</type>
+        </reason>
+      </policy_evaluated>
+    </row>
+    <identifiers>
+      <header_from>example.com</header_from>
+    </identifiers>
+    <auth_results>
+      <dkim>
+        <domain>example.com</domain>
+        <selector>google</selector>
+        <result>pass</result>
+      </dkim>
+      <spf>
+        <domain>mailinglist.com</domain>
+        <result>softfail</result>
+      </spf>
+    </auth_results>
+  </record>
+</feedback>`;
+
+/** Microsoft's shape: namespaced root, no adkim/aspf, `p` only, IPv6 sources. */
+export const MICROSOFT = `<?xml version="1.0" encoding="utf-8"?>
+<dmarc:feedback xmlns:dmarc="http://dmarc.org/dmarc-xml/0.1">
+  <report_metadata>
+    <org_name>Enterprise Outlook</org_name>
+    <email>dmarcreport@microsoft.com</email>
+    <report_id>a1b2c3</report_id>
+    <date_range><begin>1706659200</begin><end>1706745600</end></date_range>
+  </report_metadata>
+  <policy_published>
+    <domain>Example.COM.</domain>
+    <p>none</p>
+    <pct>50</pct>
+  </policy_published>
+  <record>
+    <row>
+      <source_ip>2a01:111:f400:7e1a::711</source_ip>
+      <count>310</count>
+      <policy_evaluated><disposition>none</disposition><dkim>fail</dkim><spf>pass</spf></policy_evaluated>
+    </row>
+    <identifiers><header_from>example.com</header_from></identifiers>
+    <auth_results>
+      <spf><domain>example.com</domain><scope>mfrom</scope><result>pass</result></spf>
+    </auth_results>
+  </record>
+</dmarc:feedback>`;
+
+/** A DMARCbis-era report: `np`, `t=y`, an error note and an extension element. */
+export const DMARCBIS = `<?xml version="1.0"?>
+<feedback>
+  <version>2.0</version>
+  <report_metadata>
+    <org_name>Yahoo</org_name>
+    <email>dmarchelp@yahooinc.com</email>
+    <report_id>zz-99</report_id>
+    <date_range><begin>1706572800</begin><end>1706659200</end></date_range>
+    <error>Could not resolve the reporting address on first attempt</error>
+  </report_metadata>
+  <policy_published>
+    <domain>example.com</domain>
+    <adkim>s</adkim>
+    <aspf>s</aspf>
+    <p>quarantine</p>
+    <sp>none</sp>
+    <np>reject</np>
+    <t>y</t>
+  </policy_published>
+  <extension><something-new>42</something-new></extension>
+  <record>
+    <row>
+      <source_ip>93.184.216.34</source_ip>
+      <count>200</count>
+      <policy_evaluated><disposition>none</disposition><dkim>pass</dkim><spf>fail</spf></policy_evaluated>
+    </row>
+    <identifiers><header_from>mail.example.com</header_from></identifiers>
+    <auth_results>
+      <dkim><domain>example.com</domain><selector>s1</selector><result>pass</result></dkim>
+      <spf><domain>bounce.example.com</domain><result>pass</result></spf>
+    </auth_results>
+  </record>
+</feedback>`;

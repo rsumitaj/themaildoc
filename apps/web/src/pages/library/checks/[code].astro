@@ -1,0 +1,197 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ConsultLine from '../../../components/ConsultLine.astro';
+import { ALL_ISSUES, TRIAGE_CHIP, TRIAGE_LABEL, deductionFor, triageFor } from '@maildoc/catalog';
+import type { Issue } from '@maildoc/catalog';
+
+/**
+ * One page per condition the clinic can diagnose.
+ *
+ * The catalog already holds the title, the reason, the prescription and the
+ * specification for every finding. Publishing them gives somebody searching
+ * for the exact error they are staring at a page that answers it, and it costs
+ * nothing to keep current because it is the same data the tools use.
+ */
+export function getStaticPaths() {
+  return ALL_ISSUES.map((issue) => ({
+    params: { code: issue.code.toLowerCase().replace(/_/g, '-') },
+    props: { issue },
+  }));
+}
+
+interface Props {
+  issue: Issue;
+}
+
+const { issue } = Astro.props;
+const triage = triageFor(issue.severity);
+const tone = triage.toLowerCase();
+
+/** Placeholders are filled per domain by the tools; here they read as fields. */
+const readable = (text: string): string => text.replace(/\{([a-z0-9_]+)\}/gi, 'your $1').replace(/_/g, ' ');
+
+const RECORD_TOOL: Record<string, string> = {
+  SPF: '/lab/spf-checker',
+  DMARC: '/lab/dmarc-checker',
+  DKIM: '/lab/dkim-checker',
+  MX: '/lab/mx-lookup',
+  DNSSEC: '/lab/dnssec-checker',
+  MTASTS: '/lab/mta-sts-checker',
+  TLSRPT: '/lab/tls-rpt-checker',
+  BIMI: '/lab/bimi-checker',
+  CAA: '/lab/caa-checker',
+  PTR: '/lab/reverse-dns',
+  A: '/lab/dns-records',
+  RUA: '/bloodwork',
+};
+
+const tool = RECORD_TOOL[issue.record] ?? '/health-library';
+const related = ALL_ISSUES.filter(
+  (other) => other.record === issue.record && other.code !== issue.code,
+).slice(0, 6);
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+const url = new URL(`/library/checks/${issue.code.toLowerCase().replace(/_/g, '-')}`, site).href;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: issue.title,
+    description: readable(issue.why).slice(0, 300),
+    url,
+    author: { '@type': 'Organization', name: 'The MailDoc' },
+    about: `${issue.record} email authentication`,
+    citation: issue.rfc,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'The MailDoc', item: site.href },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Checks',
+        item: new URL('/library/checks', site).href,
+      },
+      { '@type': 'ListItem', position: 3, name: issue.title, item: url },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${issue.title} | ${issue.record} | The MailDoc`}
+  description={readable(issue.why).slice(0, 155)}
+  jsonLd={jsonLd}
+>
+  <section class="check">
+    <div class="md-wrap">
+      <nav class="crumbs md-mono" aria-label="Breadcrumb">
+        <a href="/health-library">Checkup</a> <span aria-hidden="true">/</span>
+        <a href="/library/checks">Checks</a> <span aria-hidden="true">/</span>
+        <span>{issue.record}</span>
+      </nav>
+
+      <div class="head">
+        <h1>{issue.title}</h1>
+        <span class={`md-chip is-${tone}`}>{TRIAGE_CHIP[triage]}</span>
+      </div>
+
+      <p class="meta md-mono">
+        {issue.record} · {TRIAGE_LABEL[triage]} · costs {deductionFor(issue.severity)} points · {issue.rfc}
+      </p>
+
+      <div class="md-prose">
+        <h2>What it means</h2>
+        <p>{readable(issue.why)}</p>
+
+        <h2>How to fix it</h2>
+        <p>{readable(issue.fix)}</p>
+
+        <h2>Check your own domain</h2>
+        <p>
+          This page describes the condition. To find out whether your domain has it,
+          <a href={tool}>run the {issue.record} test</a> or
+          <a href="/health-library">the full checkup</a>, which examines every record at once.
+        </p>
+
+        <h2>Where this comes from</h2>
+        <p>
+          We judge this against <strong>{issue.rfc}</strong>. Every finding on this site cites the
+          specification behind it so you can check the work rather than take our word for it.
+        </p>
+
+        {
+          related.length > 0 && (
+            <>
+              <h2>Other {issue.record} conditions</h2>
+              <ul>
+                {related.map((other) => (
+                  <li>
+                    <a href={`/library/checks/${other.code.toLowerCase().replace(/_/g, '-')}`}>
+                      {other.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        }
+      </div>
+
+      <p class="code md-mono">{issue.code}</p>
+    </div>
+  </section>
+
+  <ConsultLine />
+</Base>
+
+<style>
+  .check {
+    padding-block: var(--md-space-8) var(--md-space-10);
+  }
+
+  .crumbs {
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+    display: flex;
+    gap: var(--md-space-2);
+    flex-wrap: wrap;
+  }
+
+  .crumbs a:hover {
+    color: var(--md-red);
+  }
+
+  .head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--md-space-4);
+    flex-wrap: wrap;
+    margin-top: var(--md-space-4);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    letter-spacing: var(--md-tracking-tight);
+    max-width: 24ch;
+  }
+
+  .meta {
+    margin-top: var(--md-space-3);
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+  }
+
+  .md-prose {
+    margin-top: var(--md-space-6);
+  }
+
+  .code {
+    margin-top: var(--md-space-8);
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+  }
+</style>

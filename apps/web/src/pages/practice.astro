@@ -1,0 +1,391 @@
+---
+import Base from '../layouts/Base.astro';
+import Consult from '../islands/Consult';
+
+/**
+ * The only page on the site that asks for work.
+ *
+ * Every claim here is checkable against real delivery history. Nothing is
+ * rounded up, because the person reading it is deciding whether to trust
+ * somebody with the DNS their business runs on.
+ */
+const LINKEDIN = 'https://www.linkedin.com/in/sumit-raj-9918ba183/';
+
+const built = [
+  {
+    title: 'DMARC monitoring, end to end',
+    body: 'I built and ran the platform behind 2,000+ client domains over its life: architecture, the DNS engine, deployments, monitoring and the enterprise escalations when something broke in production.',
+  },
+  {
+    title: 'Report parsing at scale',
+    body: 'Around 2 million outbound email records analysed every day from RUA aggregate reports. Batched parsing and queue tuning took 40% off processing time and cleared a bottleneck that had been there for years.',
+  },
+  {
+    title: 'The DNS engine',
+    body: 'SPF, DKIM, DMARC, MX, CNAME, MTA-STS and TLS-RPT, checked the way a receiving mail server checks them. Plus SPF flattening that brought client records from 15 and 20 lookups back under the limit of 10, published live and re-checked on a schedule.',
+  },
+  {
+    title: 'Monitoring that catches drift',
+    body: 'Record changes surfaced within 60 minutes of publication, on hosted authentication records running at 99% uptime. Most authentication breaks because somebody edited DNS on a Friday and nobody noticed until Monday.',
+  },
+];
+
+const services = [
+  {
+    heading: 'Setup',
+    items: [
+      'SPF, DKIM and DMARC published correctly the first time',
+      'Google Workspace and Microsoft 365 DNS',
+      'Reverse DNS and sending IP configuration',
+    ],
+  },
+  {
+    heading: 'Rescue',
+    items: [
+      'Mail landing in spam, or bouncing without warning',
+      'Blacklist delisting and reputation repair',
+      'Google Postmaster Tools set up and read properly',
+    ],
+  },
+  {
+    heading: 'DMARC enforcement',
+    items: [
+      'p=none to quarantine to reject without losing real mail',
+      'Aggregate reports read weekly, every sender identified',
+      'Subdomain and non-existent-domain policy',
+    ],
+  },
+  {
+    heading: 'SPF over the limit',
+    items: [
+      'Flattening with the staleness problem handled',
+      'Chain audit across every vendor you have added',
+      'A record that stays under 10 lookups next quarter too',
+    ],
+  },
+  {
+    heading: 'Compliance',
+    items: [
+      'Google, Yahoo and Microsoft bulk sender requirements',
+      'One-click unsubscribe and complaint rate',
+      'Authentication for cold email and domain warmup',
+    ],
+  },
+  {
+    heading: 'Architecture',
+    items: [
+      'Multi-domain and subdomain sending design',
+      'ESP migrations across SendGrid, Mailgun, SES, Klaviyo and HubSpot',
+      'MTA-STS, TLS-RPT and BIMI',
+    ],
+  },
+];
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Sumit Raj',
+    jobTitle: 'Email Deliverability Architect',
+    url: new URL('/practice', site).href,
+    image: new URL('/sumit-raj.jpg', site).href,
+    sameAs: [LINKEDIN],
+    email: 'support@themaildoc.co',
+    knowsAbout: [
+      'Email deliverability',
+      'DMARC',
+      'SPF',
+      'DKIM',
+      'MTA-STS',
+      'DNS',
+      'Email authentication',
+    ],
+  },
+];
+---
+
+<Base
+  title="Email Deliverability Consultant: DMARC, SPF and DKIM | Sumit Raj"
+  description="I build and fix email authentication. DMARC monitoring across 2,000+ domains, around 2M email records analysed daily, and SPF records brought back under the lookup limit. Tell me what is broken."
+  jsonLd={jsonLd}
+>
+  <section class="intro">
+    <div class="md-wrap grid">
+      <figure class="portrait">
+        <img
+          src="/sumit-raj.jpg"
+          width="520"
+          height="650"
+          alt="Sumit Raj"
+          loading="eager"
+          decoding="async"
+        />
+      </figure>
+
+      <div class="lede">
+        <p class="md-eyebrow">Sumit Raj · Email deliverability architect</p>
+        <h1>I fix email that does not arrive.</h1>
+
+        <p class="first">
+          For three years I built and ran a DMARC monitoring platform across <b>2,000+ client
+          domains</b>, and the pipeline behind it that analyses <b>around 2 million outbound email
+          records a day</b> from aggregate reports. Banks, insurers and SaaS companies, on the
+          domains their invoices and password resets go out from.
+        </p>
+        <p>
+          When a client's mail stopped arriving, the ticket came to me. Not a dashboard reading
+          amber: a finance team whose invoices were being answered by somebody else, a payroll run
+          bouncing at 2am, a marketing domain that had quietly been on the wrong side of Gmail's
+          filters for a month. Every one of those turned out to be four or five characters of DNS.
+        </p>
+        <p>
+          <strong>That is the job.</strong> Records that say what you mean, authentication that
+          survives a forward, and a policy strict enough to stop somebody impersonating you without
+          taking your own mail down with it. Most people can publish an SPF record. Knowing which
+          change breaks payroll on Monday is a different thing, and it comes from having broken it,
+          fixed it and watched the reports afterwards.
+        </p>
+
+        <p class="links">
+          <a class="linked" href={LINKEDIN} rel="me noopener noreferrer" target="_blank">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
+              <path
+                d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.78 2.5 4.78 5.75V21h-4v-5.6c0-1.34-.03-3.06-1.9-3.06-1.9 0-2.2 1.45-2.2 2.96V21H9z"
+              ></path>
+            </svg>
+            Sumit Raj on LinkedIn
+          </a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="built">
+    <div class="md-wrap">
+      <h2 class="md-eyebrow">What I have built</h2>
+      <div class="rows">
+        {
+          built.map((item) => (
+            <article class="row">
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))
+        }
+      </div>
+      <p class="engineer">Software Engineer 2 at Kratikal.</p>
+    </div>
+  </section>
+
+  <section class="services">
+    <div class="md-wrap">
+      <h2 class="md-eyebrow">What I take on</h2>
+      <div class="cols">
+        {
+          services.map((group) => (
+            <div class="col">
+              <h3>{group.heading}</h3>
+              <ul>
+                {group.items.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="book" id="book">
+    <div class="md-wrap">
+      <Consult client:load />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro {
+    padding-block: var(--md-space-12) var(--md-space-10);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--md-space-8);
+    align-items: start;
+  }
+
+  .portrait {
+    margin: 0;
+  }
+
+  .portrait img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--md-radius-lg);
+    border: var(--md-hairline) solid var(--md-line);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+    max-width: 16ch;
+  }
+
+  .lede p {
+    color: var(--md-muted);
+    max-width: 62ch;
+    margin-top: var(--md-space-4);
+    font-size: var(--md-text-md);
+    line-height: 1.65;
+  }
+
+  /* The opening paragraph carries the numbers, so it gets the ink. */
+  .lede .first {
+    color: var(--md-ink);
+    font-size: var(--md-text-lg);
+    line-height: 1.6;
+  }
+
+  .lede b {
+    font-weight: var(--md-weight-semibold);
+    color: var(--md-ink);
+  }
+
+  /* Red appears once on this page, on the sentence that says what I do. */
+  .lede strong {
+    color: var(--md-red);
+    font-weight: var(--md-weight-semibold);
+  }
+
+  .lede .md-eyebrow {
+    color: var(--md-faint);
+  }
+
+  .links {
+    margin-top: var(--md-space-5);
+  }
+
+  .linked {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-space-2);
+    font-size: var(--md-text-sm);
+    color: var(--md-ink);
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    padding-bottom: 0.2rem;
+  }
+
+  .linked:hover {
+    color: var(--md-red);
+    border-color: currentColor;
+  }
+
+  .built {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-10);
+  }
+
+  .rows {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--md-space-6) var(--md-space-8);
+    margin-top: var(--md-space-6);
+  }
+
+  .row h3 {
+    font-size: var(--md-text-md);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .row p {
+    color: var(--md-muted);
+    font-size: var(--md-text-base);
+    line-height: 1.65;
+    margin-top: var(--md-space-2);
+  }
+
+  .engineer {
+    margin-top: var(--md-space-8);
+    padding-top: var(--md-space-5);
+    border-top: var(--md-hairline) solid var(--md-line-soft);
+    font-size: var(--md-text-sm);
+    color: var(--md-faint);
+    max-width: 62ch;
+  }
+
+  .services {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-10);
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--md-space-6) var(--md-space-8);
+    margin-top: var(--md-space-6);
+  }
+
+  .col h3 {
+    font-size: var(--md-text-base);
+    padding-bottom: var(--md-space-2);
+    border-bottom: var(--md-hairline) solid var(--md-line);
+  }
+
+  .col ul {
+    list-style: none;
+    margin-top: var(--md-space-3);
+    display: grid;
+    gap: var(--md-space-2);
+  }
+
+  .col li {
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+    line-height: 1.5;
+    padding-left: 0.9rem;
+    position: relative;
+  }
+
+  .col li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--md-red);
+  }
+
+  .book {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-10) var(--md-space-12);
+  }
+
+  @media (max-width: 900px) {
+    .cols {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .grid {
+      grid-template-columns: 1fr;
+      gap: var(--md-space-6);
+    }
+
+    .portrait {
+      max-width: 200px;
+    }
+
+    .rows,
+    .cols {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

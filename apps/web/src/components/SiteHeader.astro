@@ -1,0 +1,225 @@
+---
+import Logo from './Logo.astro';
+import { LAB_GROUPS } from '../data/tests';
+
+/**
+ * Minimal by construction: a hairline rule, a flat button, and an underline
+ * that appears on hover. No shadow, no glow, no drop-down until the Lab pages
+ * exist to fill one.
+ */
+const links = [
+  { href: '/', label: 'Checkup' },
+  { href: '/lab', label: 'The Lab' },
+  { href: '/health-library', label: 'Health Library' },
+  { href: '/practice', label: 'The Practice' },
+];
+
+const { pathname } = Astro.url;
+---
+
+<header class="header">
+  <div class="md-wrap">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="/">
+        <Logo size={30} class="mark" />
+        <span class="wordmark">The MailDoc<span class="tld">.co</span></span>
+      </a>
+
+      <ul class="links">
+        {
+          links.map((link) =>
+            link.href === '/lab' ? (
+              <li class="hasmenu">
+                <a
+                  href="/lab"
+                  aria-current={pathname.startsWith('/lab') ? 'page' : undefined}
+                  aria-haspopup="true"
+                >
+                  The Lab <span class="caret" aria-hidden="true">▾</span>
+                </a>
+
+                <div class="mega">
+                  <div class="md-wrap mega__inner">
+                    {LAB_GROUPS.map((group) => (
+                      <div>
+                        <h2 class="md-eyebrow">{group.heading}</h2>
+                        {group.tests
+                          .filter((test) => test.href)
+                          .map((test) => (
+                            <a class="mega__item" href={test.href}>
+                              {test.name}
+                            </a>
+                          ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </li>
+            ) : (
+              <li>
+                <a href={link.href} aria-current={pathname === link.href ? 'page' : undefined}>
+                  {link.label}
+                </a>
+              </li>
+            ),
+          )
+        }
+      </ul>
+
+    </nav>
+  </div>
+</header>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--md-bg) 90%, transparent);
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    backdrop-filter: blur(8px);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--md-space-8);
+    min-height: var(--md-header-height);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-space-3);
+    font-weight: var(--md-weight-bold);
+    font-size: 1.1875rem;
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .brand .mark {
+    color: var(--md-red);
+  }
+
+  .tld {
+    color: var(--md-faint);
+    font-weight: var(--md-weight-medium);
+    font-size: 0.875rem;
+  }
+
+  .links {
+    display: flex;
+    gap: var(--md-space-6);
+    list-style: none;
+    font-size: 0.9rem;
+    color: var(--md-muted);
+  }
+
+  /* A 1px rule that draws in from the left — the EKG line, in miniature. */
+  .links a {
+    position: relative;
+    padding-block: 0.35rem;
+  }
+
+  .links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--md-red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--md-duration-base) var(--md-ease);
+  }
+
+  .links a:hover,
+  .links a[aria-current='page'] {
+    color: var(--md-ink);
+  }
+
+  .links a:hover::after,
+  .links a[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+
+  .mega__tag {
+    font-size: 0.7rem;
+    color: var(--md-faint);
+    white-space: nowrap;
+  }
+
+  /* Mega-menu: four columns of hairline-separated rows, no shadow theatre. */
+  .hasmenu {
+    position: static;
+  }
+
+  .caret {
+    font-size: 0.6rem;
+    color: var(--md-faint);
+  }
+
+  .mega {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    background: var(--md-card);
+    border-top: var(--md-hairline) solid var(--md-line);
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    box-shadow: var(--md-shadow-mega);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity var(--md-duration-base) var(--md-ease),
+      transform var(--md-duration-base) var(--md-ease),
+      visibility var(--md-duration-base);
+  }
+
+  .hasmenu:hover .mega,
+  .hasmenu:focus-within .mega {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .mega__inner {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--md-space-6);
+    padding-block: var(--md-space-6);
+  }
+
+  .mega__item {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--md-ink);
+    padding: 0.45rem 0;
+    border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .mega__item:hover {
+    color: var(--md-red);
+  }
+
+  .mega h2 {
+    margin-bottom: var(--md-space-2);
+  }
+
+  @media (max-width: 860px) {
+    .links {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .brand {
+      font-size: 1rem;
+    }
+
+    .tld {
+      font-size: 0.78rem;
+    }
+  }
+</style>

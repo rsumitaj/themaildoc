@@ -1,0 +1,59 @@
+---
+/** Thin clinical strip above the header: the clinic is open, and it's busy. */
+---
+
+<div class="statusbar">
+  <div class="md-wrap inner">
+    <span class="live">
+      <span class="dot" aria-hidden="true"></span>
+      <span
+        >Clinic open · free diagnosis<span class="tail">, no appointment needed</span></span
+      >
+    </span>
+    <span class="treated">2,000+ domains monitored</span>
+  </div>
+</div>
+
+<style>
+  .statusbar {
+    background: var(--md-ink);
+    color: #cfd4da;
+    font-family: var(--md-font-mono);
+    font-size: var(--md-text-xs);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--md-space-4);
+    min-height: var(--md-statusbar-height);
+  }
+
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-space-2);
+    color: #e7eaee;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--md-healthy);
+    box-shadow: 0 0 8px var(--md-healthy);
+    animation: md-pulse var(--md-pulse-duration) infinite;
+  }
+
+  .treated {
+    color: #8a93a6;
+  }
+
+  @media (max-width: 720px) {
+    .treated,
+    .tail {
+      display: none;
+    }
+  }
+</style>

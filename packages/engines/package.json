@@ -1,0 +1,31 @@
+{
+  "name": "@maildoc/engines",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./readiness": {
+      "types": "./dist/readiness.d.ts",
+      "default": "./dist/readiness.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@maildoc/catalog": "workspace:*",
+    "@maildoc/resolver": "workspace:*",
+    "@maildoc/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

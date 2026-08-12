@@ -1,0 +1,30 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "types": ["astro/client"],
+
+    /**
+     * Resolve workspace types from source, matching the Vite aliases in
+     * astro.config.mjs. Without this, `astro check` reads each package's built
+     * `dist/*.d.ts` — stale the moment an engine changes, so a real type error
+     * shows up as a phantom and a fixed one refuses to clear.
+     */
+    "baseUrl": ".",
+    "paths": {
+      "@maildoc/shared": ["../../packages/shared/src/index.ts"],
+      "@maildoc/catalog": ["../../packages/catalog/src/index.ts"],
+      "@maildoc/catalog/scoring": ["../../packages/catalog/src/scoring.ts"],
+      "@maildoc/catalog/bloodwork": ["../../packages/catalog/src/bloodwork.ts"],
+      "@maildoc/report-parsers": ["../../packages/report-parsers/src/index.ts"],
+      "@maildoc/resolver": ["../../packages/resolver/src/index.ts"],
+      "@maildoc/engines": ["../../packages/engines/src/index.ts"],
+      "@maildoc/engines/readiness": ["../../packages/engines/src/readiness.ts"]
+    }
+  },
+  "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],
+  "exclude": ["dist", ".astro", ".wrangler"]
+}

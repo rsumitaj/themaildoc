@@ -1,0 +1,307 @@
+---
+import Base from '../layouts/Base.astro';
+import HomeCheckup from '../islands/HomeCheckup';
+
+const title = 'Free Email Authentication Check: SPF, DKIM and DMARC | The MailDoc';
+const description =
+  "Free email health checkup: enter your domain and get a full diagnosis of SPF, DKIM, DMARC, MX and DNSSEC in seconds, with the exact prescription to fix what's wrong.";
+
+const steps = [
+  {
+    n: '01',
+    title: 'Examine',
+    body: 'We read your live DNS the way a receiving mail server does, every record, in the same order, with the same limits.',
+  },
+  {
+    n: '02',
+    title: 'Diagnose',
+    body: 'Each record is graded against the RFCs and triaged: critical, urgent, needs attention, minor.',
+  },
+  {
+    n: '03',
+    title: 'Prescribe',
+    body: 'Every condition comes with the exact fix, written to paste into your DNS. No jargon, no upsell.',
+  },
+  {
+    n: '04',
+    title: 'Treat',
+    body: 'Do it yourself with the prescription, or hand it to someone who has run DMARC monitoring across 2,000+ domains.',
+  },
+];
+
+const tests = [
+  { name: 'SPF Test', href: '/lab/spf-checker', tag: 'RFC 7208', body: 'Full chain walk with the exact 10-lookup count. Catches the PermError other checkers miss.' },
+  { name: 'DMARC Test', href: '/lab/dmarc-checker', tag: 'RFC 9989', body: 'Tree walk, inheritance, alignment and reporting. Is your policy actually being applied?' },
+  { name: 'DKIM Test', href: '/lab/dkim-checker', tag: 'RFC 6376', body: 'Selector discovery and real key strength. Weak keys fail silently for years.' },
+  { name: 'Spoofability', href: '/lab/spoofability', tag: 'the scary one', body: 'Can somebody send as you right now? One verdict, no hedging.' },
+  { name: 'Sender Readiness', href: '/lab/sender-readiness', tag: 'Google, Yahoo, Microsoft', body: 'Will the bulk sender rules reject you? Find out before they do.' },
+  { name: 'Bloodwork', href: '/bloodwork', tag: 'DMARC reports', body: 'Read your aggregate reports and see who is sending as you. Parsed in your browser.' },
+];
+---
+
+<Base title={title} description={description}>
+  <section class="hero">
+    <svg class="ekg" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
+      <path
+        d="M0 100 H420 L440 100 L460 40 L490 160 L515 100 H640 L660 100 L680 60 L710 140 L735 100 H1200"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+      />
+    </svg>
+
+    <div class="md-wrap">
+      <p class="pill">
+        <span class="dot" aria-hidden="true"></span>
+        Only 4% of domains actually enforce DMARC. Is yours one of them?
+      </p>
+
+      <h1>
+        Is your domain <span class="sick">sick?</span><br class="linebreak" />
+        Find out in 5 seconds.
+      </h1>
+
+      <p class="lead">
+        The MailDoc runs a full checkup on your email, SPF, DKIM, DMARC, MX and DNSSEC, then hands
+        you the exact prescription to fix what's wrong. Free, and no signup.
+      </p>
+
+      <HomeCheckup client:load />
+    </div>
+  </section>
+
+  <section class="how">
+    <div class="md-wrap">
+      <h2 class="md-eyebrow">How the checkup works</h2>
+      <div class="steps">
+        {
+          steps.map((step) => (
+            <div class="step">
+              <div class="step__n md-mono">{step.n}</div>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="lab">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red)">The Lab</p>
+      <h2>Run a single test</h2>
+      <p class="lab__lead">
+        Need to check just one thing? The Lab has a dedicated test for every part of your email
+        setup, and every one comes with a prescription.
+      </p>
+
+      <div class="labgrid">
+        {
+          tests.map((test) => (
+            <a class="test" href={test.href}>
+              <div class="test__head">
+                <h3>{test.name}</h3>
+                <span class="test__tag md-mono">{test.tag}</span>
+              </div>
+              <p>{test.body}</p>
+            </a>
+          ))
+        }
+      </div>
+      <p class="lab__more"><a href="/lab">Every test in the Lab &rarr;</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: var(--md-space-12) var(--md-space-16);
+  }
+
+  /* The pulse runs behind the lead and the input, never across the headline. */
+  .ekg {
+    position: absolute;
+    inset-inline: 0;
+    top: 340px;
+    height: 200px;
+    color: var(--md-red);
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  @media (max-width: 720px) {
+    .ekg {
+      display: none;
+    }
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-space-2);
+    margin-bottom: var(--md-space-5);
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--md-radius-pill);
+    background: var(--md-red-tint);
+    border: var(--md-hairline) solid var(--md-red-line);
+    color: var(--md-red);
+    font-size: var(--md-text-sm);
+    font-weight: var(--md-weight-semibold);
+  }
+
+  .pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--md-red);
+    animation: md-pulse var(--md-pulse-duration) infinite;
+  }
+
+  h1 {
+    position: relative;
+    font-size: var(--md-text-hero);
+    line-height: var(--md-leading-tight);
+    letter-spacing: var(--md-tracking-hero);
+    text-wrap: balance;
+  }
+
+  @media (max-width: 620px) {
+    .linebreak {
+      display: none;
+    }
+
+    h1 {
+      text-wrap: normal;
+    }
+  }
+
+  .sick {
+    color: var(--md-red);
+  }
+
+  .lead {
+    position: relative;
+    margin-top: var(--md-space-5);
+    max-width: 600px;
+    font-size: var(--md-text-lg);
+    color: var(--md-muted);
+  }
+
+  .how {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-12);
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--md-space-6);
+    margin-top: var(--md-space-6);
+  }
+
+  @media (max-width: 760px) {
+    .steps {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .step__n {
+    color: var(--md-red);
+    font-weight: var(--md-weight-bold);
+    font-size: var(--md-text-sm);
+  }
+
+  .step h3 {
+    font-size: var(--md-text-md);
+    margin: var(--md-space-2) 0 0.35rem;
+  }
+
+  .step p {
+    color: var(--md-muted);
+    font-size: var(--md-text-sm);
+    line-height: 1.55;
+  }
+
+  .lab {
+    border-top: var(--md-hairline) solid var(--md-line);
+    background: var(--md-card);
+    padding-block: var(--md-space-12);
+  }
+
+  .lab h2 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+  }
+
+  .lab__lead {
+    color: var(--md-muted);
+    max-width: 560px;
+    margin-top: var(--md-space-3);
+  }
+
+  .labgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--md-space-3);
+    margin-top: var(--md-space-8);
+  }
+
+  @media (max-width: 860px) {
+    .labgrid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .labgrid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .test {
+    border: var(--md-hairline) solid var(--md-line);
+    border-radius: var(--md-radius-md);
+    padding: var(--md-space-4) var(--md-space-5);
+    background: var(--md-bg);
+  }
+
+  .test__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--md-space-3);
+  }
+
+  .test h3 {
+    font-size: 0.94rem;
+  }
+
+  .test__tag {
+    font-size: 0.62rem;
+    color: var(--md-faint);
+    white-space: nowrap;
+  }
+
+  .test p {
+    color: var(--md-muted);
+    font-size: var(--md-text-sm);
+    margin-top: 0.4rem;
+    line-height: 1.5;
+  }
+
+  .lab__more {
+    margin-top: var(--md-space-5);
+    font-size: var(--md-text-sm);
+  }
+
+  .lab__more a {
+    color: var(--md-red);
+  }
+
+  .test:hover {
+    border-color: var(--md-red-line);
+  }
+</style>

@@ -1,0 +1,179 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ConsultLine from '../../../components/ConsultLine.astro';
+import { ALL_ISSUES, TRIAGE_CHIP, triageFor } from '@maildoc/catalog';
+
+/**
+ * Every condition the clinic can diagnose, grouped by record.
+ *
+ * The index for the per-condition pages, and a fair answer to "what exactly do
+ * you check?" that does not require running anything.
+ */
+const RECORD_ORDER = [
+  'SPF',
+  'DMARC',
+  'DKIM',
+  'MX',
+  'A',
+  'PTR',
+  'DNSSEC',
+  'MTASTS',
+  'TLSRPT',
+  'BIMI',
+  'CAA',
+  'RUA',
+  'GENERIC',
+] as const;
+
+const RECORD_LABEL: Record<string, string> = {
+  SPF: 'SPF',
+  DMARC: 'DMARC',
+  DKIM: 'DKIM',
+  MX: 'Mail servers',
+  A: 'Address records',
+  PTR: 'Reverse DNS',
+  DNSSEC: 'DNSSEC',
+  MTASTS: 'MTA-STS',
+  TLSRPT: 'TLS-RPT',
+  BIMI: 'BIMI',
+  CAA: 'CAA',
+  RUA: 'DMARC reports',
+  GENERIC: 'General',
+};
+
+const groups = RECORD_ORDER.map((record) => ({
+  record,
+  label: RECORD_LABEL[record] ?? record,
+  issues: ALL_ISSUES.filter((issue) => issue.record === record),
+})).filter((group) => group.issues.length > 0);
+
+const slug = (code: string) => code.toLowerCase().replace(/_/g, '-');
+
+const site = Astro.site ?? new URL('https://themaildoc.co');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'The MailDoc', item: site.href },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Checks',
+        item: new URL('/library/checks', site).href,
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={`Every email authentication check we run (${ALL_ISSUES.length}) | The MailDoc`}
+  description="The full list of conditions the checkup can find across SPF, DKIM, DMARC, MX, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA, each with what it means, how to fix it, and the RFC it comes from."
+  jsonLd={jsonLd}
+>
+  <section class="intro">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red)">Checks</p>
+      <h1>Everything we look for.</h1>
+      <p class="lead">
+        {ALL_ISSUES.length} conditions across {groups.length} record types. Each one has a page saying
+        what it means, what it costs you, how to fix it and which specification we judged it
+        against. Nothing here is a heuristic.
+      </p>
+    </div>
+  </section>
+
+  <section class="groups">
+    <div class="md-wrap">
+      {
+        groups.map((group) => (
+          <div class="group">
+            <h2>
+              {group.label} <span class="count md-mono">{group.issues.length}</span>
+            </h2>
+            <ul>
+              {group.issues.map((issue) => {
+                const triage = triageFor(issue.severity);
+                return (
+                  <li>
+                    <a href={`/library/checks/${slug(issue.code)}`}>
+                      <span>{issue.title}</span>
+                      <span class={`md-chip is-${triage.toLowerCase()}`}>{TRIAGE_CHIP[triage]}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <ConsultLine />
+</Base>
+
+<style>
+  .intro {
+    padding-block: var(--md-space-10) var(--md-space-6);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .lead {
+    color: var(--md-muted);
+    max-width: 62ch;
+    margin-top: var(--md-space-4);
+    font-size: var(--md-text-md);
+    line-height: 1.6;
+  }
+
+  .groups {
+    padding-bottom: var(--md-space-12);
+  }
+
+  .group {
+    margin-top: var(--md-space-8);
+  }
+
+  .group h2 {
+    font-size: var(--md-text-md);
+    padding-bottom: var(--md-space-2);
+    border-bottom: var(--md-hairline) solid var(--md-line);
+    display: flex;
+    align-items: baseline;
+    gap: var(--md-space-3);
+  }
+
+  .count {
+    font-size: var(--md-text-xs);
+    color: var(--md-faint);
+  }
+
+  .group ul {
+    list-style: none;
+    margin-top: var(--md-space-2);
+  }
+
+  .group li + li {
+    border-top: var(--md-hairline) solid var(--md-line-soft);
+  }
+
+  .group a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--md-space-4);
+    padding: var(--md-space-3) 0;
+    font-size: var(--md-text-base);
+  }
+
+  .group a:hover {
+    color: var(--md-red);
+  }
+</style>

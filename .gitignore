@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+.astro/
+.turbo/
+.wrangler/
+*.tsbuildinfo
+
+# Generated from wrangler.jsonc by `wrangler types`. 550KB of runtime
+# declarations that change with every workerd release, so it is regenerated
+# rather than committed. `pnpm typecheck` runs it first.
+apps/web/worker-configuration.d.ts
+
+# Secrets and local config. Nothing in here is ever committed.
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+
+# Editor and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Logs and local scratch
+*.log
+npm-debug.log*
+pnpm-debug.log*
+coverage/
+.tmp/
+
+# Internal product and strategy notes. Deliberately out of the repo: the code
+# is the deliverable, the business material is not.
+/context/
+/CLAUDE.md

@@ -1,0 +1,67 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Readiness from '../../islands/Readiness';
+
+const faqs = [
+  { q: 'Who has to meet these requirements?', a: 'Everyone sending to Gmail, Yahoo or Outlook, with a stricter set for anyone sending more than about 5,000 messages a day to a single provider. The bulk threshold is per provider, and it is easier to cross than most senders expect.' },
+  { q: 'What happens if I do not meet them?', a: 'Rejection, not filtering. Gmail returns permanent 550 errors for non-compliant bulk mail rather than quietly moving it to spam, so the failure is loud and immediate.' },
+  { q: 'Why do some items say "not checkable"?', a: 'Because they genuinely are not visible from DNS. Whether your platform negotiates TLS, whether your campaigns carry one-click unsubscribe headers, and what your spam-complaint rate is, are all facts no external tool can read. We say so rather than showing a green tick we have not earned.' },
+  { q: 'How do I see my spam complaint rate?', a: 'Google Postmaster Tools, free, for Gmail; Microsoft SNDS for Outlook. If you send in volume and are not watching one of these, start there, the 0.3% threshold is measured by them, not by you.' },
+];
+---
+
+<ToolPage
+  title="Google and Yahoo Sender Requirements Checker | The MailDoc"
+  description="Check your domain against the Google, Yahoo and Microsoft bulk sender requirements: SPF, DKIM, DMARC, alignment and reverse DNS, with an honest note on what cannot be checked from DNS."
+  eyebrow="Sender Readiness"
+  heading="Will the bulk sender rules reject you?"
+  intro="Measured against what Google, Yahoo and Microsoft now require. Everything checkable from DNS is checked; everything that is not is labelled, not guessed."
+  spec="the published Google, Yahoo and Microsoft sender guidelines"
+  faqs={faqs}
+  related={[
+    { href: '/lab/spf-checker', label: 'SPF checker, one of the required records' },
+    { href: '/lab/dkim-checker', label: 'DKIM checker, the other one' },
+    { href: '/lab/reverse-dns', label: 'Reverse DNS, required of every sender' },
+  ]}
+>
+  <Readiness slot="tool" client:load />
+
+  <h2>Symptoms</h2>
+  <p>
+    Mail that used to deliver starts bouncing with a permanent error, usually all at once and usually
+    to one provider. Bulk campaigns are refused while individual replies still arrive. Nothing in
+    your setup changed. The requirements did.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    The large receivers agreed a shared baseline and now enforce it. It splits into two tiers.
+  </p>
+  <h3>Every sender</h3>
+  <ul>
+    <li>SPF or DKIM authentication</li>
+    <li>Valid forward and reverse DNS on sending IPs</li>
+    <li>TLS on transmission</li>
+    <li>Correctly formatted messages</li>
+  </ul>
+  <h3>Bulk senders, roughly 5,000 a day and up</h3>
+  <ul>
+    <li>SPF <em>and</em> DKIM</li>
+    <li>A published DMARC policy, at minimum <code>p=none</code></li>
+    <li>The From domain aligned with SPF or DKIM</li>
+    <li>One-click unsubscribe in marketing mail</li>
+    <li>Spam complaints below 0.3%</li>
+  </ul>
+  <p>
+    Four of those cannot be determined from DNS by anyone. We mark them as unverifiable and point you
+    at who can actually tell you, rather than counting them as passes to make the score look better.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li><strong>Publish and validate SPF and DKIM</strong> for every service that sends on your behalf.</li>
+    <li><strong>Publish DMARC</strong>, read the reports, and fix whatever fails alignment.</li>
+    <li><strong>Fix reverse DNS</strong> on any machine you run yourself.</li>
+    <li><strong>Confirm the three invisible ones</strong> with your sending platform and Postmaster Tools.</li>
+  </ol>
+</ToolPage>

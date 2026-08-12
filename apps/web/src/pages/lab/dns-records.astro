@@ -1,0 +1,53 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import DnsLookup from '../../islands/DnsLookup';
+
+const faqs = [
+  { q: 'Why do two lookup tools show different results?', a: 'Usually propagation: a record changed recently and resolvers still hold the old answer until its TTL expires. This tool reads through two independent public resolvers and tells you when they disagree rather than picking one.' },
+  { q: 'What is TTL?', a: 'How long a resolver may cache the answer, in seconds. It is also how long your change takes to reach everyone after you make it, lower the TTL a day before a migration, not during one.' },
+  { q: 'Why is my TXT record split into pieces?', a: 'A DNS text string tops out at 255 bytes, so longer records are published as several quoted strings and joined back together by whoever reads them. That is normal; what is not normal is a DNS panel joining them with a space.' },
+  { q: 'Which records matter for email?', a: 'MX for receiving, TXT for SPF, DMARC and DKIM, and A records for the hosts your MX names. This tool shows the raw values; the full checkup tells you whether they are correct.' },
+];
+---
+
+<ToolPage
+  title="DNS Record Lookup: free DNS checker for any domain | The MailDoc"
+  description="Free DNS lookup: A, AAAA, MX, TXT, NS, SOA, CAA, DNSKEY and DS records read live through two independent resolvers, with TTLs."
+  eyebrow="DNS Records"
+  heading="DNS record lookup"
+  intro="Every record on one page, read live through two independent resolvers so a stale cache cannot quietly give you the wrong answer."
+  spec="RFC 1035, read over DNS-over-HTTPS"
+  faqs={faqs}
+  related={[
+    { href: '/lab/mx-lookup', label: 'MX lookup, with delivery checks' },
+    { href: '/lab/spf-checker', label: 'SPF checker, is that TXT record valid?' },
+    { href: '/', label: 'Full checkup, every record judged at once' },
+  ]}
+>
+  <DnsLookup slot="tool" client:load />
+
+  <h2>Symptoms</h2>
+  <p>
+    You changed a record and cannot tell whether it took. Your provider's panel shows one thing and a
+    colleague sees another. Mail is behaving as though a record you deleted is still there, which,
+    for as long as its TTL has left to run, it is.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    DNS is a cache with a publishing system attached. What you edit is the authoritative copy; what
+    the world acts on is whatever resolvers have stored, until the TTL expires. Any disagreement
+    between two resolvers means a change is still spreading.
+  </p>
+  <p>
+    This tool asks two independent public resolvers and shows what each record actually contains,
+    including the TTL, so you can tell "not published" from "not propagated yet".
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li><strong>Before a migration</strong>, lower the TTL on the records you plan to change and wait for the old TTL to pass.</li>
+    <li><strong>After a change</strong>, wait out the TTL before concluding anything is broken.</li>
+    <li><strong>If the records look right but mail is wrong</strong>, the problem is the content, not the publishing. Run the full checkup.</li>
+  </ol>
+</ToolPage>

@@ -1,0 +1,107 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'Does p=none protect my domain?',
+    a: 'No. p=none tells receivers to report what fails and deliver it anyway. It is the correct place to start, because it shows you who sends your mail before you block anything, but a domain left at p=none is exactly as spoofable as a domain with no DMARC at all.',
+  },
+  {
+    q: 'What does t=y do to my DMARC policy?',
+    a: 'It overrides it. With t=y, receivers apply p=none no matter what your policy says. A record reading p=reject; t=y protects nothing, and it is the single most common reason a domain owner is certain they are protected when they are not.',
+  },
+  {
+    q: 'Why do my DMARC reports never arrive?',
+    a: 'Usually because the reporting address is at a different domain and that domain has not authorised you. The destination must publish a record at yourdomain._report._dmarc.theirdomain, without it, receivers silently drop every report.',
+  },
+  {
+    q: 'Do I still need the pct tag?',
+    a: 'No. pct, rf and ri were removed in the current DMARC standard. Receivers ignore them, so a staged rollout built on pct is not happening. Use the t tag instead.',
+  },
+  {
+    q: 'What is the difference between p and sp?',
+    a: 'p applies to the domain itself, sp to its subdomains. If sp is weaker than p, attackers simply spoof a subdomain instead, invoices.yourdomain.com looks just as convincing in an inbox.',
+  },
+];
+---
+
+<LabTest
+  record="DMARC"
+  label="DMARC policy"
+  action="Check my DMARC"
+  title="DMARC Checker: free DMARC record lookup and policy test | The MailDoc"
+  description="Free DMARC checker: policy discovery by DNS tree walk, sp/np inheritance, test mode, alignment and external report authorisation, with the fix for each."
+  eyebrow="DMARC Test"
+  heading="DMARC record check"
+  intro="Finds the policy receivers actually apply to your domain, including one inherited from a parent, and one silently disabled by test mode."
+  spec="RFC 9989, with reporting rules from RFC 9990 and RFC 9991"
+  faqs={faqs}
+  related={[
+    { href: '/lab/spf-checker', label: 'SPF checker, chain walk and lookup count' },
+    { href: '/lab/dkim-checker', label: 'DKIM checker, key discovery and strength' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    DMARC problems rarely announce themselves. The record exists, the syntax looks right, and
+    somebody at some point declared the project finished. Then a supplier is invoiced by someone
+    impersonating you, or you discover that the policy you set two years ago has never once been
+    enforced.
+  </p>
+  <p>What we find most often:</p>
+  <ul>
+    <li>A policy of <code>p=none</code> that was always meant to be temporary.</li>
+    <li><code>t=y</code> left in place after a rollout, quietly overriding <code>p=reject</code>.</li>
+    <li>No <code>rua</code>, so nobody has ever seen a report and nobody dares tighten the policy.</li>
+    <li>A subdomain policy weaker than the domain's, which is where the spoofing then happens.</li>
+    <li>Reports sent to an agency's address that never authorised the domain, so none arrive.</li>
+  </ul>
+
+  <h2>Diagnosis</h2>
+  <p>
+    DMARC ties SPF and DKIM to the address your recipient actually sees, and tells receivers what to
+    do when neither matches. Three things decide whether it works.
+  </p>
+  <h3>Which record applies</h3>
+  <p>
+    Receivers look for <code>_dmarc</code> at your domain, and if there is nothing there they walk up
+    the DNS tree, stripping a label at a time, up to eight queries, until they find one. A record
+    found on a parent still applies to you, through its <code>sp</code> value rather than its
+    <code>p</code>. This test performs that walk and reports which record governs your mail.
+  </p>
+  <h3>What enforcement really is</h3>
+  <p>
+    <code>p=reject</code> refuses forged mail. <code>p=quarantine</code> sends it to spam, where a
+    determined recipient still finds it. <code>p=none</code> does nothing but report. And
+    <code>t=y</code> replaces whatever you set with <code>none</code>, which is why we report the
+    effective policy rather than the published one.
+  </p>
+  <h3>Reporting you can act on</h3>
+  <p>
+    Aggregate reports are the only way to see who sends mail as you before you start blocking. If the
+    address belongs to another domain, that domain must publish an authorisation record. Otherwise
+    receivers drop the reports and you are enforcing blind.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>Start honestly.</strong> Publish
+      <code>v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com</code> and read the reports for two to
+      four weeks.
+    </li>
+    <li>
+      <strong>Fix what the reports show.</strong> Every legitimate sender should pass SPF or DKIM
+      with alignment. This is the work; the rest is configuration.
+    </li>
+    <li>
+      <strong>Move to quarantine, then reject.</strong> Change <code>p</code>, watch the reports for
+      a week at each step, and set <code>sp</code> to match so subdomains are not the soft target.
+    </li>
+    <li>
+      <strong>Close the gaps.</strong> Add <code>np=reject</code> for subdomains that do not exist,
+      and remove <code>t=y</code> and any <code>pct</code> left over from the rollout.
+    </li>
+  </ol>
+</LabTest>

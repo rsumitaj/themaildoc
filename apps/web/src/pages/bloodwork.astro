@@ -1,0 +1,125 @@
+---
+import ToolPage from '../layouts/ToolPage.astro';
+import Bloodwork from '../islands/Bloodwork';
+
+const faqs = [
+  {
+    q: 'Are my reports uploaded anywhere?',
+    a: 'No. The file is decompressed, parsed and analysed by JavaScript running in your own browser, and this page makes no request to our servers after it loads. You can watch that in your network tab, or disconnect from the internet after the page loads and analyse a report anyway, it still works.',
+  },
+  {
+    q: 'What files does it take?',
+    a: 'The attachment exactly as it arrived: .xml, .xml.gz or .zip. Drop in as many as you like and they merge into one picture, which is the only way to see a sender that only mails once a month. The format is decided by the file’s own bytes, not its extension, because receivers have been known to send gzip named .zip.',
+  },
+  {
+    q: 'Why is your pass rate lower than the one my provider shows?',
+    a: 'Because we recompute alignment from the authentication results in the report rather than trusting the summary. A receiver often records a pass for a forwarded message on the strength of the forwarder’s own SPF, which is not aligned with your domain and does not authenticate you. Where the two numbers differ we show both and tell you which messages caused it.',
+  },
+  {
+    q: 'What does "not authenticated" actually mean?',
+    a: 'That a message carried your domain in the From address and had no aligned identifier of yours behind it, no signature you published, no envelope from your domain. Somebody else sent it. Whether it reached anyone depends on your policy, which is why the verdict and the disposition are shown separately.',
+  },
+  {
+    q: 'A source is marked "forwarded", is that bad?',
+    a: 'Usually not. It is mail a recipient auto-forwarded or a mailing list relayed, which changes the envelope and often breaks the signature. It is the most common reason a healthy domain sees failures. The pattern is not conclusive though: an attacker who copies a DKIM-Signature header looks similar, so check the volume against senders you recognise.',
+  },
+  {
+    q: 'Do I need reports before I can enforce DMARC?',
+    a: 'You need enough of them. A week or two shows the senders that mail daily; a month catches invoicing, payroll and campaigns. We refuse to recommend enforcement off a single day of data, because the sender you have not seen yet is the one that breaks.',
+  },
+  {
+    q: 'How do I get these reports in the first place?',
+    a: 'Publish a DMARC record with a rua address, rua=mailto:dmarc@yourdomain.com, and every large receiver starts sending you one a day, free. Use our DMARC generator to build the record if you do not have one.',
+  },
+];
+---
+
+<ToolPage
+  title="DMARC Report Analyzer: read your aggregate reports free | The MailDoc"
+  description="Drop your DMARC aggregate reports in and see who is sending as your domain, what passes alignment and what does not. Parsed entirely in your browser, your reports are never uploaded. Free, no signup."
+  eyebrow="Bloodwork"
+  heading="Read your DMARC reports without a spreadsheet."
+  intro="Aggregate reports arrive as compressed XML nobody wants to open. Drop them here and get the picture you actually need: every source sending as you, ranked, classified and explained, in your browser, where your data belongs."
+  spec="RFC 9990 for the report format and RFC 9989 §4.4 for alignment"
+  faqs={faqs}
+  related={[
+    { href: '/lab/dmarc-checker', label: 'DMARC checker, the record these reports come from' },
+    { href: '/lab/dmarc-generator', label: 'DMARC generator, build a record with a rua address' },
+    { href: '/lab/spoofability', label: 'Spoofability, can someone send as you right now?' },
+  ]}
+>
+  <Bloodwork slot="tool" client:load />
+
+  <h2>Symptoms</h2>
+  <p>
+    A file called <code>google.com!yourdomain.com!1706745600!1706832000.xml.gz</code> arrives every
+    morning and goes straight into a folder you never open. You published DMARC because someone told
+    you to, you are still on <code>p=none</code> months later, and you have no idea whether turning
+    enforcement on would stop an attacker or stop your invoices.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    An aggregate report is a receiver telling you, once a day, what it did with mail carrying your
+    domain in the From address. Every row is one sending address: how many messages, what SPF and
+    DKIM said, and what the receiver did about it. It is the only view you will ever get of mail sent
+    <em>as</em> you rather than <em>by</em> you.
+  </p>
+  <p>
+    The trap is that a report contains two different verdicts and most tools only show one. The
+    <code>policy_evaluated</code> block is the receiver's own summary, already alignment-aware; the
+    <code>auth_results</code> block is the evidence behind it. They disagree more often than you
+    would expect, usually on forwarded mail, where a receiver credits a pass to the forwarder's SPF
+    rather than to you. We compute alignment ourselves from the evidence and show you both numbers.
+  </p>
+  <h3>What each verdict means</h3>
+  <ul>
+    <li>
+      <strong>Authorised</strong>, passed with an identifier that is provably yours. Your mail,
+      arriving correctly.
+    </li>
+    <li>
+      <strong>Forwarded</strong>, relayed by a list or an auto-forward that changed the message on
+      the way. Normal, and not an attack.
+    </li>
+    <li>
+      <strong>Yours, broken</strong>, claims your domain and fails anyway. A wrong selector, an
+      unpublished key, a server missing from SPF. This is the mail you lose the day you enforce.
+    </li>
+    <li>
+      <strong>Not authenticated</strong>. nothing in it belongs to you. Somebody else is putting
+      your domain in the From line.
+    </li>
+  </ul>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>Collect a fortnight.</strong> Drop every report in at once. One day of data hides the
+      senders that only mail monthly, and those are the ones that break.
+    </li>
+    <li>
+      <strong>Fix "yours, broken" first.</strong> Every source in that group is a service of yours
+      with a treatable fault. Nothing else should change until that column is empty.
+    </li>
+    <li>
+      <strong>Sign everything with DKIM.</strong> SPF does not survive forwarding; a signature does.
+      Any source passing on SPF alone will start failing the moment a recipient forwards it.
+    </li>
+    <li>
+      <strong>Then tighten the policy.</strong> <code>p=quarantine</code> with <code>pct=25</code>,
+      a week of reports, then <code>pct=100</code>, then <code>p=reject</code>. One change at a
+      time, so any surprise is easy to attribute.
+    </li>
+  </ol>
+
+  <h2>Your reports never leave this tab</h2>
+  <p>
+    Aggregate reports name the people who mail you and the systems you run. Every other free
+    analyzer asks you to upload them to a server you cannot see, which is how a privacy promise
+    quietly becomes a database. Bloodwork parses the file in your browser: decompression, XML
+    parsing, alignment and classification all run here, and the page makes no request after it
+    loads. The XML reader refuses entity declarations outright, which is the standard way a hostile
+    report file carries an attack (RFC 9990 §8.1).
+  </p>
+</ToolPage>

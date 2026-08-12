@@ -1,0 +1,102 @@
+import type { Severity, TriageLevel, VitalsBand } from '@maildoc/shared';
+
+/**
+ * ONE severity → score mapping, used by every record (context/03).
+ * Vitals start at 100 and every condition deducts its severity's weight.
+ */
+export const SEVERITY_DEDUCTION: Record<Severity, number> = {
+  CRITICAL: 40,
+  HIGH: 25,
+  MEDIUM: 15,
+  LOW: 8,
+  INFO: 2,
+};
+
+/** Severity → triage level (the patient-facing scale). */
+export const SEVERITY_TRIAGE: Record<Severity, TriageLevel> = {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'URGENT',
+  MEDIUM: 'ATTENTION',
+  LOW: 'MINOR',
+  INFO: 'HEALTHY',
+};
+
+/** Sentence-case triage label (prose, drawers, tooltips). */
+export const TRIAGE_LABEL: Record<TriageLevel, string> = {
+  CRITICAL: 'Critical',
+  URGENT: 'Urgent',
+  ATTENTION: 'Needs attention',
+  MINOR: 'Minor',
+  HEALTHY: 'Healthy',
+};
+
+/**
+ * Mono chip label on a condition card.
+ * INFO-severity conditions are advisories, so their chip reads NOTE — the word
+ * HEALTHY is reserved for a record (or domain) with nothing wrong.
+ */
+export const TRIAGE_CHIP: Record<TriageLevel, string> = {
+  CRITICAL: 'CODE RED',
+  URGENT: 'URGENT',
+  ATTENTION: 'ATTENTION',
+  MINOR: 'MINOR',
+  HEALTHY: 'NOTE',
+};
+
+/** Triage colors — meaning only, always paired with an icon + label (WCAG AA). */
+export const TRIAGE_COLOR: Record<TriageLevel, string> = {
+  CRITICAL: '#E5322D',
+  URGENT: '#F5811F',
+  ATTENTION: '#F5B60D',
+  MINOR: '#2E7CF6',
+  HEALTHY: '#1FB56A',
+};
+
+/** Most severe first — the order conditions are triaged in the chart. */
+export const SEVERITY_ORDER: readonly Severity[] = [
+  'CRITICAL',
+  'HIGH',
+  'MEDIUM',
+  'LOW',
+  'INFO',
+] as const;
+
+export function severityRank(severity: Severity): number {
+  return SEVERITY_ORDER.indexOf(severity);
+}
+
+export function deductionFor(severity: Severity): number {
+  return SEVERITY_DEDUCTION[severity];
+}
+
+export function triageFor(severity: Severity): TriageLevel {
+  return SEVERITY_TRIAGE[severity];
+}
+
+/** Vitals verdict copy by band (context/06). */
+export const VITALS_VERDICT: Record<VitalsBand, { headline: string; note: string }> = {
+  CRITICAL: {
+    headline: 'CRITICAL CONDITION',
+    note: 'Your domain is exposed right now. Let’s treat this.',
+  },
+  AT_RISK: {
+    headline: 'AT RISK',
+    note: 'Serious conditions found. Your deliverability and security are exposed.',
+  },
+  NEEDS_CARE: {
+    headline: 'NEEDS CARE',
+    note: 'Some real gaps are hurting you. All treatable, see below.',
+  },
+  HEALTHY: {
+    headline: 'HEALTHY',
+    note: 'Clean bill of health, a few minor tune-ups at most.',
+  },
+};
+
+/** 0–39 critical · 40–64 at risk · 65–84 needs care · 85–100 healthy. */
+export function vitalsBand(score: number): VitalsBand {
+  if (score >= 85) return 'HEALTHY';
+  if (score >= 65) return 'NEEDS_CARE';
+  if (score >= 40) return 'AT_RISK';
+  return 'CRITICAL';
+}

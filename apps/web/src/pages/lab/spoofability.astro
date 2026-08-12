@@ -1,0 +1,65 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Spoofability from '../../islands/Spoofability';
+
+const faqs = [
+  { q: 'Can someone really send email as my domain?', a: 'Unless you publish an enforcing DMARC policy, yes, trivially, and without touching your systems. The From address a recipient sees is just text in the message; nothing verifies it by default.' },
+  { q: 'I have SPF. Am I protected?', a: 'No. SPF authenticates the envelope sender, which recipients never see. A forger can pass SPF for their own domain while putting yours in the From header. DMARC is what ties the two together.' },
+  { q: 'My DMARC says p=reject. Why does this still say I am spoofable?', a: 'Check for t=y in the record. Test mode tells receivers to apply p=none regardless of your policy, and it is the most common reason a domain that looks protected is not. This test reports the policy receivers actually apply.' },
+  { q: 'What about my subdomains?', a: 'They follow sp, not p. A domain at p=reject with sp=none is still spoofable through invoices.yourdomain.com, and that reads just as convincingly in an inbox.' },
+];
+---
+
+<ToolPage
+  title="Domain Spoofing Test: can someone send email as you? | The MailDoc"
+  description="Find out whether somebody can send email as your domain right now. One verdict from your live DMARC and SPF records, with the reasoning behind it."
+  eyebrow="Spoofability"
+  heading="Can somebody send email as you?"
+  intro="One question, answered from your live DNS. The verdict follows the policy receivers actually apply, not the one your record claims."
+  spec="RFC 9989 for policy, RFC 7208 for SPF"
+  faqs={faqs}
+  related={[
+    { href: '/lab/dmarc-checker', label: 'DMARC checker, the record this depends on' },
+    { href: '/lab/spf-checker', label: 'SPF checker, chain walk and lookup count' },
+    { href: '/lab/sender-readiness', label: 'Sender readiness, the Google and Yahoo rules' },
+  ]}
+>
+  <Spoofability slot="tool" client:load />
+
+  <h2>Symptoms</h2>
+  <p>
+    A supplier pays an invoice they never received from you. A customer forwards a phishing message
+    with your logo on it and asks whether it is genuine. Your own staff receive urgent requests from
+    an executive who did not send them. In every case the mail is technically from you as far as the
+    recipient can tell, and nothing in your systems has been breached.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    Email has two sender addresses. The envelope sender, which SPF checks and nobody sees, and the
+    From header, which is what the recipient reads. Anyone can write anything in the second one.
+  </p>
+  <p>
+    DMARC is the only mechanism that connects them. It tells receivers to check that the From domain
+    matches an authenticated identity, and what to do when it does not. That instruction is your
+    policy, and there are exactly three answers:
+  </p>
+  <ul>
+    <li><code>p=none</code>, report it and deliver anyway. You are spoofable.</li>
+    <li><code>p=quarantine</code>, deliver to spam. Recipients can still find and open it.</li>
+    <li><code>p=reject</code>, refuse it. This is protection.</li>
+  </ul>
+  <p>
+    Two things override that answer, and both are easy to miss. <code>t=y</code> makes receivers
+    apply <code>p=none</code> whatever the policy says. And a policy inherited from a parent domain
+    governs you through its <code>sp</code> value, not its <code>p</code>.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li><strong>Publish DMARC at p=none with a reporting address</strong>, and read the reports for a few weeks. This changes nothing about delivery and shows you who sends as you.</li>
+    <li><strong>Fix the legitimate senders</strong> the reports reveal. Every one should pass SPF or DKIM with alignment.</li>
+    <li><strong>Move to quarantine, then reject</strong>, and set <code>sp</code> to match so subdomains are not the soft target.</li>
+    <li><strong>Remove t=y</strong> when the rollout is done. Leaving it is the same as never having started.</li>
+  </ol>
+</ToolPage>

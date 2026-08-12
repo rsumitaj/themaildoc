@@ -1,0 +1,40 @@
+---
+import ToolPage from '../../layouts/ToolPage.astro';
+import Generator from '../../islands/Generator';
+
+const faqs = [
+  { q: 'Does this change my DNS?', a: 'No. Nothing here touches your domain, and nothing you type is sent anywhere, the record is built in your browser. You copy it and publish it yourself, which is the only way a tool should ever work.' },
+  { q: 'Where do I paste the record?', a: 'Into your DNS provider, as a TXT record, using the host and value shown. Some panels want the host without your domain on the end, and some want it with, if one fails, try the other form.' },
+  { q: 'How long until it works?', a: 'As long as the TTL on the record, usually an hour or less for a new one. Check it with the full checkup afterwards rather than assuming.' },
+  { q: 'Should I publish this straight to production?', a: 'For reporting-only records, yes. For anything that changes how mail is treated, start with the least strict setting the form offers and tighten once you have seen the reports.' },
+];
+---
+
+<ToolPage
+  title="DMARC Record Generator: free DMARC record builder | The MailDoc"
+  description="Build a correct DMARC record and paste it into DNS. Policy, subdomain policy, reporting addresses and alignment, with the trade-offs stated plainly."
+  eyebrow="DMARC Generator"
+  heading="Build a DMARC record"
+  intro="Fill in the form, copy the record. Nothing is sent anywhere and nothing touches your DNS, this builds text for you to publish yourself."
+  spec="RFC 9989 §4.7"
+  faqs={faqs}
+  related={[
+    { href: '/lab', label: 'The Lab, every test and treatment' },
+    { href: '/', label: 'Full checkup, check what you published' },
+    { href: '/practice', label: 'Consult an expert before a risky change' },
+  ]}
+>
+  <Generator kind="dmarc" slot="tool" client:load />
+
+  <h2>Before you publish</h2>
+  <p>
+    A generator gives you correct syntax. It cannot know your senders, and syntax was never the hard
+    part. Every record here is easy to write and easy to get subtly wrong in a way that blocks real
+    mail rather than forged mail.
+  </p>
+  <p>
+    Publish the least strict version first, run the full checkup against your domain, and tighten
+    only once you can see what the change did. If mail is business-critical and you are unsure,
+    that is exactly the sort of thing worth a second opinion.
+  </p>
+</ToolPage>

@@ -1,0 +1,87 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'Does DNSSEC affect email deliverability?',
+    a: 'Not directly, no receiver scores your mail on it. What it protects is the DNS your email security depends on: without it, an attacker who can poison a resolver can replace your MX, SPF and DMARC records and redirect mail without ever touching your account.',
+  },
+  {
+    q: 'What does "signed but no DS record" mean?',
+    a: 'Your DNS host has signed the zone, but the matching DS record was never published at your registrar. The chain of trust is broken at the top, so validating resolvers treat the zone as unsigned. You have all of the cost and none of the protection.',
+  },
+  {
+    q: 'What happens if DNSSEC validation fails?',
+    a: 'The domain stops resolving for a large part of the internet. Google, Cloudflare and most large mail providers validate, and a bogus signature makes them refuse the answer entirely rather than fall back. It is one of the few DNS mistakes that takes a domain fully offline.',
+  },
+  {
+    q: 'Is DNSSEC risky to enable?',
+    a: 'The enabling is safe; the rotating is where people get hurt. Change the key at your DNS host without updating the DS at your registrar and the domain goes dark. Let your provider manage both ends if it offers to.',
+  },
+];
+---
+
+<LabTest
+  record="DNSSEC"
+  label="DNSSEC"
+  action="Check my DNSSEC"
+  title="DNSSEC Checker: free DNSSEC validation test | The MailDoc"
+  description="Free DNSSEC checker: is the zone signed, does the parent publish a DS record, and does validation actually succeed? Catches the half-finished setup."
+  eyebrow="DNSSEC Test"
+  heading="DNSSEC check"
+  intro="Tells you whether the zone is signed, whether the chain of trust reaches it, and whether a validating resolver actually accepts the answers."
+  spec="RFC 4033, RFC 4034 and RFC 4035"
+  faqs={faqs}
+  related={[
+    { href: '/lab/dmarc-checker', label: 'DMARC checker, the policy DNSSEC protects' },
+    { href: '/lab/mx-lookup', label: 'MX lookup, the routing DNSSEC protects' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    DNSSEC has exactly two states worth talking about, and neither produces a symptom you would
+    notice in an inbox. Either it is absent, which is the common case and a quiet risk, or it is
+    half configured, which is a risk that eventually becomes an outage.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    Every email security record you publish is only as trustworthy as the DNS that carries it. SPF,
+    DKIM and DMARC all assume a receiver reads the real record. DNSSEC signs your zone so a resolver
+    can prove it did.
+  </p>
+  <h3>The three outcomes</h3>
+  <ul>
+    <li>
+      <strong>Unsigned.</strong> No keys published. Nothing is broken, and nothing is verifiable
+      either.
+    </li>
+    <li>
+      <strong>Signed and validating.</strong> Keys published, the DS record at your registrar links
+      them to the chain, and a validating resolver confirms it. This is the goal.
+    </li>
+    <li>
+      <strong>Signed but not validating.</strong> Keys exist, the chain does not reach them. Usually
+      a missing DS record; sometimes a key rotated on one side only, which is the state that takes
+      the domain offline.
+    </li>
+  </ul>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>
+      <strong>To enable it:</strong> turn DNSSEC on at your DNS host, then publish the DS record it
+      gives you at your registrar. Both steps, or neither. The first alone achieves nothing.
+    </li>
+    <li>
+      <strong>If it is signed with no DS:</strong> copy the DS record from your DNS host into the
+      registrar's control panel. This is a one-time step that is very easy to forget.
+    </li>
+    <li>
+      <strong>If validation is failing:</strong> treat it as urgent. Check that the DS at your
+      registrar still matches the key at your DNS host, and if you cannot fix it quickly, disable
+      DNSSEC at the registrar to restore resolution while you sort it out.
+    </li>
+  </ol>
+</LabTest>

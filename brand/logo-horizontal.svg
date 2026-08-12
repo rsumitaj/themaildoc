@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" width="380" height="90" font-family="'Space Grotesk',Arial,sans-serif">
+  <g transform="translate(6,15)">
+    <rect x="8" y="16" width="60" height="42" rx="6" fill="none" stroke="#E5322D" stroke-width="6"/>
+    <path d="M8 20 L38 41 L68 20" fill="none" stroke="#E5322D" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M12 47 H30 L34 47 L39 34 L45 60 L49 47 H64" fill="none" stroke="#E5322D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="90" y="58" font-size="40" font-weight="700" fill="#14171A" letter-spacing="-1">The Mail<tspan fill="#E5322D">Doc</tspan></text>
+</svg>

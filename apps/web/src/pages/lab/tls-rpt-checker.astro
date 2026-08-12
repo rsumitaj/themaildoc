@@ -1,0 +1,54 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  { q: 'What does TLS-RPT actually report?', a: 'Daily summaries from receiving providers about TLS connections to your mail servers: how many succeeded, how many failed, and why. It is the only external view you get of encryption problems in transit.' },
+  { q: 'Do I need TLS-RPT if I have MTA-STS?', a: 'You need it more. MTA-STS in enforce mode makes senders refuse to deliver when TLS fails, TLS-RPT is how you find out that is happening, ideally before you turn enforcement on.' },
+  { q: 'Where should the reports go?', a: 'A mailbox someone reads, or a reporting service. They arrive as JSON attachments, so a shared alias that nobody opens is the same as not having them.' },
+  { q: 'Does TLS-RPT slow anything down or leak information?', a: 'No. It adds one DNS record and asks receivers to send you a daily summary. It contains aggregate connection data about your own servers.' },
+];
+---
+
+<LabTest
+  record="TLSRPT"
+  label="TLS reporting"
+  action="Check my TLS-RPT"
+  title="TLS-RPT Checker: free SMTP TLS reporting record test | The MailDoc"
+  description="Free TLS-RPT check: is the _smtp._tls record published, is the version string right, and can the reporting destination actually receive reports?"
+  eyebrow="TLS-RPT Test"
+  heading="TLS-RPT record check"
+  intro="Checks whether TLS failures reaching your mail servers are reported to anyone, the feedback you need before enforcing MTA-STS."
+  spec="RFC 8460 §3"
+  faqs={faqs}
+  related={[
+    { href: '/lab/mta-sts-checker', label: 'MTA-STS checker, the policy this reports on' },
+    { href: '/lab/mx-lookup', label: 'MX lookup, the servers being connected to' },
+    { href: '/', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    Silence. Mail that fails on TLS is retried and eventually returned to the sender, and the sender
+    is the one who sees it. You find out when a customer mentions that their reply bounced. Without
+    TLS-RPT there is no channel through which that reaches you.
+  </p>
+
+  <h2>Diagnosis</h2>
+  <p>
+    TLS-RPT is a single TXT record at <code>_smtp._tls.yourdomain.com</code> containing a version and
+    a destination. Receiving providers batch up what happened when they connected to your servers and
+    send you a daily summary.
+  </p>
+  <p>
+    The version string is <code>v=TLSRPTv1</code> and it is case-sensitive. The destination is either
+    a <code>mailto:</code> address or an <code>https:</code> endpoint. Anything else is discarded, and
+    because nothing depends on this record working, nothing tells you.
+  </p>
+
+  <h2>Cure</h2>
+  <ol>
+    <li>Publish <code>v=TLSRPTv1; rua=mailto:tlsrpt@yourdomain.com</code> at <code>_smtp._tls</code>.</li>
+    <li>Point it at a mailbox someone actually reads, or a service that parses the JSON for you.</li>
+    <li>Watch it for two weeks before moving MTA-STS from testing to enforce.</li>
+  </ol>
+</LabTest>

@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Page not found | The MailDoc"
+  description="That page isn't in our records. Run a free email health checkup instead."
+>
+  <section class="empty">
+    <div class="md-wrap">
+      <p class="md-eyebrow">Error 404</p>
+      <h1>That page isn't in our records.</h1>
+      <p class="lead">
+        Either it moved, or it never existed. Nothing is wrong with your domain, but since you're
+        here, you may as well find out.
+      </p>
+      <a class="md-btn" href="/">Run a free checkup &rarr;</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .empty {
+    padding-block: var(--md-space-16);
+  }
+
+  h1 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+    letter-spacing: var(--md-tracking-tight);
+  }
+
+  .lead {
+    color: var(--md-muted);
+    max-width: 52ch;
+    margin: var(--md-space-4) 0 var(--md-space-6);
+    font-size: var(--md-text-md);
+    line-height: 1.6;
+  }
+</style>
