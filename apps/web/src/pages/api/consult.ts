@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 // runtime module. This route is `prerender = false`, so it only ever loads
 // inside workerd where that module exists.
 import { env } from 'cloudflare:workers';
-import { jsonResponse, rateLimit } from '../../lib/api';
+import { jsonResponse, rateLimit, sameOrigin } from '../../lib/api';
 import { validateLead, type Lead } from '../../lib/leads';
 
 /**
@@ -43,6 +43,12 @@ export const POST: APIRoute = async ({ request }) => {
     return error('RATE_LIMITED', 'That is a lot of requests. Give it a moment.', 429, {
       'retry-after': String(limit.retryAfter),
     });
+  }
+
+  // This is the one endpoint that writes, so it is the one that another site
+  // could use a visitor's browser to submit on their behalf.
+  if (!sameOrigin(request)) {
+    return error('INVALID', 'We couldn’t read that submission.', 400);
   }
 
   const declared = Number.parseInt(request.headers.get('content-length') ?? '0', 10);

@@ -27,6 +27,7 @@
 /bloodwork
   Cache-Control: private, no-store
 
-/api/*
-  X-Robots-Tag: noindex
-  Cross-Origin-Resource-Policy: same-origin
+# Nothing for /api/* here on purpose. This file decorates static asset
+# responses, and every API route is built by the Worker instead, so a rule
+# written here would look right and do nothing. Those headers are set in
+# `src/lib/api.ts`, which is the code that actually builds the response.

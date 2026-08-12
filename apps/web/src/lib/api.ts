@@ -11,12 +11,20 @@ export type ApiErrorCode =
   | 'CHECK_FAILED'
   | 'METHOD_NOT_ALLOWED';
 
+/**
+ * Set here rather than in `public/_headers`, because that file only decorates
+ * static asset responses. Every `/api/*` route is `prerender = false`, so its
+ * response is built by the Worker and never passes through the asset handler.
+ * Anything these endpoints need on the way out has to be attached in code.
+ */
 const SECURITY_HEADERS: Record<string, string> = {
   'content-type': 'application/json; charset=utf-8',
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
   // The API is same-origin only; nothing here is meant to be embedded.
   'x-frame-options': 'DENY',
+  // A JSON diagnosis of somebody's domain is not a search result.
+  'x-robots-tag': 'noindex, nofollow',
 };
 
 export function jsonResponse(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
@@ -33,6 +41,36 @@ export function apiError(
   extra: Record<string, string> = {},
 ): Response {
   return jsonResponse({ ok: false, error: { code, message } }, status, extra);
+}
+
+/**
+ * Is this write coming from our own pages, or from somebody else's?
+ *
+ * The read endpoints do not need this: they change nothing, and no CORS header
+ * is sent, so another site can cause a lookup but never see the answer. The
+ * consultation form is different, because it writes a row.
+ *
+ * Two checks, because either alone has a gap:
+ *
+ *   - `Origin` must match ours when the browser sends it, which it does on
+ *     every cross-origin POST.
+ *   - The content type must be JSON. An HTML form on another site can post to
+ *     us without any preflight, but only as form-encoded or plain text. It
+ *     cannot set `application/json`, so requiring it rules the whole trick out
+ *     even where `Origin` is stripped by a privacy tool along the way.
+ */
+export function sameOrigin(request: Request): boolean {
+  const type = request.headers.get('content-type') ?? '';
+  if (!type.toLowerCase().startsWith('application/json')) return false;
+
+  const origin = request.headers.get('origin');
+  if (origin === null) return true;
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
 }
 
 /**

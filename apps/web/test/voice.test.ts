@@ -161,4 +161,19 @@ describe('voice', () => {
     );
     expect(found.length, `\n${report(found)}`).toBe(0);
   });
+
+  it('avoids the vocabulary that reads as generated', () => {
+    // None of these are wrong words. They are just the ones that turn up far
+    // more often in generated marketing copy than in anything a person wrote
+    // about their own work, and a reader clocks them before they clock why.
+    const found = scan(
+      /\b(delve|tapestry|testament to|realm of|landscape of|navigate the|elevate your|empower(s|ing)? (you|your|teams)|streamline(s|d)?|comprehensive suite|underscore(s|d)?|it'?s worth noting|furthermore|moreover)\b/i,
+    );
+    expect(found.length, `\n${report(found)}`).toBe(0);
+  });
+
+  it('does not stack three adjectives in a row, which nobody speaking does', () => {
+    const found = scan(/\b(fast|simple|easy|clear|honest|free|quick),\s+\w+,\s+and\s+\w+\b/i);
+    expect(found.length, `\n${report(found)}`).toBe(0);
+  });
 });

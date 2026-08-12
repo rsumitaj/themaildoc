@@ -22,7 +22,7 @@
 			"binding": "LEADS",
 			"database_name": "maildoc-leads",
 			"database_id": "9994252c-b742-4a48-bf89-b341821d87af",
-			"migrations_dir": "../../migrations"
+			"migrations_dir": "migrations"
 		}
 	]
 	// Phase 2, once created with `wrangler r2 bucket create maildoc-geo`:
