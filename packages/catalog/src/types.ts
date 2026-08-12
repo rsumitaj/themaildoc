@@ -38,6 +38,15 @@ export interface Issue {
   readonly rfc: string;
   /** Patient may dismiss it (advisories only). */
   readonly dismissible?: boolean;
+  /**
+   * Set when the entry reports a fact rather than a fault, so it costs nothing.
+   *
+   * A null MX is the example: publishing one is the correct, deliberate way to
+   * say a domain receives no mail, and the entry's own text ends "if that is
+   * deliberate, it is exactly right". Taking points off for it meant the score
+   * disagreed with the sentence beside it.
+   */
+  readonly scores?: false;
   /** `{placeholder}` names the detector must supply. */
   readonly vars?: readonly string[];
 }

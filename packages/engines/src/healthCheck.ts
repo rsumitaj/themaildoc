@@ -1,5 +1,6 @@
 import {
   dedupeConditions,
+  rollupRecord,
   sortConditions,
   vitals,
   type Condition,
@@ -132,19 +133,28 @@ export async function healthCheck(
     analyzePtr(name, resolver, { addresses: ownAddresses(spf, mx, address), maxAddresses: 2 }),
   ]);
 
+  // Read the posture from the raw analyses, then narrow every one of them, so
+  // the per-record cards, the chart and the score are all built from the same
+  // set of findings. Filtering only the merged list left a record card saying
+  // "critical, 4 conditions" above a chart that listed none of them.
+  const posture = readPosture(spf, mx);
+  const narrowed = {
+    spf: narrow(spf, posture),
+    dmarc: narrow(dmarc, posture),
+    mx: narrow(mx, posture),
+    address: narrow(address, posture),
+    dnssec: narrow(dnssec, posture),
+    mtasts: narrow(mtasts, posture),
+    tlsrpt: narrow(tlsrpt, posture),
+    bimi: narrow(bimi, posture),
+    caa: narrow(caa, posture),
+    ptr: narrow(ptr, posture),
+  };
+
   const conditions = sortConditions(
-    dedupeConditions([
-      ...dmarc.conditions,
-      ...spf.conditions,
-      ...mx.conditions,
-      ...address.conditions,
-      ...dnssec.conditions,
-      ...mtasts.conditions,
-      ...tlsrpt.conditions,
-      ...bimi.conditions,
-      ...caa.conditions,
-      ...ptr.conditions,
-    ]),
+    dedupeConditions(
+      Object.values(narrowed).flatMap((analysis) => analysis.conditions as Condition[]),
+    ),
   );
 
   const notes = new Set<ResolverNote>([
@@ -165,18 +175,9 @@ export async function healthCheck(
     checkedAt: new Date(started).toISOString(),
     vitals: vitals(conditions),
     spoofability: assessSpoofability(name, dmarc, spf),
-    records: summarize({ spf, dmarc, mx, address, dnssec, mtasts, tlsrpt, bimi, caa, ptr }),
+    records: summarize(narrowed),
     conditions,
-    spf,
-    dmarc,
-    mx,
-    address,
-    dnssec,
-    mtasts,
-    tlsrpt,
-    bimi,
-    caa,
-    ptr,
+    ...narrowed,
     meta: {
       queriesUsed: resolver.queriesIssued,
       budget,
@@ -185,6 +186,96 @@ export async function healthCheck(
       durationMs: Date.now() - started,
     },
   };
+}
+
+/**
+ * What the domain says it does with mail.
+ *
+ * This exists because example.com scored 4 out of 100 while being configured
+ * exactly right. It publishes `v=spf1 -all`, `p=reject; sp=reject` with strict
+ * alignment, and a null MX. That is the textbook lockdown for a domain nobody
+ * should ever send as or deliver to, and it was being told it was in critical
+ * condition.
+ *
+ * The cause is that most checks silently assume a domain is in the mail
+ * business. MTA-STS and TLS-RPT protect mail arriving at your servers, so they
+ * are meaningless without servers. BIMI puts a logo beside mail you send. A
+ * DMARC reporting address tells you who is sending as you, which matters far
+ * less when the answer is meant to be nobody.
+ *
+ * So we read the two statements the domain actually made and stop asking for
+ * things that do not apply. Parked domains are a large share of what gets
+ * tested, and they are the case where a wrong answer is most obvious.
+ */
+interface MailPosture {
+  /** The domain authorises at least one sender. */
+  sends: boolean;
+  /** The domain publishes somewhere for mail to be delivered. */
+  receives: boolean;
+}
+
+/** Mechanisms that authorise a sender. `all` is the default, not a permission. */
+const AUTHORISING = new Set(['ip4', 'ip6', 'a', 'mx', 'include', 'exists', 'ptr']);
+
+function readPosture(spf: SpfAnalysis, mx: MxAnalysis): MailPosture {
+  // RFC 7505: a null MX is an explicit "no mail is delivered here". A domain
+  // with no MX at all is a different situation, usually an accident, and is
+  // already reported as such, so it is not treated as a statement.
+  const receives = !mx.acceptsNoMail && mx.hosts.length > 0;
+
+  // Sending is shut off only by `-all` with nothing authorised before it. A
+  // `~all` still lets mail through at most receivers, and a redirect hands the
+  // decision to another record we have not judged here.
+  const authorises = spf.terms.some(
+    (term) =>
+      term.kind === 'mechanism' &&
+      AUTHORISING.has(term.name) &&
+      term.qualifier !== '-' &&
+      term.qualifier !== '?',
+  );
+  const sends = !(spf.found && spf.allQualifier === '-' && spf.redirect === null && !authorises);
+
+  return { sends, receives };
+}
+
+/** Findings that only mean something for a domain that receives mail. */
+const INBOUND_ONLY = new Set(['MTASTS_MISSING', 'TLSRPT_MISSING']);
+
+/** Findings that only mean something for a domain that sends mail. */
+const OUTBOUND_ONLY = new Set([
+  'BIMI_MISSING',
+  // Both of these say "you are enforcing without visibility". A domain that
+  // authorises no senders has no legitimate mail to be blind to, and refusing
+  // everything with no report address is the recommended parked configuration.
+  'DMARC_BLIND_REJECT',
+  'DMARC_RUA_MISSING',
+]);
+
+function applyPosture(conditions: Condition[], posture: MailPosture): Condition[] {
+  if (posture.sends && posture.receives) return conditions;
+
+  return conditions.filter((condition) => {
+    if (!posture.receives && INBOUND_ONLY.has(condition.code)) return false;
+    if (!posture.sends && OUTBOUND_ONLY.has(condition.code)) return false;
+    return true;
+  });
+}
+
+/**
+ * One analysis with the findings that do not apply removed, and its own status
+ * recomputed from what is left.
+ *
+ * Recomputing the status is the point. A record whose only findings were
+ * suppressed is not still in critical condition, and leaving the old status in
+ * place put a red dot on a DMARC card that had nothing left to report.
+ */
+function narrow<T extends { conditions: Condition[]; status: RecordStatus }>(
+  analysis: T,
+  posture: MailPosture,
+): T {
+  const kept = applyPosture(analysis.conditions, posture);
+  if (kept.length === analysis.conditions.length) return analysis;
+  return { ...analysis, conditions: kept, status: rollupRecord(kept) };
 }
 
 /**
@@ -246,8 +337,9 @@ function summarize({
       label: 'SPF authentication',
       status: spf.status,
       found: spf.found,
+      // `-` on its own is not a thing anyone can look up. Say `-all`.
       summary: spf.found
-        ? `${spf.lookupCount}${spf.lookupCountExact ? '' : '+'} of 10 lookups used, ending in ${spf.allQualifier ?? 'no all'}`
+        ? `${spf.lookupCount}${spf.lookupCountExact ? '' : '+'} of 10 lookups used, ending in ${spf.allQualifier === null ? 'no all mechanism' : `${spf.allQualifier}all`}`
         : 'No SPF record published',
       conditionCount: spf.conditions.length,
     },
@@ -317,7 +409,9 @@ function summarize({
         ? mtasts.policy?.mode
           ? `Policy in ${mtasts.policy.mode} mode`
           : 'Announced, but the policy could not be read'
-        : 'Not published, inbound TLS can be stripped',
+        : mx.acceptsNoMail
+          ? 'Not published, and not needed, this domain receives no mail'
+          : 'Not published, inbound TLS can be stripped',
       conditionCount: mtasts.conditions.length,
     },
     {
@@ -327,7 +421,9 @@ function summarize({
       found: tlsrpt.found,
       summary: tlsrpt.found
         ? `${tlsrpt.destinations.length} reporting destination${tlsrpt.destinations.length === 1 ? '' : 's'}`
-        : 'Not published, no visibility into TLS failures',
+        : mx.acceptsNoMail
+          ? 'Not published, and not needed, this domain receives no mail'
+          : 'Not published, no visibility into TLS failures',
       conditionCount: tlsrpt.conditions.length,
     },
     {

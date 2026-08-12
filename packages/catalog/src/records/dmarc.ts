@@ -331,6 +331,9 @@ export const DMARC_ISSUES: readonly Issue[] = [
     fix: 'Confirm every sender signs as {domain} exactly, or switch to adkim=r.',
     rfc: 'RFC 9989 §4.7.1',
     dismissible: true,
+    // A deliberate tightening, not a defect. The consequence is worth
+    // stating; taking points off for choosing the stricter setting is not.
+    scores: false,
     vars: ['domain'],
   },
   {
@@ -343,6 +346,9 @@ export const DMARC_ISSUES: readonly Issue[] = [
     fix: 'Confirm every sender uses {domain} exactly in the envelope sender, or switch to aspf=r.',
     rfc: 'RFC 9989 §4.7.2',
     dismissible: true,
+    // A deliberate tightening, not a defect. The consequence is worth
+    // stating; taking points off for choosing the stricter setting is not.
+    scores: false,
     vars: ['domain'],
   },
   {
@@ -544,7 +550,10 @@ export const DMARC_ISSUES: readonly Issue[] = [
     // owner is not blind. What they lose is the copy going to a third party.
     severity: 'MEDIUM',
     category: 'reporting',
-    title: 'One reporting destination is not authorised to receive your reports',
+    // The target belongs in the title: a domain with several third-party
+    // reporters gets one card per destination, and identical headings on all
+    // of them read as the same finding repeated rather than as separate ones.
+    title: '{target} is not authorised to receive your reports',
     why: 'Reports addressed to {target} are dropped, because {target} has not published the record that authorises it to receive reports about {domain}. You still get reports at your own address, so you are not blind, but whoever expected a copy at {target} is getting nothing and probably does not know.',
     fix: 'Ask {target} to publish a TXT record at {domain}._report._dmarc.{target} containing v=DMARC1. If that address belongs to a vendor you no longer use, remove it from your rua tag instead.',
     rfc: 'RFC 9990 §4',

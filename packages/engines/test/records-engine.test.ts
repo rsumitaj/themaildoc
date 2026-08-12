@@ -58,14 +58,16 @@ describe('MX', () => {
     expect(analysis.conditions.map((c) => c.code)).toContain('MX_TARGET_NO_ADDRESS');
   });
 
-  it('flags equal priorities and a lone exchanger', async () => {
+  it('leaves equal priorities alone and flags a lone exchanger', async () => {
+    // Two hosts at the same priority is load balancing, which is how nearly
+    // every mail provider publishes. It is not a fault and must not score.
     const { resolver } = resolverFor({
       'example.com': { MX: ['10 a.example.com.', '10 b.example.com.'] },
       'a.example.com': { A: ['203.0.113.1'] },
       'b.example.com': { A: ['203.0.113.2'] },
     });
     const analysis = await analyzeMx('example.com', resolver);
-    expect(analysis.conditions.map((c) => c.code)).toContain('MX_DUPLICATE_PRIORITY');
+    expect(analysis.conditions.map((c) => c.code)).toEqual([]);
 
     const { resolver: single } = resolverFor({
       'example.com': { MX: ['10 a.example.com.'] },
@@ -108,11 +110,21 @@ describe('A / AAAA', () => {
     expect(analysis.conditions.map((c) => c.code)).toEqual([]);
   });
 
-  it('notes a missing AAAA without treating it as a problem', async () => {
+  it('says nothing about a missing AAAA, which does not affect mail', async () => {
     const { resolver } = resolverFor({ 'example.com': { A: ['203.0.113.1'] } });
     const analysis = await analyzeAddresses('example.com', resolver);
 
-    expect(analysis.conditions.map((c) => c.code)).toEqual(['AAAA_MISSING']);
+    expect(analysis.conditions.map((c) => c.code)).toEqual([]);
+    expect(analysis.status).toBe('HEALTHY');
+    expect(analysis.ipv4).toEqual(['203.0.113.1']);
+  });
+
+  it('says nothing about a domain with no address record at all', async () => {
+    // A mail-only domain is a normal thing to own.
+    const { resolver } = resolverFor({ 'example.com': { MX: ['10 a.example.com.'] } });
+    const analysis = await analyzeAddresses('example.com', resolver);
+
+    expect(analysis.conditions.map((c) => c.code)).toEqual([]);
     expect(analysis.status).toBe('HEALTHY');
   });
 
@@ -124,13 +136,6 @@ describe('A / AAAA', () => {
     expect(analysis.conditions.map((c) => c.code)).toContain('A_PRIVATE_IP');
   });
 
-  it('says nothing alarming about a mail-only domain', async () => {
-    const { resolver } = resolverFor({ 'example.com': { MX: ['10 a.example.com.'] } });
-    const analysis = await analyzeAddresses('example.com', resolver);
-
-    expect(analysis.conditions.map((c) => c.code)).toEqual(['A_MISSING']);
-    expect(analysis.conditions[0]?.severity).toBe('INFO');
-  });
 });
 
 describe('DNSSEC', () => {

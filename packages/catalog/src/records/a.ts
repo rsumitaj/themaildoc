@@ -1,19 +1,13 @@
 import type { Issue } from '../types.js';
 
 /** A / AAAA conditions. RFC 1035, RFC 1918 / 5735 (address space). */
+/**
+ * There is deliberately no entry here for a missing A record or a missing AAAA
+ * record. Neither has any bearing on whether mail authenticates or arrives, so
+ * neither belongs in a score about email. What remains is the one address fact
+ * that is a genuine problem.
+ */
 export const A_ISSUES: readonly Issue[] = [
-  {
-    code: 'A_MISSING',
-    record: 'A',
-    severity: 'INFO',
-    category: 'existence',
-    title: 'Domain has no address record',
-    why: '{domain} has no A or AAAA record, so it resolves to nothing on the web. For a mail-only domain that is perfectly normal.',
-    fix: 'Nothing to do unless {domain} is meant to host a website, in which case add the A or AAAA record your host gave you.',
-    rfc: 'RFC 1035 §3.4.1',
-    dismissible: true,
-    vars: ['domain'],
-  },
   {
     code: 'A_PRIVATE_IP',
     record: 'A',
@@ -24,18 +18,6 @@ export const A_ISSUES: readonly Issue[] = [
     fix: 'Publish the public address instead, and keep internal names on internal DNS.',
     rfc: 'RFC 1918 §3',
     vars: ['domain', 'offending_term'],
-  },
-  {
-    code: 'AAAA_MISSING',
-    record: 'A',
-    severity: 'LOW',
-    category: 'existence',
-    title: 'No IPv6 address',
-    why: '{domain} is IPv4 only. Nothing breaks today, but a growing share of networks are IPv6-first, and some receivers treat dual-stack presence as a small positive signal.',
-    fix: 'Add an AAAA record when your host supports it. There is no downside to publishing both.',
-    rfc: 'RFC 3596 §2.1',
-    dismissible: true,
-    vars: ['domain'],
   },
 ];
 

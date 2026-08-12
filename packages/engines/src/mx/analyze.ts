@@ -84,11 +84,12 @@ export async function analyzeMx(
     return finish(ctx, name, true, true, [], resolver, startQueries);
   }
 
-  const priorities = new Map<number, number>();
-  for (const host of hosts) priorities.set(host.priority, (priorities.get(host.priority) ?? 0) + 1);
-  for (const [priority, count] of priorities) {
-    if (count > 1) emit(ctx, 'MX_DUPLICATE_PRIORITY', { offending_term: String(priority) });
-  }
+  // Deliberately no finding for mail exchangers sharing a priority.
+  //
+  // Equal priority is how load balancing is spelled in DNS, and it is what
+  // Google Workspace, Microsoft 365, Proofpoint and Mimecast all publish. It
+  // was being reported as a fault, once per shared priority level, on domains
+  // whose mail routing is entirely correct.
 
   const maxTargets = options.maxTargets ?? 5;
   const resolveTargets = options.resolveTargets ?? true;

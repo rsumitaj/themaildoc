@@ -55,12 +55,16 @@ export async function analyzeAddresses(
   const ipv4 = v4.records.map((record) => record.data);
   const ipv6 = v6.records.map((record) => record.data);
 
-  if (ipv4.length === 0 && ipv6.length === 0) {
-    emit(ctx, 'A_MISSING', { domain: name });
-  } else if (ipv6.length === 0) {
-    emit(ctx, 'AAAA_MISSING', { domain: name });
-  }
-
+  // Deliberately no finding for "no A record" or "no AAAA record".
+  //
+  // Neither affects mail. A mail-only domain with no website is a normal thing
+  // to own, and an IPv4-only apex sends and receives exactly as well as a
+  // dual-stack one. Scoring either of them down meant a correctly configured
+  // domain lost points for a fact about its website, which is not what this
+  // tool measures. The addresses are still reported as data below.
+  //
+  // A private address published in public DNS is a different matter: that is a
+  // real leak of internal addressing, and it stays.
   for (const address of ipv4) {
     if (isPrivateIpv4(address)) {
       emit(ctx, 'A_PRIVATE_IP', { domain: name, offending_term: address });

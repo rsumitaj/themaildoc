@@ -37,6 +37,21 @@ const naked: MockZone = {
 };
 
 /**
+ * A domain locked out of the mail business entirely: nothing may send as it,
+ * nothing may be delivered to it, and DMARC refuses anything that tries. This
+ * is the real configuration on example.com, and it is what the guidance for
+ * parked domains asks for.
+ */
+const parked: MockZone = {
+  'example.com': {
+    TXT: ['v=spf1 -all'],
+    MX: ['0 .'],
+    A: ['203.0.113.10'],
+  },
+  '_dmarc.example.com': { TXT: ['v=DMARC1;p=reject;sp=reject;adkim=s;aspf=s'] },
+};
+
+/**
  * DNS comes from the mock zone; the MTA-STS policy file comes from a stand-in
  * web server, because that check is the one HTTPS fetch in the product.
  */
@@ -108,6 +123,84 @@ describe('healthCheck — a domain with nothing', () => {
     const rank = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 } as const;
     const ranks = severities.map((s) => rank[s]);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  });
+});
+
+describe('healthCheck — a parked domain', () => {
+  it('does not ask a domain that sends no mail for outbound protection', async () => {
+    const { result } = await run(parked);
+    const codes = result.conditions.map((condition) => condition.code);
+
+    // Nothing may send as it, so there is no legitimate traffic to be blind to
+    // and no logo to show beside mail it does not send.
+    expect(codes).not.toContain('DMARC_BLIND_REJECT');
+    expect(codes).not.toContain('DMARC_RUA_MISSING');
+    expect(codes).not.toContain('BIMI_MISSING');
+  });
+
+  it('does not ask a domain that receives no mail to protect its servers', async () => {
+    const { result } = await run(parked);
+    const codes = result.conditions.map((condition) => condition.code);
+
+    // Both protect mail in transit to your mail servers. There are none.
+    expect(codes).not.toContain('MTASTS_MISSING');
+    expect(codes).not.toContain('TLSRPT_MISSING');
+  });
+
+  it('scores it as the healthy configuration it is', async () => {
+    // This is the regression that mattered: example.com, configured exactly
+    // the way the guidance says to configure a domain nobody should send as,
+    // was scored 4 out of 100 and called a critical condition.
+    const { result } = await run(parked);
+
+    expect(result.vitals.score).toBeGreaterThanOrEqual(85);
+    expect(result.vitals.band).toBe('HEALTHY');
+    expect(result.spoofability.verdict).toBe('PROTECTED');
+  });
+
+  it('agrees with itself: no card counts a finding the chart does not list', async () => {
+    // The cards were built before the suppression was applied, so DMARC showed
+    // a red dot reading "4 conditions" above a chart that listed none of them.
+    const { result } = await run(parked);
+    const charted = result.conditions.length;
+    const counted = result.records.reduce((total, record) => total + record.conditionCount, 0);
+
+    expect(counted).toBe(charted);
+    expect(result.records.every((record) => record.status !== 'CRITICAL')).toBe(true);
+  });
+
+  it('names the all mechanism in full, not as a bare qualifier', async () => {
+    const { result } = await run(parked);
+    const spf = result.records.find((record) => record.record === 'SPF');
+
+    expect(spf?.summary).toContain('-all');
+  });
+
+  it('still says out loud that the domain accepts no mail, at no cost', async () => {
+    const { result } = await run(parked);
+    const nullMx = result.conditions.find((condition) => condition.code === 'MX_NULL');
+
+    expect(nullMx).toBeDefined();
+    expect(nullMx?.deduction).toBe(0);
+  });
+
+  it('keeps asking a normal domain for all of it', async () => {
+    // The suppression must key off the domain's own statements rather than
+    // firing for everybody. A domain with real mail exchangers and real
+    // senders still owes MTA-STS, TLS-RPT and a reporting address.
+    const { result } = await run({
+      'example.com': {
+        TXT: ['v=spf1 ip4:198.51.100.0/24 -all'],
+        MX: ['10 mail1.example.com.'],
+      },
+      '_dmarc.example.com': { TXT: ['v=DMARC1; p=reject'] },
+      'mail1.example.com': { A: ['203.0.113.1'] },
+    });
+    const codes = result.conditions.map((condition) => condition.code);
+
+    expect(codes).toContain('MTASTS_MISSING');
+    expect(codes).toContain('TLSRPT_MISSING');
+    expect(codes).toContain('BIMI_MISSING');
   });
 });
 

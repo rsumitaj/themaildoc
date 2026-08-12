@@ -28,6 +28,7 @@ export const MX_ISSUES: readonly Issue[] = [
     fix: 'No action needed, unless this domain is supposed to receive mail, in which case replace the null MX with real mail exchangers.',
     rfc: 'RFC 7505 §3',
     dismissible: true,
+    scores: false,
     vars: ['domain'],
   },
   {
@@ -62,18 +63,6 @@ export const MX_ISSUES: readonly Issue[] = [
     fix: 'Point the MX at a hostname that has A or AAAA records directly, not at an alias.',
     rfc: 'RFC 5321 §5.1',
     vars: ['target'],
-  },
-  {
-    code: 'MX_DUPLICATE_PRIORITY',
-    record: 'MX',
-    severity: 'LOW',
-    category: 'policy',
-    title: 'Two mail exchangers share priority {offending_term}',
-    why: 'Several hosts are set to priority {offending_term}. Senders pick between them at random, which is fine for load sharing and surprising if you meant one to be a backup.',
-    fix: 'Give each host a distinct priority, 10, 20, 30, if you intended an order rather than a pool.',
-    rfc: 'RFC 5321 §5.1',
-    dismissible: true,
-    vars: ['offending_term'],
   },
   {
     code: 'MX_SINGLE_POINT_OF_FAILURE',

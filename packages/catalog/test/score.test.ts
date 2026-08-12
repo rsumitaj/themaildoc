@@ -113,13 +113,13 @@ describe('dedupeConditions', () => {
 
 describe('optional hardening is capped', () => {
   it('does not let optional records dominate the score', () => {
-    // MTA-STS, TLS-RPT, BIMI, CAA, DNSSEC and IPv6 gaps together removed 33
-    // points, which put a well-authenticated domain beside one with nothing.
+    // MTA-STS, TLS-RPT, BIMI, CAA and DNSSEC gaps together removed more than a
+    // quarter of the score, which put a well-authenticated domain beside one
+    // with nothing.
     const hardening = [
       createCondition('MTASTS_MISSING', { domain: 'a.com' }),
       createCondition('TLSRPT_MISSING', { domain: 'a.com' }),
       createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
-      createCondition('AAAA_MISSING', { domain: 'a.com' }),
       createCondition('BIMI_MISSING', { domain: 'a.com' }),
       createCondition('CAA_MISSING', { domain: 'a.com' }),
     ];
@@ -186,14 +186,14 @@ describe('scoreBreakdown', () => {
   it('reproduces the score it explains', () => {
     const conditions = [
       createCondition('DMARC_OBSOLETE_TAGS', { domain: 'a.com', offending_term: 'pct=100' }),
-      createCondition('MX_DUPLICATE_PRIORITY', { domain: 'a.com', count: 2 }),
+      createCondition('DMARC_P_QUARANTINE', { domain: 'a.com' }),
       createCondition('MTASTS_MISSING', { domain: 'a.com' }),
       createCondition('TLSRPT_MISSING', { domain: 'a.com' }),
     ];
 
     const sum = scoreBreakdown(conditions);
-    // Both DNS findings are LOW, so they fall under the minor cap rather than
-    // core. Nothing here threatens delivery or lets anyone impersonate.
+    // Both DMARC findings are LOW, so they fall under the minor cap rather
+    // than core. Nothing here threatens delivery or lets anyone impersonate.
     expect(sum.core).toBe(0);
     expect(sum.minor).toBe(16);
     expect(sum.minorCharged).toBe(16);
@@ -226,7 +226,7 @@ describe('scoreBreakdown', () => {
       createCondition('DMARC_STRING_TOO_LONG', { domain: 'a.com', count: 300 }),
       createCondition('DMARC_TOO_MANY_URIS', { count: 4 }),
       createCondition('SPF_SOFTFAIL_ADVISORY', { domain: 'a.com' }),
-      createCondition('DMARC_ADKIM_STRICT_ADV', { domain: 'a.com' }),
+      createCondition('DMARC_UPPERCASE_TAGS', { offending_term: 'P' }),
       createCondition('SPF_EXTRA_WHITESPACE', { domain: 'a.com' }),
     ];
 
@@ -243,7 +243,8 @@ describe('scoreBreakdown', () => {
       createCondition('DMARC_STRING_TOO_LONG', { domain: 'a.com', count: 300 }),
       createCondition('DMARC_TOO_MANY_URIS', { count: 4 }),
       createCondition('SPF_SOFTFAIL_ADVISORY', { domain: 'a.com' }),
-      createCondition('DMARC_ADKIM_STRICT_ADV', { domain: 'a.com' }),
+      createCondition('DMARC_UPPERCASE_TAGS', { offending_term: 'P' }),
+      createCondition('SPF_EXTRA_WHITESPACE', { domain: 'a.com' }),
     ];
 
     const sum = scoreBreakdown(mixed);

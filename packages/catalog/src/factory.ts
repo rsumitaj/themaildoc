@@ -33,7 +33,7 @@ export function conditionFactory(
       why: interpolate(issue.why, vars),
       fix: interpolate(issue.fix, vars),
       rfc: issue.rfc,
-      deduction: deductionFor(issue.severity),
+      deduction: issue.scores === false ? 0 : deductionFor(issue.severity),
       dismissible: issue.dismissible ?? false,
       vars,
       ...(options.evidence === undefined ? {} : { evidence: options.evidence }),

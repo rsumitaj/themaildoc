@@ -229,6 +229,32 @@ function judgeCertificate(ctx: Ctx, domain: string, url: string, report: CertRep
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Every property tag in IANA's "Certification Authority Restriction
+ * Properties" registry, not just the three RFC 8659 defines.
+ *
+ * The registry is the authority here, and it has grown well past that RFC.
+ * Treating anything outside `issue`, `issuewild` and `iodef` as a syntax error
+ * reported microsoft.com's perfectly valid `contactemail` record as a fault
+ * worth fifteen points.
+ *
+ *   issue, issuewild, iodef      RFC 8659 §4.2, §4.3, §4.4
+ *   contactemail, contactphone   CA/Browser Forum, used for domain validation
+ *   issuemail                    RFC 9495 §3, S/MIME certificates
+ *   issuevmc                     verified mark certificates, which is BIMI
+ *   accounturi, validationmethods  RFC 8657 §3, §4
+ */
+const KNOWN_CAA_PROPERTIES: ReadonlySet<string> = new Set([
+  'iodef',
+  'contactemail',
+  'contactphone',
+  'issuemail',
+  'issuewildmail',
+  'issuevmc',
+  'accounturi',
+  'validationmethods',
+]);
+
 /** CAA — RFC 8659 §4. */
 export async function analyzeCaa(domain: string, resolver: DohResolver): Promise<CaaAnalysis> {
   const startQueries = resolver.queriesIssued;
@@ -253,6 +279,8 @@ export async function analyzeCaa(domain: string, resolver: DohResolver): Promise
   let forbidsAll = false;
 
   for (const record of result.records) {
+    // Handled below; `issue` and `issuewild` carry the answer, the rest of the
+    // registry is legitimate and must not be called a syntax error.
     // DoH renders CAA rdata as: 0 issue "letsencrypt.org"
     const match = /^\s*(\d+)\s+([a-z0-9]+)\s+"?([^"]*)"?\s*$/i.exec(record.data);
     if (!match) continue;
@@ -265,7 +293,7 @@ export async function analyzeCaa(domain: string, resolver: DohResolver): Promise
       else if (value) issuers.push(value);
     } else if (property === 'issuewild') {
       if (value && value !== ';') wildcardIssuers.push(value);
-    } else if (property !== 'iodef') {
+    } else if (!KNOWN_CAA_PROPERTIES.has(property)) {
       emit(ctx, 'CAA_SYNTAX', { offending_term: property });
     }
   }

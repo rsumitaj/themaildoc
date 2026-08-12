@@ -26,7 +26,6 @@ export const HARDENING_RECORDS: ReadonlySet<string> = new Set([
   'BIMI',
   'CAA',
   'DNSSEC',
-  'A',
 ]);
 
 /** The most that optional hardening may remove between all of it. */

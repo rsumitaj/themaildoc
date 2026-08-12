@@ -280,9 +280,31 @@ describe('CAA', () => {
     expect(codesOf(analysis)).toEqual(['CAA_FORBIDS_ALL']);
   });
 
-  it('flags a property no CA acts on', async () => {
-    const { resolver } = resolverFor({ 'example.com': { CAA: ['0 issuemail "example.net"'] } });
+  it('flags a property that is in no registry', async () => {
+    const { resolver } = resolverFor({ 'example.com': { CAA: ['0 notaproperty "example.net"'] } });
     expect(codesOf(await analyzeCaa('example.com', resolver))).toContain('CAA_SYNTAX');
+  });
+
+  it('accepts every property tag IANA has registered', async () => {
+    // This test previously used `issuemail` as its example of an invalid
+    // property. It is RFC 9495, and the registry has grown well past the three
+    // tags RFC 8659 defines: microsoft.com's valid `contactemail` record was
+    // being reported as a fifteen-point fault.
+    for (const property of [
+      'iodef',
+      'contactemail',
+      'contactphone',
+      'issuemail',
+      'issuewildmail',
+      'issuevmc',
+      'accounturi',
+      'validationmethods',
+    ]) {
+      const { resolver } = resolverFor({
+        'example.com': { CAA: ['0 issue "letsencrypt.org"', `0 ${property} "whatever"`] },
+      });
+      expect(codesOf(await analyzeCaa('example.com', resolver)), property).toEqual([]);
+    }
   });
 
   it('ignores iodef, which is valid', async () => {

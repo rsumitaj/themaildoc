@@ -165,8 +165,12 @@ export async function fetchCertificate(url: string, doFetch: FetchLike): Promise
     certificates: blocks.length,
     notBefore: parsed.notBefore,
     notAfter: parsed.notAfter,
+    // Truncate rather than floor. Flooring a negative rounds away from zero,
+    // so a certificate 107.9 days expired was reported as 108 days expired.
+    // Truncating is right in both directions: it under-states the time left on
+    // a live certificate and states the time since expiry exactly.
     daysRemaining: parsed.notAfter
-      ? Math.floor((Date.parse(parsed.notAfter) - Date.now()) / 86_400_000)
+      ? Math.trunc((Date.parse(parsed.notAfter) - Date.now()) / 86_400_000)
       : null,
     issuer: parsed.issuer,
   };
