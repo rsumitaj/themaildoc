@@ -141,7 +141,14 @@ if (kind === 'article') {
     image: ogImage,
     ...(published ? { datePublished: published } : {}),
     dateModified: updated ?? published ?? undefined,
-    author: { '@type': 'Organization', name: 'The Practice', url: new URL('/practice', site).href },
+    // A named author with a page of their own is what Google reads as
+    // expertise. "The Practice" was a house byline pointing at nobody.
+    author: {
+      '@type': 'Person',
+      name: 'Sumit Raj',
+      url: new URL('/practice', site).href,
+      jobTitle: 'Email Deliverability Architect',
+    },
     publisher: { '@id': `${site.href}#organization` },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
   });

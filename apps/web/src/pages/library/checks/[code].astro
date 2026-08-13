@@ -28,7 +28,71 @@ const triage = triageFor(issue.severity);
 const tone = triage.toLowerCase();
 
 /** Placeholders are filled per domain by the tools; here they read as fields. */
-const readable = (text: string): string => text.replace(/\{([a-z0-9_]+)\}/gi, 'your $1').replace(/_/g, ' ');
+/**
+ * These pages describe a condition in the abstract, but the catalog wording is
+ * written for a specific finding and carries `{placeholders}` the checkup fills
+ * in from the domain it examined.
+ *
+ * Substituting "your <token>" produced sentences nobody can read: "Receivers
+ * recorded your types kinds of override on your count messages, most often
+ * 'your type'". Fifty-six of the hundred and sixty-six pages read like that,
+ * which is worse than not having them.
+ *
+ * Concrete example values fix it. `example.com` is a real hostname, so
+ * `_mta-sts.{domain}` becomes something you could paste rather than
+ * "_mta-sts.your domain", and `N` reads as a number in every sentence that
+ * wanted one. They render as mono slots so it is obvious the page describes a
+ * pattern rather than a specific domain.
+ */
+const SLOT: Record<string, string> = {
+  domain: 'example.com',
+  target: 'example.net',
+  source_domain: 'example.org',
+  selector: 'selector1',
+  record: 'TXT',
+  chain_path: 'a.example.com to b.example.com',
+  void_domains: 'example.net',
+  offending_term: 'the offending value',
+  policy: 'none',
+  p: 'none',
+  sp: 'none',
+  subdomain_policy: 'none',
+  np_policy: 'none',
+  computed: 'pass',
+  reported: 'fail',
+  type: 'local_policy',
+  types: 'N',
+  count: 'N',
+  days: 'N',
+  bits: 'N',
+  share: 'N',
+  rate: 'N',
+  sources: 'N',
+  reports: 'N',
+  variants: 'N',
+  pct: 'N',
+  rest: 'N',
+};
+
+/** Split prose into text and slots so each can be rendered differently. */
+function segments(text: string): { text: string; slot: boolean }[] {
+  const out: { text: string; slot: boolean }[] = [];
+  let at = 0;
+  for (const match of text.matchAll(/\{([a-z0-9_]+)\}/gi)) {
+    const index = match.index ?? 0;
+    if (index > at) out.push({ text: text.slice(at, index), slot: false });
+    out.push({ text: SLOT[(match[1] ?? '').toLowerCase()] ?? match[1] ?? '', slot: true });
+    at = index + match[0].length;
+  }
+  if (at < text.length) out.push({ text: text.slice(at), slot: false });
+  return out;
+}
+
+/** Flat version, for meta tags and structured data. */
+const readable = (text: string): string =>
+  segments(text)
+    .map((part) => part.text)
+    .join('');
 
 const RECORD_TOOL: Record<string, string> = {
   SPF: '/lab/spf-checker',
@@ -102,7 +166,7 @@ const jsonLd = [
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Checks',
+        name: 'Conditions',
         item: new URL('/library/checks', site).href,
       },
       { '@type': 'ListItem', position: 3, name: issue.title, item: url },
@@ -150,8 +214,7 @@ function trimTitle(value: string): string {
   <section class="check">
     <div class="md-wrap">
       <nav class="crumbs md-mono" aria-label="Breadcrumb">
-        <a href="/checkup">Checkup</a> <span aria-hidden="true">/</span>
-        <a href="/library/checks">Checks</a> <span aria-hidden="true">/</span>
+        <a href="/library/checks">Conditions</a> <span aria-hidden="true">/</span>
         <span>{issue.record}</span>
       </nav>
 
@@ -166,22 +229,26 @@ function trimTitle(value: string): string {
 
       <div class="md-prose">
         <h2>What it means</h2>
-        <p>{readable(issue.why)}</p>
+        <p>
+          {segments(issue.why).map((part) => (part.slot ? <code>{part.text}</code> : part.text))}
+        </p>
 
         <h2>How to fix it</h2>
-        <p>{readable(issue.fix)}</p>
+        <p>
+          {segments(issue.fix).map((part) => (part.slot ? <code>{part.text}</code> : part.text))}
+        </p>
 
         <h2>Check your own domain</h2>
         <p>
-          This page describes the condition. To find out whether your domain has it,
-          <a href={tool}>run the {issue.record} test</a> or
+          This page describes the condition. To find out whether your domain has it,{' '}
+          <a href={tool}>run the {issue.record} test</a> or{' '}
           <a href="/checkup">the full checkup</a>, which examines every record at once.
         </p>
 
         <h2>Understand it properly</h2>
         <p>
-          This page covers one condition. For the whole picture,
-          <a href={guide.href}>{guide.label}</a>, or start at
+          This page covers one condition. For the whole picture,{' '}
+          <a href={guide.href}>{guide.label}</a>, or start at{' '}
           <a href="/health-library">the Health Library</a>.
         </p>
 

@@ -274,7 +274,7 @@ export const SPF_ISSUES: readonly Issue[] = [
     severity: 'CRITICAL',
     category: 'syntax',
     title: 'SPF repeats a modifier',
-    why: 'The record contains more than one {offending_term} modifier. The standard permits exactly one of each, and receivers return a permanent error, SPF fails for all of your mail.',
+    why: 'The record contains the {offending_term} modifier more than once. The standard permits exactly one of each, and receivers return a permanent error, SPF fails for all of your mail.',
     fix: 'Keep a single {offending_term} and delete the duplicate.',
     rfc: 'RFC 7208 section 6',
     vars: ['offending_term'],

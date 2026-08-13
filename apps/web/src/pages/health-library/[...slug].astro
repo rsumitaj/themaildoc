@@ -75,14 +75,15 @@ const readable = data.updated.toLocaleDateString('en-GB', {
       <nav class="crumbs" aria-label="Breadcrumb">
         <a href="/health-library">Health Library</a>
         <span aria-hidden="true">/</span>
-        <span>{data.kind === 'pillar' ? 'Guide' : 'Article'}</span>
+        <span>{data.kind === 'pillar' ? 'Guide' : (pillar?.data.heading ?? 'Article')}</span>
       </nav>
 
       <header class="head">
         <h1>{data.heading}</h1>
         <p class="standfirst">{data.standfirst}</p>
         <p class="byline md-mono">
-          The Practice · reviewed <time datetime={updated}>{readable}</time>
+          <a href="/practice">Sumit Raj</a> · reviewed{' '}
+          <time datetime={updated}>{readable}</time>
         </p>
       </header>
 
@@ -199,6 +200,19 @@ const readable = data.updated.toLocaleDateString('en-GB', {
     margin-top: var(--md-space-5);
     font-size: var(--md-text-xs);
     color: var(--md-faint);
+  }
+
+  /* A named person carries more weight than a house byline, and the link is
+     the only way a reader can check who wrote it. */
+  .byline a {
+    color: var(--md-muted);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  .byline a:hover {
+    color: var(--md-red-ink);
   }
 
   .md-prose {

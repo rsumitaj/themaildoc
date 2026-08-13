@@ -16,6 +16,11 @@ const orphans = entries.filter(
 
 const clustersOf = (slug: string) => entries.filter((entry) => entry.data.pillar === slug);
 
+/** Named here rather than linked to, so the section is worth its own space. */
+const terms = (await getCollection('glossary', (entry) => !entry.data.draft)).sort((a, b) =>
+  a.data.term.localeCompare(b.data.term),
+);
+
 const title = 'Health Library: email authentication guides | MailDoc';
 const description =
   'Guides and answers on SPF, DKIM, DMARC and deliverability. Written from the RFCs, with the free test for each, and no signup to read any of it.';
@@ -80,11 +85,20 @@ const description =
       }
 
       <section class="cluster">
-        <h2>Definitions</h2>
+        <p class="md-eyebrow">Glossary</p>
+        <h2><a href="/glossary">Definitions</a></h2>
         <p class="cluster__lead">
-          One page per term, for when you need the meaning rather than the guide.
-          <a href="/glossary">Open the glossary</a>.
+          One page per term, for when you want the meaning rather than the guide.
         </p>
+        <ul class="terms">
+          {
+            terms.map((term) => (
+              <li>
+                <a href={`/glossary/${term.id}`}>{term.data.term}</a>
+              </li>
+            ))
+          }
+        </ul>
       </section>
 
       <ConsultLine />
@@ -124,6 +138,30 @@ const description =
   }
 
   .cluster h2 a:hover {
+    color: var(--md-red-ink);
+  }
+
+  .terms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--md-space-2) var(--md-space-3);
+    list-style: none;
+    margin-top: var(--md-space-5);
+  }
+
+  .terms a {
+    display: inline-block;
+    font-family: var(--md-font-mono);
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+    border: var(--md-hairline) solid var(--md-line);
+    border-radius: var(--md-radius-sm);
+    padding: 0.3rem 0.7rem;
+    transition: border-color var(--md-duration-fast) var(--md-ease);
+  }
+
+  .terms a:hover {
+    border-color: var(--md-red-ink);
     color: var(--md-red-ink);
   }
 
