@@ -2,23 +2,78 @@
 import Base from '../layouts/Base.astro';
 import Checkup from '../islands/Checkup';
 import ConsultLine from '../components/ConsultLine.astro';
+import { PILLAR_LABEL, PILLAR_ORDER, PILLAR_QUESTION, PILLAR_WEIGHT, SEVERITY_DEDUCTION } from '@maildoc/catalog';
 
-const title = 'Email Health Check: free SPF, DKIM and DMARC test | MailDoc';
+/**
+ * This page and the home page carry the same tool, which for a long time meant
+ * they carried the same title, the same description and the same job. Two pages
+ * chasing one query is two pages splitting one page's worth of ranking, and
+ * Google picks whichever it likes and buries the other.
+ *
+ * So they are split by intent. Home answers "check my domain". This answers the
+ * question people ask immediately afterwards, which is what the number means and
+ * where it came from. Nothing else on the site explains the arithmetic, and a
+ * score you cannot reproduce is a score you have no reason to believe.
+ */
+const title = 'Email Health Report: how your Vitals score works | MailDoc';
 const description =
-  'Enter a domain and read the full diagnosis: SPF, DKIM, DMARC, MX, DNSSEC and MTA-STS, each with the exact fix. Every finding cites its RFC.';
+  'Run the full checkup, then see exactly how the 0 to 100 Vitals score is built: four weighted pillars, what each finding costs, and what the bands mean.';
 
-const site = Astro.site ?? new URL('https://themaildoc.co');
+const pillars = PILLAR_ORDER.map((pillar) => ({
+  label: PILLAR_LABEL[pillar],
+  question: PILLAR_QUESTION[pillar],
+  weight: PILLAR_WEIGHT[pillar],
+}));
+
+const costs = [
+  { severity: 'Critical', cost: SEVERITY_DEDUCTION.CRITICAL, meaning: 'Somebody can act on this against you today.' },
+  { severity: 'Urgent', cost: SEVERITY_DEDUCTION.HIGH, meaning: 'Mail is being lost or trust is being spent right now.' },
+  { severity: 'Needs attention', cost: SEVERITY_DEDUCTION.MEDIUM, meaning: 'A real gap, with time to close it properly.' },
+  { severity: 'Minor', cost: SEVERITY_DEDUCTION.LOW, meaning: 'Worth tidying on the next change you make.' },
+  { severity: 'Note', cost: SEVERITY_DEDUCTION.INFO, meaning: 'An observation, not a fault.' },
+];
+
+const bands = [
+  { range: '85 to 100', name: 'Healthy', meaning: 'Nothing serious is wrong. Tune-ups at most.' },
+  { range: '65 to 84', name: 'Needs care', meaning: 'Real gaps that are costing you something measurable.' },
+  { range: '40 to 64', name: 'At risk', meaning: 'Serious conditions across more than one record.' },
+  { range: '0 to 39', name: 'Critical', meaning: 'Somebody can impersonate you, or your mail is failing outright.' },
+];
+
+const faqs = [
+  {
+    q: 'Why did my domain score badly when my DMARC policy is p=reject?',
+    a: 'It should not, and that was a real defect until the score was rebuilt around four pillars. A domain publishing p=reject cannot fall below 55 out of 100 on impersonation, whatever else is missing, because the verdict is computed from the policy a receiver will actually apply. If you are seeing otherwise, send us the domain.',
+  },
+  {
+    q: 'Why can a tidy domain still be capped below 40?',
+    a: 'Because anybody can send mail as it. If the spoofability verdict is Spoofable, the score cannot rise above 39 however good the rest of the setup is. A CAA record is not a defence against impersonation and the number should not pretend it is.',
+  },
+  {
+    q: 'The same problem appears three times. Is it charged three times?',
+    a: 'No. Each distinct finding is charged once however many times it is found. Three DKIM selectors carrying 1024-bit keys is one problem with one fix. Every instance is still listed so you know which selectors to rotate.',
+  },
+  {
+    q: 'Do the DMARC report findings change my score?',
+    a: 'No. Bloodwork findings describe last week’s mail rather than today’s DNS, and a quiet week would otherwise flatter a broken domain. They are shown beside the score, never inside it.',
+  },
+  {
+    q: 'Is the score comparable between two domains?',
+    a: 'Within reason. Two domains with the same records get the same number, and findings that do not apply are never charged: a domain that only receives mail is not marked down for missing BIMI. It is a diagnosis of one domain rather than a league table.',
+  },
+];
 ---
 
 <Base
   title={title}
   description={description}
+  faqs={faqs}
   crumbs={[{ name: 'Checkup', href: '/checkup' }]}
 >
   <section class="page">
     <div class="md-wrap">
       <p class="md-eyebrow" style="color: var(--md-red-ink)">Checkup</p>
-      <h1>What is wrong with your email, and how to fix it.</h1>
+      <h1>Your email health report, and the score behind it.</h1>
       <p class="lead">
         Every record a receiving mail server reads, checked against the specification it is judged
         by. You get a score, the conditions behind it, and the exact line to publish for each one.
@@ -27,6 +82,134 @@ const site = Astro.site ?? new URL('https://themaildoc.co');
       <Checkup client:load />
     </div>
   </section>
+
+  <section class="explain">
+    <div class="md-wrap">
+      <div class="md-prose">
+        <h2>How the Vitals score is worked out</h2>
+        <p>
+          A single number is only worth having if you can reproduce it. This one is four separate
+          questions, each answered out of 100 and then weighted, rather than one pool everything
+          subtracts from. That difference matters: under a single pool, a domain publishing
+          <code>p=reject</code> could score zero because four unrelated findings happened to add up
+          past 100, which said a well defended domain was as exposed as one with no DNS at all.
+        </p>
+
+        <h3>The four pillars</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Pillar</th>
+              <th>The question it answers</th>
+              <th>Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              pillars.map((pillar) => (
+                <tr>
+                  <td>{pillar.label}</td>
+                  <td>{pillar.question}</td>
+                  <td>{pillar.weight}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+        <p>
+          Impersonation carries the most weight because it is the failure that ends up in a news
+          story. Hardening carries the least because no receiver requires any of it. A pillar cannot
+          fall below zero, so one catastrophe can no longer drag the whole number to nothing.
+        </p>
+
+        <h3>What each finding costs</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Triage</th>
+              <th>Points off its pillar</th>
+              <th>What it means</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              costs.map((cost) => (
+                <tr>
+                  <td>{cost.severity}</td>
+                  <td>{cost.cost}</td>
+                  <td>{cost.meaning}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+        <p>
+          Each distinct finding is charged once however many times it appears, and findings that do
+          not apply to your domain are never charged at all. A domain that only receives mail is not
+          marked down for a missing BIMI record it has no use for.
+        </p>
+
+        <h3>The floor and the ceiling</h3>
+        <p>
+          Two rules keep the number and the words beside it telling one story. If the spoofability
+          verdict is <strong>Protected</strong>, impersonation cannot score below 55, because
+          receivers are refusing unauthenticated mail whatever else is missing. If the verdict is
+          <strong>Spoofable</strong>, the total cannot rise above 39, because a domain anybody can
+          send as does not get to look healthy on the strength of its CAA record.
+        </p>
+
+        <h3>Reading the bands</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Score</th>
+              <th>Band</th>
+              <th>What it means</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              bands.map((band) => (
+                <tr>
+                  <td>{band.range}</td>
+                  <td>{band.name}</td>
+                  <td>{band.meaning}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+
+        <h2>What the checkup reads</h2>
+        <p>
+          SPF with the whole include chain walked and counted, DKIM across the selectors your mail
+          actually uses, DMARC including the tree walk that decides which policy a subdomain
+          inherits, MX, PTR and forward-confirmed reverse DNS, DNSSEC, MTA-STS, TLS-RPT, BIMI and
+          CAA. Every finding cites the specification it comes from, and every one of them has
+          <a href="/library/checks">a page explaining it</a>.
+        </p>
+
+        <h2>Common questions</h2>
+        {
+          faqs.map((faq) => (
+            <details class="md-faq">
+              <summary>{faq.q}</summary>
+              <p>{faq.a}</p>
+            </details>
+          ))
+        }
+
+        <h2>Where to go next</h2>
+        <ul>
+          <li><a href="/lab">The Lab</a>, if you want one record at a time rather than all of them.</li>
+          <li><a href="/health-library/email-authentication-guide">How SPF, DKIM and DMARC fit together</a>, if the report used a word you did not recognise.</li>
+          <li><a href="/health-library/dmarc-guide">The DMARC guide</a>, if the answer was that you need a policy.</li>
+          <li><a href="/bloodwork">Bloodwork</a>, if you already have DMARC reports arriving and nothing to read them with.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <ConsultLine />
 </Base>
 
@@ -39,7 +222,7 @@ const site = Astro.site ?? new URL('https://themaildoc.co');
     font-size: var(--md-text-2xl);
     margin-top: var(--md-space-3);
     letter-spacing: var(--md-tracking-tight);
-    max-width: 20ch;
+    max-width: 22ch;
   }
 
   .lead {
@@ -48,5 +231,18 @@ const site = Astro.site ?? new URL('https://themaildoc.co');
     margin: var(--md-space-4) 0 var(--md-space-6);
     font-size: var(--md-text-md);
     line-height: 1.6;
+  }
+
+  .explain {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-8) var(--md-space-12);
+  }
+
+  /* Every h2 in the prose carries its own hairline. The first one sits just
+     under the section's, which reads as a mistake rather than a rhythm. */
+  .explain :global(.md-prose > h2:first-child) {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
   }
 </style>
