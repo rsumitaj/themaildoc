@@ -323,9 +323,9 @@
  * The copy button.
  *
  * Its box is deliberately small — it sits inside a prescription and must not
- * compete with it — so the 44px touch target is given by a pseudo-element
- * rather than by padding. The thing you can hit is the size WCAG 2.5.8 asks
- * for; the thing you can see is the size the card can afford.
+ * compete with it — so the target is given by a pseudo-element rather than by
+ * padding. What you can hit is what WCAG 2.5.8 asks for; what you can see is
+ * what the card can afford.
  */
 .md-copy {
   position: relative;
@@ -348,8 +348,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: max(100%, var(--md-tap));
-  height: var(--md-tap);
+  width: max(100%, var(--md-tap-min));
+  height: var(--md-tap-min);
   transform: translate(-50%, -50%);
 }
 
@@ -1692,8 +1692,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: var(--md-tap);
-  height: var(--md-tap);
+  width: var(--md-tap-min);
+  height: var(--md-tap-min);
   transform: translate(-50%, -50%);
 }
 
@@ -1805,8 +1805,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: var(--md-tap);
-  height: var(--md-tap);
+  width: var(--md-tap-min);
+  height: var(--md-tap-min);
   transform: translate(-50%, -50%);
 }
 
@@ -1971,10 +1971,15 @@
 
 .md-bimi__previews figure { margin: 0; text-align: center; }
 
+/*
+ * White in both modes on purpose: this is a preview of how a mail client will
+ * draw the logo, and a mail client draws it on white. Showing it on our dark
+ * surface would be a prettier picture of something that will not happen.
+ */
 .md-bimi__previews img {
   border-radius: 50%;
   border: var(--md-hairline) solid var(--md-line);
-  background: #fff;
+  background: var(--md-avatar-bg);
   display: block;
 }
 
@@ -2319,8 +2324,12 @@
   z-index: 0;
   color: var(--md-ekg-color);
   opacity: var(--md-ekg-opacity);
-  /* Isolate it from the rest of the page's paint work. */
-  contain: strict;
+  /*
+   * Layout and paint only. `strict` would add size containment, and this
+   * element takes its size from its containing block through `inset: 0` — not
+   * a combination worth being clever about for a decoration.
+   */
+  contain: layout paint;
 }
 
 /*
@@ -2394,4 +2403,35 @@
   .md-ekg__head {
     display: none;
   }
+}
+
+/* ---- The handover, at the foot of a chart ------------------------------- */
+
+/*
+ * Deliberately quiet. It is a hairline, a sentence and a button — the same
+ * furniture as a condition card, so it reads as the last item on the chart
+ * rather than as an advertisement that got in among the findings.
+ */
+.md-handover {
+  margin-top: var(--md-space-8);
+  padding-top: var(--md-space-6);
+  border-top: var(--md-hairline) solid var(--md-line);
+}
+
+.md-handover__lead {
+  max-width: 62ch;
+  font-size: var(--md-text-base);
+  line-height: var(--md-leading-body);
+  color: var(--md-muted);
+}
+
+.md-handover .md-btn {
+  margin-top: var(--md-space-4);
+}
+
+.md-handover__note {
+  margin-top: var(--md-space-3);
+  font-size: var(--md-text-sm);
+  color: var(--md-faint);
+  line-height: var(--md-leading-ui);
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { dedupeConditions, sortConditions, vitals as computeVitals } from '@maildoc/catalog/scoring';
 import type { CheckResponse, CheckSuccess, Condition, DkimResponse } from '../lib/types';
 import { CrossIcon, TickIcon } from './Icons';
-import { CleanBill, ConditionCard, RecordRow, SpoofBanner } from './Chart';
+import { ChartConsult, CleanBill, ConditionCard, RecordRow, SpoofBanner } from './Chart';
 import { CheckupForm } from './CheckupForm';
 import { ScoreExplainer } from './Explain';
 import { SpfTree } from './SpfTree';
@@ -217,6 +217,12 @@ export default function Checkup() {
                   exact={core.detail.spf.lookupCountExact}
                 />
               )}
+
+              <ChartConsult
+                domain={core.domain}
+                vitals={scored}
+                spoofability={core.spoofability}
+              />
             </div>
           </div>
         </div>

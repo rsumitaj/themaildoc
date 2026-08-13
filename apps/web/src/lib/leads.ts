@@ -1,4 +1,5 @@
-import { toDomain } from '@maildoc/shared';
+import { toDomain, type VitalsBand } from '@maildoc/shared';
+import type { SpoofVerdict } from '@maildoc/engines';
 
 /**
  * What a consultation request has to look like before it is allowed near the
@@ -28,8 +29,26 @@ export type HelpValue = (typeof HELP_OPTIONS)[number]['value'];
 
 const HELP_VALUES: readonly string[] = HELP_OPTIONS.map((option) => option.value);
 
-export const VITALS_BANDS: readonly string[] = ['HEALTHY', 'NEEDS_CARE', 'AT_RISK', 'CRITICAL'];
-export const SPOOF_VERDICTS: readonly string[] = ['SPOOFABLE', 'PARTIAL', 'PROTECTED'];
+/**
+ * The result a chart hands over with a consultation request, as an allow-list.
+ *
+ * Typed against the real unions rather than as loose strings, because the
+ * failure mode here is silent. Anything not on these lists is stored as null:
+ * no score, no verdict, and a first reply missing the one piece of context the
+ * whole handover exists to carry. Nothing throws, nothing logs, and it only
+ * surfaces weeks later as a column of nulls.
+ *
+ * The annotation makes a renamed or removed band a compile error. The test in
+ * `test/leads.test.ts` covers the other direction, checking these against the
+ * catalog's exhaustive band record so a newly *added* band cannot be forgotten.
+ */
+export const VITALS_BANDS: readonly VitalsBand[] = [
+  'HEALTHY',
+  'NEEDS_CARE',
+  'AT_RISK',
+  'CRITICAL',
+];
+export const SPOOF_VERDICTS: readonly SpoofVerdict[] = ['SPOOFABLE', 'PARTIAL', 'PROTECTED'];
 
 export interface Lead {
   name: string;

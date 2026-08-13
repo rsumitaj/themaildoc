@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { HELP_OPTIONS, validateLead } from '../src/lib/leads';
+import { VITALS_VERDICT } from '@maildoc/catalog';
+import { HELP_OPTIONS, SPOOF_VERDICTS, VITALS_BANDS, validateLead } from '../src/lib/leads';
 
 const valid = {
   name: '  Sam Patel ',
@@ -119,5 +120,51 @@ describe('validateLead', () => {
   it('refuses anything that is not an object', () => {
     expect(validateLead(null)).toMatchObject({ ok: false });
     expect(validateLead('name=sam')).toMatchObject({ ok: false });
+  });
+});
+
+/**
+ * The chart hands its result to the form through the URL, and the form hands it
+ * to the database through these two allow-lists. Anything not on them is stored
+ * as null, which is the quiet kind of wrong: no error, no log, just a
+ * consultation request that arrives without the score it was supposed to carry.
+ *
+ * `VITALS_VERDICT` is a `Record<VitalsBand, …>`, so the type checker already
+ * forces it to name every band. Comparing against its keys is what turns a band
+ * added upstream and forgotten here into a failing test rather than a column of
+ * nulls somebody notices in a month.
+ */
+describe('the result a chart attaches to a request', () => {
+  it('accepts every Vitals band the scorer can produce', () => {
+    expect([...VITALS_BANDS].sort()).toEqual(Object.keys(VITALS_VERDICT).sort());
+  });
+
+  it('stores a band and a verdict that came from a real result', () => {
+    for (const band of VITALS_BANDS) {
+      const result = validateLead({ ...valid, vitalsBand: band, vitalsScore: '42' });
+      expect(result).toMatchObject({ ok: true, lead: { vitalsBand: band, vitalsScore: 42 } });
+    }
+
+    for (const verdict of SPOOF_VERDICTS) {
+      expect(validateLead({ ...valid, spoofable: verdict })).toMatchObject({
+        ok: true,
+        lead: { spoofable: verdict },
+      });
+    }
+  });
+
+  it('drops a band or a score somebody made up', () => {
+    expect(validateLead({ ...valid, vitalsBand: 'EXCELLENT' })).toMatchObject({
+      ok: true,
+      lead: { vitalsBand: null },
+    });
+    expect(validateLead({ ...valid, vitalsScore: '900' })).toMatchObject({
+      ok: true,
+      lead: { vitalsScore: null },
+    });
+    expect(validateLead({ ...valid, spoofable: 'MAYBE' })).toMatchObject({
+      ok: true,
+      lead: { spoofable: null },
+    });
   });
 });

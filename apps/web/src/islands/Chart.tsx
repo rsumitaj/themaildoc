@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { TRIAGE_CHIP, TRIAGE_COLOR, triageFor } from '@maildoc/catalog/scoring';
-import type { Condition, RecordSummary, Spoofability } from '../lib/types';
-import { AlertIcon, ShieldIcon } from './Icons';
+import type { Condition, RecordSummary, Spoofability, Vitals } from '../lib/types';
+import { AlertIcon, ArrowIcon, ShieldIcon } from './Icons';
 
 /**
  * The chart: what is wrong, why it matters, and the prescription.
@@ -138,6 +138,63 @@ export function CleanBill() {
         is rarer than it should be.
       </p>
     </article>
+  );
+}
+
+/**
+ * The one place the chart offers help, at the bottom of it.
+ *
+ * Two things were wrong before this existed. The result screen — the page in
+ * the whole product where somebody has just been told their domain can be
+ * impersonated — carried no route to a consultation at all; the only offer was
+ * a single line below two thousand words of scoring methodology, which nobody
+ * reaching for help scrolls through. And `Consult` has always read `?domain`,
+ * `?score`, `?band` and `?spoofable` from the URL so it can say "attaching your
+ * result for example.com, Vitals 32/100", except nothing on the site had ever
+ * passed them. The form has been asking people to retype what we already knew.
+ *
+ * Still one offer, once, after the findings — the restraint in `ConsultLine`
+ * was right and this does not undo it. It is placed where the prescriptions
+ * end, because that is the moment the question changes from "what is wrong"
+ * to "who does this", and it carries the chart with it.
+ */
+export function ChartConsult({
+  domain,
+  vitals,
+  spoofability,
+}: {
+  domain: string;
+  vitals: Vitals;
+  spoofability: Spoofability;
+}) {
+  const query = new URLSearchParams({
+    domain,
+    score: String(vitals.score),
+    band: vitals.band,
+    spoofable: spoofability.verdict,
+  });
+
+  // A domain with nothing to treat is not a sales opportunity, and pitching one
+  // there would make every other finding on this site read as a pitch too.
+  const healthy = vitals.band === 'HEALTHY' && spoofability.verdict === 'PROTECTED';
+
+  return (
+    <aside class="md-handover">
+      <p class="md-handover__lead">
+        {healthy
+          ? 'Nothing here needs treating. Keeping it that way is the other half of the job: reports read, new senders caught before they break, the policy held at enforcement.'
+          : 'Every prescription above is yours to publish, free, in whatever order you like. If you would rather not do it yourself, or the order matters more than you would like it to, bring this chart.'}
+      </p>
+
+      <a class="md-btn" href={`/practice?${query.toString()}#book`}>
+        Consult an expert
+        <ArrowIcon size={16} />
+      </a>
+
+      <p class="md-handover__note">
+        Your result comes with you, so the first reply is about {domain} rather than about DMARC.
+      </p>
+    </aside>
   );
 }
 
