@@ -7,6 +7,7 @@ import {
   type IssueVars,
 } from '@maildoc/catalog';
 import type { DohResolver, FetchLike, ResolverNote } from '@maildoc/resolver';
+import { safeFetch, type ResolveHost } from '../net/safeFetch.js';
 import type { RecordStatus } from '@maildoc/shared';
 
 /**
@@ -61,6 +62,8 @@ export interface MtaStsOptions {
   timeoutMs?: number;
   /** Live MX hostnames, so the policy can be checked against reality. */
   mxHosts?: readonly string[];
+  /** Lets the fetch guard refuse a policy host that points at private space. */
+  resolveHost?: ResolveHost;
 }
 
 interface Ctx {
@@ -186,80 +189,46 @@ type FetchOutcome =
  */
 const MAX_POLICY_BYTES = 64 * 1024;
 
-async function readCapped(response: Response): Promise<string | null> {
-  const declared = Number.parseInt(response.headers.get('content-length') ?? '', 10);
-  if (Number.isFinite(declared) && declared > MAX_POLICY_BYTES) return null;
-
-  const body = response.body;
-  if (!body) return response.text();
-
-  const reader = body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-      total += value.length;
-      if (total > MAX_POLICY_BYTES) {
-        await reader.cancel();
-        return null;
-      }
-      chunks.push(value);
-    }
-  } catch {
-    return null;
-  }
-
-  const merged = new Uint8Array(total);
-  let at = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, at);
-    at += chunk.length;
-  }
-  return new TextDecoder('utf-8').decode(merged);
-}
-
 async function fetchPolicy(domain: string, options: MtaStsOptions): Promise<FetchOutcome> {
   const doFetch = options.fetchImpl ?? (globalThis.fetch as FetchLike | undefined);
   if (!doFetch) return { ok: false, reason: 'NETWORK', detail: 'no fetch available' };
 
   const url = `https://mta-sts.${domain}/.well-known/mta-sts.txt`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 5_000);
 
-  try {
-    const response = await doFetch(url, {
-      // §3.3: redirects MUST NOT be followed. `manual` lets us see the 3xx
-      // rather than silently ending up somewhere the spec forbids.
-      redirect: 'manual',
-      signal: controller.signal,
-    });
+  // The host is built from the domain under test, so it is user input with a
+  // fixed prefix. `maxRedirects: 0` is not a safety default here, it is
+  // RFC 8461 section 3.3: a policy fetch MUST NOT follow redirects, and seeing
+  // the 3xx is the finding.
+  const result = await safeFetch(url, {
+    fetchImpl: doFetch,
+    maxBytes: MAX_POLICY_BYTES,
+    timeoutMs: options.timeoutMs ?? 5_000,
+    maxRedirects: 0,
+    ...(options.resolveHost ? { resolveHost: options.resolveHost } : {}),
+  });
 
-    if (response.status >= 300 && response.status < 400) {
-      return { ok: false, reason: 'REDIRECT', detail: `HTTP ${response.status}` };
+  if (!result.ok) {
+    if (result.refusal === 'REDIRECT') {
+      return { ok: false, reason: 'REDIRECT', detail: result.detail };
     }
-    if (response.status !== 200) {
-      return { ok: false, reason: 'STATUS', detail: `HTTP ${response.status}` };
+    if (result.refusal === 'STATUS') {
+      return { ok: false, reason: 'STATUS', detail: result.detail };
     }
-
-    const body = await readCapped(response);
-    if (body === null) {
+    if (result.refusal === 'TOO_LARGE') {
       return { ok: false, reason: 'TYPE', detail: 'the response is larger than a policy file can be' };
     }
-    if (!/version\s*:/i.test(body)) {
-      return { ok: false, reason: 'TYPE', detail: 'the response is not a policy file' };
-    }
-    return { ok: true, body };
-  } catch {
-    // An invalid certificate lands here too, which is the correct outcome:
-    // senders would refuse it as well.
-    return { ok: false, reason: 'NETWORK', detail: 'the request failed or the certificate is invalid' };
-  } finally {
-    clearTimeout(timer);
+    // NOT_HTTPS cannot happen on a URL we built, and a blocked address is
+    // reported the same way an unreachable one is: we did not get a policy.
+    // An invalid certificate lands here too, which is correct, because a
+    // sender would refuse it as well.
+    return { ok: false, reason: 'NETWORK', detail: result.detail };
   }
+
+  const body = new TextDecoder('utf-8').decode(result.body);
+  if (!/version\s*:/i.test(body)) {
+    return { ok: false, reason: 'TYPE', detail: 'the response is not a policy file' };
+  }
+  return { ok: true, body };
 }
 
 function describePolicyProblem(policy: MtaStsPolicy): string {

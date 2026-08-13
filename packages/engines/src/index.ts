@@ -60,6 +60,9 @@ export { healthCheck, DEFAULT_HEALTH_CHECK_BUDGET } from './healthCheck.js';
 export type { HealthCheck, HealthCheckOptions, RecordSummary } from './healthCheck.js';
 
 export { fetchLogo, fetchCertificate, LOGO_MAX_BYTES, CERT_MAX_BYTES } from './bimi/assets.js';
+export { safeFetch, inspectUrl, isBlockedAddress } from './net/safeFetch.js';
+export type { SafeFetchOptions, SafeFetchResult, FetchRefusal, ResolveHost } from './net/safeFetch.js';
+export { resolverAddressLookup } from './net/resolveHost.js';
 export type { LogoReport, CertReport, AssetFailure } from './bimi/assets.js';
 
 export { assessSpoofability } from './spoofability.js';

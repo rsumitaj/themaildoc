@@ -11,7 +11,16 @@
  * and a timeout. The URLs come from a stranger's DNS record.
  */
 
+import { safeFetch, type ResolveHost } from '../net/safeFetch.js';
+
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
+
+/**
+ * A BIMI record names two URLs and we fetch both, which makes this the widest
+ * server-side request surface in the product. Everything about the request is
+ * bounded in `safeFetch`; this file only decides what to do with the bytes.
+ */
+const MAX_REDIRECTS = 2;
 
 /** The BIMI draft caps an indicator at 32KB. */
 export const LOGO_MAX_BYTES = 32 * 1024;
@@ -60,41 +69,33 @@ async function get(
   url: string,
   doFetch: FetchLike,
   maxBytes: number,
+  resolveHost?: ResolveHost,
 ): Promise<{ ok: true; body: Uint8Array; type: string } | { ok: false; failure: AssetFailure; detail: string }> {
-  if (!/^https:\/\//i.test(url)) {
-    return { ok: false, failure: 'NOT_HTTPS', detail: 'the URL is not https' };
+  const result = await safeFetch(url, {
+    fetchImpl: doFetch,
+    maxBytes,
+    timeoutMs: TIMEOUT_MS,
+    maxRedirects: MAX_REDIRECTS,
+    ...(resolveHost ? { resolveHost } : {}),
+  });
+
+  if (result.ok) {
+    return { ok: true, body: result.body, type: result.contentType };
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  // The refusals map onto the failures this report already had. An address we
+  // refuse to fetch and a host that will not answer are the same fact to a
+  // reader: the logo cannot be retrieved. The detail says which.
+  const failure: AssetFailure =
+    result.refusal === 'NOT_HTTPS'
+      ? 'NOT_HTTPS'
+      : result.refusal === 'STATUS'
+        ? 'STATUS'
+        : result.refusal === 'TOO_LARGE'
+          ? 'TOO_LARGE'
+          : 'UNREACHABLE';
 
-  try {
-    const response = await doFetch(url, { signal: controller.signal, redirect: 'follow' });
-
-    if (response.status !== 200) {
-      return { ok: false, failure: 'STATUS', detail: `HTTP ${response.status}` };
-    }
-
-    const declared = Number.parseInt(response.headers.get('content-length') ?? '', 10);
-    if (Number.isFinite(declared) && declared > maxBytes) {
-      return { ok: false, failure: 'TOO_LARGE', detail: `${declared} bytes` };
-    }
-
-    const buffer = await response.arrayBuffer();
-    if (buffer.byteLength > maxBytes) {
-      return { ok: false, failure: 'TOO_LARGE', detail: `${buffer.byteLength} bytes` };
-    }
-
-    return {
-      ok: true,
-      body: new Uint8Array(buffer),
-      type: (response.headers.get('content-type') ?? '').toLowerCase(),
-    };
-  } catch {
-    return { ok: false, failure: 'UNREACHABLE', detail: 'the request failed or the certificate is invalid' };
-  } finally {
-    clearTimeout(timer);
-  }
+  return { ok: false, failure, detail: result.detail };
 }
 
 /** Things the BIMI draft forbids in an indicator, because they can carry behaviour. */
@@ -106,8 +107,12 @@ const FORBIDDEN: ReadonlyArray<{ pattern: RegExp; name: string }> = [
   { pattern: /<foreignObject\b/i, name: 'foreignObject' },
 ];
 
-export async function fetchLogo(url: string, doFetch: FetchLike): Promise<LogoReport> {
-  const result = await get(url, doFetch, LOGO_MAX_BYTES);
+export async function fetchLogo(
+  url: string,
+  doFetch: FetchLike,
+  resolveHost?: ResolveHost,
+): Promise<LogoReport> {
+  const result = await get(url, doFetch, LOGO_MAX_BYTES, resolveHost);
   if (!result.ok) return { ok: false, failure: result.failure, detail: result.detail };
 
   const type = result.type;
@@ -141,8 +146,12 @@ export async function fetchLogo(url: string, doFetch: FetchLike): Promise<LogoRe
 
 const PEM_BLOCK = /-----BEGIN CERTIFICATE-----([A-Za-z0-9+/=\s]+?)-----END CERTIFICATE-----/g;
 
-export async function fetchCertificate(url: string, doFetch: FetchLike): Promise<CertReport> {
-  const result = await get(url, doFetch, CERT_MAX_BYTES);
+export async function fetchCertificate(
+  url: string,
+  doFetch: FetchLike,
+  resolveHost?: ResolveHost,
+): Promise<CertReport> {
+  const result = await get(url, doFetch, CERT_MAX_BYTES, resolveHost);
   if (!result.ok) return { ok: false, failure: result.failure, detail: result.detail };
 
   const text = new TextDecoder('utf-8').decode(result.body);

@@ -14,6 +14,7 @@ import {
   type FetchLike,
   type LogoReport,
 } from '../bimi/assets.js';
+import type { ResolveHost } from '../net/safeFetch.js';
 import type { RecordStatus } from '@maildoc/shared';
 
 /** TLS-RPT (RFC 8460), BIMI (Internet-Draft) and CAA (RFC 8659). */
@@ -116,6 +117,8 @@ export async function analyzeBimi(
     dmarcPolicy?: 'none' | 'quarantine' | 'reject';
     /** Absent means DNS only, which is what the full checkup uses. */
     fetchImpl?: FetchLike;
+    /** Lets the fetch guard refuse an asset host that points at private space. */
+    resolveHost?: ResolveHost;
   } = {},
 ): Promise<BimiAnalysis> {
   const startQueries = resolver.queriesIssued;
@@ -171,11 +174,11 @@ export async function analyzeBimi(
 
   if (options.fetchImpl && !declined) {
     if (logo && /^https:\/\//i.test(logo)) {
-      logoReport = await fetchLogo(logo, options.fetchImpl);
+      logoReport = await fetchLogo(logo, options.fetchImpl, options.resolveHost);
       judgeLogo(ctx, name, logo, logoReport);
     }
     if (authority && /^https:\/\//i.test(authority)) {
-      certReport = await fetchCertificate(authority, options.fetchImpl);
+      certReport = await fetchCertificate(authority, options.fetchImpl, options.resolveHost);
       judgeCertificate(ctx, name, authority, certReport);
     }
   }

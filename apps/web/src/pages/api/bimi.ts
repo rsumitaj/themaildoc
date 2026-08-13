@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { analyzeBimi, analyzeDmarc } from '@maildoc/engines';
+import { analyzeBimi, analyzeDmarc, resolverAddressLookup } from '@maildoc/engines';
 import { DohResolver } from '@maildoc/resolver';
 import { apiError, jsonResponse, rateLimit, readDomain } from '../../lib/api';
 import { cachedResponse, createDnsCache, storeResponse } from '../../lib/dnsCache';
@@ -38,6 +38,10 @@ async function handle(request: Request): Promise<Response> {
     const result = await analyzeBimi(parsed.domain, resolver, {
       ...(dmarc.effectivePolicy ? { dmarcPolicy: dmarc.effectivePolicy } : {}),
       fetchImpl: fetch,
+      // The two URLs in a BIMI record are chosen by whoever controls that DNS,
+      // and this endpoint will fetch both from our egress. The guard checks
+      // where the host resolves before we do.
+      resolveHost: resolverAddressLookup(resolver),
     });
 
     const response = jsonResponse(

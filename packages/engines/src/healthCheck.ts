@@ -13,6 +13,7 @@ import { analyzeDmarc } from './dmarc/analyze.js';
 import { analyzeMx } from './mx/analyze.js';
 import { analyzeAddresses, analyzeDnssec } from './address/analyze.js';
 import { analyzeMtaSts, type MtaStsAnalysis } from './transport/mtasts.js';
+import { resolverAddressLookup } from './net/resolveHost.js';
 import {
   analyzeBimi,
   analyzeCaa,
@@ -138,6 +139,9 @@ export async function healthCheck(
   const [mtasts, bimi, ptr] = await Promise.all([
     analyzeMtaSts(name, resolver, {
       mxHosts: mx.hosts.map((host) => host.host).filter(Boolean),
+      // The policy host is built from a domain a stranger typed, so the fetch
+      // guard gets a way to check where it actually points.
+      resolveHost: resolverAddressLookup(resolver),
       ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
       ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
     }),
