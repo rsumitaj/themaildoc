@@ -56,7 +56,8 @@ export {
 } from './spf/cidr.js';
 export type { CidrBlock } from './spf/cidr.js';
 
-export { healthCheck, DEFAULT_HEALTH_CHECK_BUDGET } from './healthCheck.js';
+export { healthCheck, DEFAULT_HEALTH_CHECK_BUDGET, HEALTH_CHECK_RESERVE } from './healthCheck.js';
+export { SPF_DEEP_WALK_BUDGET } from '@maildoc/shared';
 export type { HealthCheck, HealthCheckOptions, RecordSummary } from './healthCheck.js';
 
 export { fetchLogo, fetchCertificate, LOGO_MAX_BYTES, CERT_MAX_BYTES } from './bimi/assets.js';

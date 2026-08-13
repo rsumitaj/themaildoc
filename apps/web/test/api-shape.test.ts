@@ -58,3 +58,31 @@ describe('API response shape', () => {
     expect(source).not.toMatch(/^\s+Records:/m);
   });
 });
+
+/**
+ * The three endpoints the result screen fires together.
+ *
+ * Two of the checks have requests of their own, and for the same reason: a
+ * Worker gets fifty subrequests and neither fits inside the checkup's share of
+ * them. DKIM has to probe speculative selectors; the SPF chain has to be walked
+ * one hop at a time and can be fifty names long.
+ */
+describe('the checks that need a request of their own', () => {
+  it('walks the SPF chain in a request that spends nothing else', () => {
+    const source = readFileSync(join(API, 'check/spf.ts'), 'utf8');
+
+    // The whole point: its own budget, not a share of the checkup's.
+    expect(source).toMatch(/budget:\s*SPF_DEEP_WALK_BUDGET/);
+    expect(source).toMatch(/analyzeSpf\(/);
+    // Nothing else may run here, or the budget stops being the chain's.
+    expect(source).not.toMatch(/analyzeDmarc|analyzeMx|healthCheck/);
+  });
+
+  it('throttles and validates like every other endpoint', () => {
+    const source = readFileSync(join(API, 'check/spf.ts'), 'utf8');
+
+    expect(source).toMatch(/rateLimit\(request\)/);
+    expect(source).toMatch(/readDomain\(request\)/);
+    expect(source).toMatch(/prerender = false/);
+  });
+});

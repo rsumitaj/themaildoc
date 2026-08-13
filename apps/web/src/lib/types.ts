@@ -51,6 +51,31 @@ export interface CheckSuccess {
   };
 }
 
+/**
+ * The standalone SPF chain walk.
+ *
+ * The checkup's own SPF pass shares fifty subrequests with nine other records,
+ * which is not enough for a chain published through a flattening vendor. This
+ * comes from a request of its own that spends nearly the whole allowance on the
+ * chain, so it is the authoritative one and the result screen prefers it.
+ */
+export interface SpfSuccess {
+  ok: true;
+  domain: string;
+  found: boolean;
+  record: string | null;
+  chain: SpfAnalysis['chain'];
+  lookupCount: number;
+  lookupCountExact: boolean;
+  voidLookupCount: number;
+  voidCountExact: boolean;
+  allQualifier: SpfAnalysis['allQualifier'];
+  redirect: string | null;
+  status: SpfAnalysis['status'];
+  conditions: Condition[];
+  meta: { queriesUsed: number; budget: number; notes: string[] };
+}
+
 export interface DkimSuccess {
   ok: true;
   domain: string;
@@ -69,5 +94,6 @@ export interface ApiFailure {
 
 export type CheckResponse = CheckSuccess | ApiFailure;
 export type DkimResponse = DkimSuccess | ApiFailure;
+export type SpfResponse = SpfSuccess | ApiFailure;
 
 export type { Condition, Vitals, RecordSummary, Spoofability };

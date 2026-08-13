@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { vitals } from '@maildoc/catalog';
 import { DohResolver } from '@maildoc/resolver';
 import { createMockDoh, type MockDohOptions, type MockZone } from '@maildoc/resolver/testing';
-import { analyzeSpf, type SpfEngineOptions } from '../src/index.js';
+import { analyzeSpf, SPF_DEEP_WALK_BUDGET, type SpfEngineOptions } from '../src/index.js';
 import type { SpfChainNode } from '../src/spf/types.js';
 
 /**
@@ -937,6 +937,20 @@ describe('SPF — the walk goes to the end of the chain', () => {
     for (const child of node.children) chainDomains(child, out);
     return out;
   }
+
+  it('reads every hop of a chain forty-five deep', async () => {
+    // The standalone chain endpoint spends SPF_DEEP_WALK_BUDGET on nothing but
+    // this, so the walk has to be able to use all of it. Forty-five hops is
+    // nine times the deepest chain a real SPF vendor publishes and one short of
+    // the budget, which is where the honest limit is.
+    const deep = await run(linearChain(45), { budget: SPF_DEEP_WALK_BUDGET });
+    const names = chainDomains(deep.analysis.chain!);
+
+    expect(names).toHaveLength(46);
+    expect(names.at(-1)).toBe('hop45.vendor.example');
+    expect(deep.analysis.lookupCountExact).toBe(true);
+    expect(deep.analysis.chain!.children[0]).toBeDefined();
+  });
 
   it('reads all twenty-five hops of a chain twenty-five deep', async () => {
     // Twice the depth the old guard allowed, and five times the deepest chain

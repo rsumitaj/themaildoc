@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { dedupeConditions, sortConditions, vitals as computeVitals } from '@maildoc/catalog/scoring';
-import type { CheckResponse, CheckSuccess, Condition, DkimResponse } from '../lib/types';
+import type {
+  CheckResponse,
+  CheckSuccess,
+  Condition,
+  DkimResponse,
+  SpfResponse,
+  SpfSuccess,
+} from '../lib/types';
 import { CrossIcon, TickIcon } from './Icons';
 import { ChartConsult, CleanBill, ConditionCard, RecordRow, SpoofBanner } from './Chart';
 import { CheckupForm } from './CheckupForm';
@@ -45,6 +52,8 @@ export default function Checkup() {
   const [rows, setRows] = useState<ExamRow[]>(initialRows);
   const [core, setCore] = useState<CheckSuccess | null>(null);
   const [dkimConditions, setDkimConditions] = useState<Condition[]>([]);
+  /** The deep chain walk, when it lands. Authoritative over the checkup's own. */
+  const [deepSpf, setDeepSpf] = useState<SpfSuccess | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
@@ -75,6 +84,7 @@ export default function Checkup() {
     setRows(initialRows());
     setCore(null);
     setDkimConditions([]);
+    setDeepSpf(null);
 
     const query = `domain=${encodeURIComponent(domain)}`;
 
@@ -92,6 +102,26 @@ export default function Checkup() {
           }),
         );
         return data;
+      });
+
+    /**
+     * The chain, walked in a request of its own.
+     *
+     * A Worker gets fifty subrequests and the checkup spends most of them on
+     * the nine other records, so an include chain published through a
+     * flattening vendor ran out part way down. This one spends nearly the whole
+     * allowance on the chain alone. It lands after the checkup and replaces
+     * what the checkup found, the same way DKIM already does, so nobody waits
+     * on it to see their score.
+     */
+    const spfPromise = fetch(`/api/check/spf?${query}`)
+      .then((response) => response.json() as Promise<SpfResponse>)
+      .then((data) => {
+        if (data.ok) setDeepSpf(data);
+      })
+      .catch(() => {
+        // The checkup's own chain is already on screen. Losing the deeper walk
+        // costs depth, never the result.
       });
 
     const dkimPromise = fetch(`/api/check/dkim?${query}`)
@@ -116,7 +146,10 @@ export default function Checkup() {
 
     try {
       await corePromise;
-      await dkimPromise;
+      // All three left together, so waiting on the other two costs the slower
+      // of them rather than the sum. Neither can fail the checkup: DKIM and the
+      // deep chain both swallow their own errors above.
+      await Promise.all([dkimPromise, spfPromise]);
       setPhase('done');
       if (new URLSearchParams(location.search).get('domain') !== domain) {
         history.pushState(null, '', `?domain=${encodeURIComponent(domain)}`);
@@ -134,8 +167,28 @@ export default function Checkup() {
     }
   }
 
+  /**
+   * The deep walk's SPF findings replace the checkup's, rather than joining
+   * them.
+   *
+   * Both walks judge the same record, so most of what they say is identical and
+   * dedupes away. The lookup count does not: a bounded walk that stopped at
+   * nine reports nine, the full walk reports twelve, and merging the two would
+   * put both numbers on the chart as separate findings. The deeper walk saw
+   * more, so it wins outright.
+   */
+  const spfConditions = deepSpf
+    ? deepSpf.conditions
+    : (core?.conditions ?? []).filter((condition) => condition.record === 'SPF');
+
   const conditions: Condition[] = core
-    ? sortConditions(dedupeConditions([...core.conditions, ...dkimConditions]))
+    ? sortConditions(
+        dedupeConditions([
+          ...core.conditions.filter((condition) => condition.record !== 'SPF'),
+          ...spfConditions,
+          ...dkimConditions,
+        ]),
+      )
     : [];
   // Re-scored in the browser so DKIM's findings count toward Vitals, using the
   // same arithmetic the Worker used.
@@ -145,6 +198,41 @@ export default function Checkup() {
   const scored = core
     ? computeVitals(conditions, { spoofability: core.spoofability.verdict })
     : null;
+
+  /** The chain to draw, and the count that goes with it. */
+  const chain = deepSpf?.chain
+    ? { node: deepSpf.chain, lookupCount: deepSpf.lookupCount, exact: deepSpf.lookupCountExact }
+    : core?.detail.spf.chain
+      ? {
+          node: core.detail.spf.chain,
+          lookupCount: core.detail.spf.lookupCount,
+          exact: core.detail.spf.lookupCountExact,
+        }
+      : null;
+
+  /**
+   * The SPF card has to agree with the tree beside it.
+   *
+   * Leaving the checkup's summary in place while the tree showed a deeper walk
+   * put "9+ of 10 lookups used" above a chain that plainly counted twelve.
+   */
+  const records = core
+    ? core.records.map((record) =>
+        record.record === 'SPF' && deepSpf
+          ? {
+              ...record,
+              status: deepSpf.status,
+              found: deepSpf.found,
+              conditionCount: deepSpf.conditions.length,
+              summary: deepSpf.found
+                ? `${deepSpf.lookupCount}${deepSpf.lookupCountExact ? '' : '+'} of 10 lookups used, ending in ${
+                    deepSpf.allQualifier === null ? 'no all mechanism' : `${deepSpf.allQualifier}all`
+                  }`
+                : 'No SPF record published',
+            }
+          : record,
+      )
+    : [];
 
   return (
     <div>
@@ -186,8 +274,9 @@ export default function Checkup() {
           </div>
           <p class="md-chart__meta">
             Examined just now · {conditions.length}{' '}
-            {conditions.length === 1 ? 'condition' : 'conditions'} found · {core.meta.queriesUsed} DNS
-            lookups{core.meta.partial ? ' · partial result' : ''}
+            {conditions.length === 1 ? 'condition' : 'conditions'} found ·{' '}
+            {core.meta.queriesUsed + (deepSpf?.meta.queriesUsed ?? 0)} DNS lookups
+            {core.meta.partial ? ' · partial result' : ''}
           </p>
 
           <div class="md-chart">
@@ -198,7 +287,7 @@ export default function Checkup() {
 
             <div>
               <SpoofBanner spoofability={core.spoofability} />
-              <RecordRow records={core.records} />
+              <RecordRow records={records} />
 
               <div class="md-conditions">
                 {conditions.length === 0 ? (
@@ -210,11 +299,11 @@ export default function Checkup() {
                 )}
               </div>
 
-              {core.detail.spf.chain && (
+              {chain && (
                 <SpfTree
-                  chain={core.detail.spf.chain}
-                  lookupCount={core.detail.spf.lookupCount}
-                  exact={core.detail.spf.lookupCountExact}
+                  chain={chain.node}
+                  lookupCount={chain.lookupCount}
+                  exact={chain.exact}
                 />
               )}
 

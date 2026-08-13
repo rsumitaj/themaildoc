@@ -29,6 +29,17 @@ export const SPF_APPROACHING_LOOKUP_LIMIT = 9;
  */
 export const SPF_MAX_MX_NAMES = 10;
 /**
+ * DNS attempts the standalone SPF chain walk may spend.
+ *
+ * A Cloudflare Worker gets fifty subrequests per request. This walk is the only
+ * thing in its request, so nearly all of them are its to spend, and that is the
+ * point: a chain fifty names long can be read to the end. Four are held back
+ * for a retry or a failover on a slow name rather than being spent on depth
+ * that no real record has.
+ */
+export const SPF_DEEP_WALK_BUDGET = 46;
+
+/**
  * Runaway guard for include:/redirect= recursion. Not a product limit.
  *
  * This was 10, borrowed from the lookup limit, and it was the wrong number for
@@ -38,11 +49,11 @@ export const SPF_MAX_MX_NAMES = 10;
  * on the domains whose chains are deep enough to be worth drawing at all.
  *
  * Loops are caught by the ancestor path, not by depth, so this only has to stop
- * a chain that is pathological rather than circular. Thirty is past anything
- * the query budget can reach, which makes the budget the binding constraint and
- * this a backstop that should never fire.
+ * a chain that is pathological rather than circular. Fifty matches the platform
+ * ceiling the standalone walk spends against, which makes the query budget the
+ * binding constraint and this a backstop that should never fire.
  */
-export const SPF_MAX_RECURSION_DEPTH = 30;
+export const SPF_MAX_RECURSION_DEPTH = 50;
 
 /**
  * Nodes one chain may expand to. Also a runaway guard.

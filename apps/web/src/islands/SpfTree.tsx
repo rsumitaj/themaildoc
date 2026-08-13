@@ -126,7 +126,7 @@ export function SpfTree({
       </div>
 
       <div class="md-tree__cols">
-        <span>Open a row to see the record it publishes</span>
+        <span>Every name a receiver visits. Open a row to read what it publishes</span>
         <span>Cost</span>
         <span>Total</span>
       </div>
@@ -160,15 +160,24 @@ interface NodeProps {
 }
 
 function Node({ node, entries, depth }: NodeProps) {
-  // The apex opens so the shape is visible. Everything below waits to be asked.
+  /**
+   * The toggle opens the *record*, never the chain.
+   *
+   * These used to be one state, so collapsing a node to hide four hundred IP
+   * addresses also hid every include underneath it, and the shape of the chain
+   * — the only thing on this screen that explains the lookup count — was three
+   * clicks away. Every name a receiver would visit is now always on screen, to
+   * the end of every branch. What you choose to open is the text.
+   */
   const [open, setOpen] = useState(depth < 1);
   const walked = entries.get(node);
   const tone = STATUS_TONE[node.status] ?? '';
   const note = STATUS_LABEL[node.status] ?? '';
   const spent = node.lookups > 0;
 
-  // Every node opens: its children if it has them, its record either way.
-  const openable = node.children.length > 0 || node.record !== null;
+  // The toggle governs the record text, so a node with nothing published has
+  // nothing to open. Its children are drawn regardless.
+  const openable = node.record !== null;
 
   return (
     <li class="md-tree__item">
@@ -182,7 +191,7 @@ function Node({ node, entries, depth }: NodeProps) {
           >
             <span aria-hidden="true">{open ? '−' : '+'}</span>
             <span class="md-visually-hidden">
-              {open ? 'Hide' : 'Show'} what {node.domain} publishes
+              {open ? 'Hide' : 'Show'} the record {node.domain} publishes
             </span>
           </button>
         ) : (
@@ -215,12 +224,12 @@ function Node({ node, entries, depth }: NodeProps) {
         Past a few levels the indent stops growing.
 
         Each nested list steps in by about 23px, which reads well for the four
-        or five levels a real chain has and walks a twenty-hop one off the right
+        or five levels a real chain has and walks a fifty-hop one off the right
         edge of a phone. The rule that draws the nesting is the left border, and
         that keeps working at zero indent, so deep chains stay readable rather
         than becoming a horizontal scroll.
       */}
-      {open && node.children.length > 0 && (
+      {node.children.length > 0 && (
         <ol class={`md-tree__list ${depth >= 5 ? 'is-deep' : ''}`}>
           {node.children.map((child, index) => (
             <Node key={`${child.domain}-${index}`} node={child} entries={entries} depth={depth + 1} />
