@@ -46,10 +46,7 @@ const {
   related,
 } = Astro.props;
 
-const site = Astro.site ?? new URL('https://themaildoc.co');
-const url = new URL(Astro.url.pathname, site).href;
-
-
+/** `build.format: 'file'` puts `.html` on the pathname; breadcrumbs must not. */
 const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
 ---
 

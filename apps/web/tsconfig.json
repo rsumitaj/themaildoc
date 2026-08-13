@@ -26,5 +26,13 @@
     }
   },
   "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],
-  "exclude": ["dist", ".astro", ".wrangler"]
+  /**
+   * `.astro` is deliberately not excluded.
+   *
+   * `exclude` beats `include`, so listing it here dropped `.astro/types.d.ts`
+   * from the program, and with it the `astro:content` declarations it points
+   * at. Every `getCollection` call then fell back to `any` and seventy real
+   * type errors across the article and glossary pages went unreported.
+   */
+  "exclude": ["dist", ".wrangler"]
 }

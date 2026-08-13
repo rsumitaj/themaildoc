@@ -1,5 +1,13 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
+/**
+ * `z` from `astro:content` is deprecated in Astro 7, and the deprecation is not
+ * cosmetic: the generated `astro:content` types infer an entry's shape through
+ * `astro/zod`, so a schema built with the re-export does not match and every
+ * `getCollection` call falls back to `any`. That turned seventy real type
+ * errors into silence across the article and glossary pages.
+ */
+import { z } from 'astro/zod';
 
 /**
  * The two content collections, and the SEO fields an entry cannot ship
