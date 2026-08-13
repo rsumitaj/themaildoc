@@ -82,10 +82,11 @@ export function VitalsMonitor({ vitals }: { vitals: Vitals }) {
       <h2 class="md-vitals__cap" id="vitals-heading">
         VITALS
         <Explain label="the Vitals score">
-          Every domain starts at 100. Each condition found subtracts a fixed amount set by how much
-          damage it does: 40 for critical, 25 urgent, 15 needs attention, 8 minor, 2 for a note. The
-          same problem costs the same on every domain. Open "How this score works" below for your
-          domain's exact arithmetic.
+          Four questions, not one list: can somebody send as you, will your own mail arrive, would
+          you find out, and what optional hardening is in place. Each is answered out of 100 and
+          then weighted, so a domain can be excellent at one and poor at another. A record you have
+          not published at all holds down the questions it would have answered. Open "How this score
+          works" below for your domain's exact arithmetic.
         </Explain>
       </h2>
 

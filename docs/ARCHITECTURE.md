@@ -61,20 +61,26 @@ decides whether the rest of our citations are believed.
 uses `redirect: 'manual'`. A certificate failure surfaces as unreachable,
 because that is exactly what a sending server would conclude.
 
-**Optional hardening is capped.** MTA-STS, TLS-RPT, BIMI, CAA, DNSSEC and IPv6
-gaps together removed 33 points, which put GitHub — SPF, DKIM and an enforcing
-DMARC — within seven points of a domain with no email setup at all. Those
-records make a domain better and no receiver requires them, so between them
-they may remove at most `HARDENING_DEDUCTION_CAP` (25). Authentication and
-delivery problems are still charged in full.
+**Optional hardening cannot outweigh authentication.** MTA-STS, TLS-RPT, BIMI,
+CAA and DNSSEC live in their own pillar, worth 15 of the 100, so no amount of
+missing hardening can drag a domain with correct SPF, DKIM and an enforcing
+DMARC policy down beside one with no email setup at all. The deduction caps
+that used to do this job are gone; the pillars do it structurally. See
+[SCORING.md](SCORING.md).
 
-**Score once per problem.** `scoreConditions` charges each distinct code a
+**Absence is not the same as a fault.** Every finding is a fault in something
+published, so a domain that publishes nothing collects almost no findings. Three
+absences — no zone at all, no DMARC record, no SPF record — cap the pillars they
+serve rather than merely charging them, because a missing record is not a
+tidiness problem with the record.
+
+**Score once per problem.** `scoreBreakdown` charges each distinct code a
 single time however often it was found — three DKIM selectors with 1024-bit
-keys is one fix, and charging it three times reported GitHub as being in
-critical condition over a tidy-up.
+keys is one fix, and charging it three times reported a well-run domain as
+being in critical condition over a tidy-up.
 
 **A report is not a configuration.** Bloodwork findings (`record: 'RUA'`) are
-skipped by `scoreConditions` outright. Vitals score what a domain publishes
+skipped by `scoreBreakdown` outright. Vitals score what a domain publishes
 today; an aggregate report describes what its mail did last week, and letting a
 quiet week move the number would flatter a broken domain.
 
@@ -147,5 +153,13 @@ against `apps/web/wrangler.jsonc` serves the site without its assets.
 ## Response shape
 
 `/api/check` returns `{ domain, vitals, records[], conditions[], spoofability,
-meta }`. `conditions[]` is already triaged, interpolated and weighted by the
-catalog; the client renders, it never decides severity.
+detail, meta }`. `conditions[]` is already triaged, interpolated and weighted by
+the catalog; the client renders, it never decides severity.
+
+Two checks have endpoints of their own, for the same reason: a Worker gets fifty
+subrequests and neither fits inside the checkup's share. `/api/check/dkim`
+probes speculative selectors. `/api/check/spf` walks the include chain to the
+end, spending `SPF_DEEP_WALK_BUDGET` on nothing else, and is authoritative over
+the bounded chain the checkup itself walks. The result screen fires all three
+together and re-scores in the browser with the same catalog function, so the
+number never depends on which one answered first.
