@@ -1,5 +1,5 @@
 import { useId, useState } from 'preact/hooks';
-import { scoreBreakdown, type SpoofVerdict } from '@maildoc/catalog/scoring';
+import { scoreBreakdown, type AbsenceCode, type SpoofVerdict } from '@maildoc/catalog/scoring';
 import type { Condition } from '../lib/types';
 
 /**
@@ -73,7 +73,7 @@ const BANDS: ReadonlyArray<{ range: string; name: string; meaning: string }> = [
  * absence itself is the answer to the question, and each one names what a
  * receiver can no longer do.
  */
-const ABSENCE_REASON: Record<string, string> = {
+const ABSENCE_REASON: Record<AbsenceCode, string> = {
   DOMAIN_NXDOMAIN: 'this domain does not resolve at all, so there is no zone to score.',
   DMARC_RECORD_MISSING:
     'with no DMARC record, a receiver has no instruction to refuse forged mail and no report is ever sent to you.',

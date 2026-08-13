@@ -11,14 +11,19 @@ import {
 } from './pillars.js';
 
 /**
- * Vitals: start at 100, subtract every condition's weight, clamp to 0–100.
- * Deliberately additive — patients can do the arithmetic, and the before/after
- * simulator can move the number by toggling conditions off.
+ * Vitals: four questions, each answered out of 100 from the findings that
+ * belong to it, then weighted. Not one pool — see `pillars.ts` for why that
+ * failed, and `docs/SCORING.md` for the model in full.
  *
  * Each distinct condition *code* is charged once, however many times it was
  * found. Three DKIM selectors carrying 1024-bit keys is one problem with one
  * fix, and charging it three times says a domain is in critical condition when
  * it has a single thing to tidy up. The chart still lists every instance.
+ *
+ * A pillar can also be held down rather than charged, when the record it
+ * depends on is absent entirely, and lifted by a floor when the DMARC policy a
+ * receiver applies proves the domain is defended. Every one of those is
+ * reported in the breakdown so the number on screen can be checked.
  */
 /**
  * How exposed the domain is to being sent as, judged from the policy receivers
@@ -95,16 +100,26 @@ const VERDICT_CEILING: Record<SpoofVerdict, number> = {
  *   The domain does not resolve at all (RFC 8020) — there is no zone, so there
  *   is nothing to score in any pillar.
  */
-const ABSENCE_CEILING: Record<string, Partial<Record<Pillar, number>>> = {
+const ABSENCE_CEILING = {
   DOMAIN_NXDOMAIN: { IMPERSONATION: 0, DELIVERY: 0, VISIBILITY: 0, HARDENING: 0 },
   DMARC_RECORD_MISSING: { IMPERSONATION: 0, VISIBILITY: 0 },
   SPF_RECORD_MISSING: { IMPERSONATION: 20, DELIVERY: 40 },
-};
+} as const satisfies Record<string, Partial<Record<Pillar, number>>>;
+
+/**
+ * The findings that cap a pillar rather than merely charging it.
+ *
+ * Exported as a type so the explainer's copy is checked against it. Adding a
+ * ceiling without the sentence that justifies it would otherwise render as
+ * "Held at 0: undefined" beside somebody's score, which is worse than not
+ * showing the ceiling at all.
+ */
+export type AbsenceCode = keyof typeof ABSENCE_CEILING;
 
 /** Why a pillar could not score higher, in the words the explainer prints. */
 export interface PillarCeiling {
   /** The finding that imposed it. */
-  code: string;
+  code: AbsenceCode;
   limit: number;
 }
 
@@ -112,9 +127,13 @@ export interface PillarCeiling {
 function ceilingFor(pillar: Pillar, codes: Iterable<string>): PillarCeiling | null {
   let tightest: PillarCeiling | null = null;
   for (const code of codes) {
-    const limit = ABSENCE_CEILING[code]?.[pillar];
+    if (!(code in ABSENCE_CEILING)) continue;
+    const entry = ABSENCE_CEILING[code as AbsenceCode] as Partial<Record<Pillar, number>>;
+    const limit = entry[pillar];
     if (limit === undefined) continue;
-    if (tightest === null || limit < tightest.limit) tightest = { code, limit };
+    if (tightest === null || limit < tightest.limit) {
+      tightest = { code: code as AbsenceCode, limit };
+    }
   }
   return tightest;
 }

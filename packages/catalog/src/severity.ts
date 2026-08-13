@@ -43,13 +43,28 @@ export const TRIAGE_CHIP: Record<TriageLevel, string> = {
   HEALTHY: 'NOTE',
 };
 
-/** Triage colors — meaning only, always paired with an icon + label (WCAG AA). */
+/**
+ * Triage colours — meaning only, always paired with an icon and a label
+ * (WCAG AA).
+ *
+ * These are custom property references rather than hex, and that is the point.
+ * They were literals, which made this file a second copy of the palette that
+ * `tokens.css` also defines: two places to change a colour, one of them
+ * invisible to the design-token check, and every triage dot on the site frozen
+ * to the light theme regardless of what the page around it was doing. Naming
+ * the token instead means the dot is whatever the mode says it is, and there is
+ * one definition of ambulance red.
+ *
+ * Every consumer renders these into a DOM that has the stylesheet, so the
+ * reference always resolves. Anything drawn outside a document — an image
+ * generated at build time — must read the value from `@maildoc/ui` instead.
+ */
 export const TRIAGE_COLOR: Record<TriageLevel, string> = {
-  CRITICAL: '#E5322D',
-  URGENT: '#F5811F',
-  ATTENTION: '#F5B60D',
-  MINOR: '#2E7CF6',
-  HEALTHY: '#1FB56A',
+  CRITICAL: 'var(--md-critical)',
+  URGENT: 'var(--md-urgent)',
+  ATTENTION: 'var(--md-attention)',
+  MINOR: 'var(--md-minor)',
+  HEALTHY: 'var(--md-healthy)',
 };
 
 /** Most severe first — the order conditions are triaged in the chart. */

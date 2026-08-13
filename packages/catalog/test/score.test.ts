@@ -9,6 +9,12 @@ import {
   vitalsBand,
   vitals,
   worstSeverity,
+  SEVERITY_DEDUCTION,
+  SEVERITY_ORDER,
+  TRIAGE_CHIP,
+  TRIAGE_COLOR,
+  TRIAGE_LABEL,
+  triageFor,
 } from '../src/index.js';
 
 const critical = () => createCondition('SPF_RECORD_MISSING', { domain: 'a.com' });
@@ -391,5 +397,47 @@ describe('record status matches what the record costs', () => {
     // colour that means "look at this" on something nobody needs to look at.
     expect(rollupRecord([createCondition('BIMI_MISSING', { domain: 'a.com' })])).toBe('HEALTHY');
     expect(rollupRecord([])).toBe('HEALTHY');
+  });
+});
+
+/**
+ * Severity is the one input every colour, chip and dot on the site is derived
+ * from, so the tables that derive them have to be complete and consistent with
+ * each other. TypeScript enforces that each is a `Record<Severity, …>`; these
+ * assert the values agree.
+ */
+describe('severity maps to one triage level, one chip and one colour', () => {
+  it('gives every severity a deduction, a triage level and a chip', () => {
+    for (const severity of SEVERITY_ORDER) {
+      const triage = triageFor(severity);
+      expect(SEVERITY_DEDUCTION[severity], severity).toBeGreaterThan(0);
+      expect(TRIAGE_LABEL[triage], severity).toBeTruthy();
+      expect(TRIAGE_CHIP[triage], severity).toBeTruthy();
+      expect(TRIAGE_COLOR[triage], severity).toBeTruthy();
+    }
+  });
+
+  it('orders the deductions the same way it orders the severities', () => {
+    // A CRITICAL that cost less than a HIGH would put the cards in one order
+    // and the arithmetic in another.
+    const costs = SEVERITY_ORDER.map((s) => SEVERITY_DEDUCTION[s]);
+    expect([...costs].sort((a, b) => b - a)).toEqual(costs);
+  });
+
+  it('names a design token for every triage colour rather than a hex', () => {
+    // These were five literals, which made this package a second copy of the
+    // palette and froze every dot to the light theme.
+    for (const triage of Object.keys(TRIAGE_COLOR) as Array<keyof typeof TRIAGE_COLOR>) {
+      expect(TRIAGE_COLOR[triage]).toMatch(/^var\(--md-[a-z-]+\)$/);
+    }
+  });
+
+  it('reserves the healthy chip for a note, not for a fault', () => {
+    // INFO is the only severity that rolls a record up to healthy, and it is
+    // the only one whose chip reads NOTE. Those two have to stay in step or a
+    // green dot appears beside an amber card.
+    expect(triageFor('INFO')).toBe('HEALTHY');
+    expect(TRIAGE_CHIP.HEALTHY).toBe('NOTE');
+    expect(rollupRecord([createCondition('BIMI_MISSING', { domain: 'a.com' })])).toBe('HEALTHY');
   });
 });

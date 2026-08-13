@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import type { SpfChainNode } from '@maildoc/engines';
+import type { SpfChainNode, SpfNodeStatus } from '@maildoc/engines';
 import { Explain } from './Explain';
 
 /**
@@ -24,7 +24,7 @@ import { Explain } from './Explain';
  * to the same DoH endpoints we use; we had simply run out of budget mid-walk.
  * Saying whose problem it is, accurately, is the whole point of this product.
  */
-const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL: Record<SpfNodeStatus, string> = {
   OK: '',
   NO_RECORD: 'no SPF record here',
   MULTIPLE: 'more than one SPF record, a permanent error',
@@ -34,7 +34,7 @@ const STATUS_LABEL: Record<string, string> = {
   TRUNCATED: 'we stopped walking here',
 };
 
-const STATUS_TONE: Record<string, string> = {
+const STATUS_TONE: Record<SpfNodeStatus, string> = {
   OK: '',
   NO_RECORD: 'is-bad',
   MULTIPLE: 'is-bad',

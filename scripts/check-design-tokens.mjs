@@ -27,11 +27,25 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TOKENS = join(root, 'packages/ui/src/tokens.css');
 
-const ROOTS = ['apps/web/src', 'packages/ui/src'];
-const EXTENSIONS = ['.css', '.astro', '.tsx'];
+/**
+ * `packages/catalog` is here because the palette got copied into it.
+ * `TRIAGE_COLOR` held five hex literals that `tokens.css` also defined, so
+ * there were two places to change ambulance red and this check could only see
+ * one of them. Anything that names a colour is in scope.
+ */
+const ROOTS = ['apps/web/src', 'packages/ui/src', 'packages/catalog/src'];
+const EXTENSIONS = ['.css', '.astro', '.tsx', '.ts'];
 
-/** Files allowed to name a colour directly. */
-const PALETTE = ['packages/ui/src/tokens.css'];
+/**
+ * Files allowed to name a colour directly.
+ *
+ * `index.ts` holds exactly one: the brand red, for the `theme-color` meta tag,
+ * which is an HTML attribute and cannot read a custom property. That it matches
+ * `--md-red` is asserted in `packages/ui/test/tokens.test.ts` rather than left
+ * to trust, which is the difference between a permitted duplicate and a
+ * forgotten one.
+ */
+const PALETTE = ['packages/ui/src/tokens.css', 'packages/ui/src/index.ts'];
 
 /**
  * SVG artwork and OG cards are drawings, not interface. A logo's stroke is

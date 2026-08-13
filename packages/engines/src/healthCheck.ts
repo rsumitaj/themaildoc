@@ -393,9 +393,11 @@ function summarize(
       status: spf.status,
       found: spf.found,
       // `-` on its own is not a thing anyone can look up. Say `-all`.
-      summary: spf.found
-        ? `${spf.lookupCount}${spf.lookupCountExact ? '' : '+'} of 10 lookups used, ending in ${spf.allQualifier === null ? 'no all mechanism' : `${spf.allQualifier}all`}`
-        : 'No SPF record published',
+      summary: !resolves
+        ? absent
+        : spf.found
+          ? `${spf.lookupCount}${spf.lookupCountExact ? '' : '+'} of 10 lookups used, ending in ${spf.allQualifier === null ? 'no all mechanism' : `${spf.allQualifier}all`}`
+          : 'No SPF record published',
       conditionCount: spf.conditions.length,
     },
     {
@@ -403,9 +405,11 @@ function summarize(
       label: 'DMARC policy',
       status: dmarc.status,
       found: dmarc.found,
-      summary: dmarc.found
-        ? `Policy ${dmarc.effectivePolicy}${dmarc.testMode ? ' (test mode overrides the published policy)' : ''}${dmarc.discovery.source === 'parent' ? `, inherited from ${dmarc.discovery.foundAt}` : ''}`
-        : 'No DMARC record published',
+      summary: !resolves
+        ? absent
+        : dmarc.found
+          ? `Policy ${dmarc.effectivePolicy}${dmarc.testMode ? ' (test mode overrides the published policy)' : ''}${dmarc.discovery.source === 'parent' ? `, inherited from ${dmarc.discovery.foundAt}` : ''}`
+          : 'No DMARC record published',
       conditionCount: dmarc.conditions.length,
     },
     {
@@ -413,7 +417,9 @@ function summarize(
       label: 'Mail servers',
       status: mx.status,
       found: mx.found,
-      summary: mx.acceptsNoMail
+      summary: !resolves
+        ? absent
+        : mx.acceptsNoMail
         ? 'Null MX, this domain accepts no mail, by design'
         : mx.found
           ? `${mx.hosts.length} mail exchanger${mx.hosts.length === 1 ? '' : 's'}`

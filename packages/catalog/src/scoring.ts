@@ -38,6 +38,7 @@ export type {
   ScoreBreakdown,
   PillarBreakdown,
   PillarCeiling,
+  AbsenceCode,
   ChargedFinding,
   ScoreOptions,
   SpoofVerdict,

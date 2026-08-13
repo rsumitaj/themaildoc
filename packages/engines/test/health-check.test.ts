@@ -328,11 +328,11 @@ describe('a domain that does not exist', () => {
     const mock = createMockDoh(nowhere);
     const result = await healthCheck('abcdhsv3648193.com', { fetchImpl: mock.fetch });
 
+    // Every card, not a chosen few. "No SPF record published" is true of a
+    // domain that does not exist and implies the fix is to publish one.
     for (const record of result.records) {
-      expect(record.summary).not.toContain('not needed');
+      expect(record.summary, record.record).toBe('Not checked, this domain does not resolve');
     }
-    const mtasts = result.records.find((r) => r.record === 'MTASTS');
-    expect(mtasts?.summary).toBe('Not checked, this domain does not resolve');
   });
 
   it('says the domain does not resolve', async () => {
