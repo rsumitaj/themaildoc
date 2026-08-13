@@ -28,8 +28,29 @@ export const SPF_APPROACHING_LOOKUP_LIMIT = 9;
  * the 10-lookup budget, and one almost no checker tests (RFC 7208 §4.6.4).
  */
 export const SPF_MAX_MX_NAMES = 10;
-/** Depth guard for include:/redirect= recursion (independent of the lookup count). */
-export const SPF_MAX_RECURSION_DEPTH = 10;
+/**
+ * Runaway guard for include:/redirect= recursion. Not a product limit.
+ *
+ * This was 10, borrowed from the lookup limit, and it was the wrong number for
+ * the wrong reason. RFC 7208's ten is a budget a *receiver* spends evaluating a
+ * message; it says nothing about how far a checker may read. Reusing it meant
+ * the chart stopped drawing exactly where a record started being interesting,
+ * on the domains whose chains are deep enough to be worth drawing at all.
+ *
+ * Loops are caught by the ancestor path, not by depth, so this only has to stop
+ * a chain that is pathological rather than circular. Thirty is past anything
+ * the query budget can reach, which makes the budget the binding constraint and
+ * this a backstop that should never fire.
+ */
+export const SPF_MAX_RECURSION_DEPTH = 30;
+
+/**
+ * Nodes one chain may expand to. Also a runaway guard.
+ *
+ * A diamond-shaped include graph is legitimately re-walked down each path, so
+ * a wide record can have many more nodes than it has lookups.
+ */
+export const SPF_MAX_CHAIN_NODES = 250;
 
 /** DNS wire limits we surface as conditions. */
 export const TXT_STRING_MAX_BYTES = 255;

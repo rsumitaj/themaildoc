@@ -910,3 +910,78 @@ describe('SPF — the chain gets the budget it needs', () => {
     expect(answered.txt[0]?.value).toContain('v=spf1');
   });
 });
+
+describe('SPF — the walk goes to the end of the chain', () => {
+  /** A linear chain `n` hops deep, each hop only findable from the one above. */
+  function linearChain(depth: number): MockZone {
+    const zone: MockZone = {
+      'example.com': { TXT: ['v=spf1 include:hop1.vendor.example ~all'] },
+    };
+    for (let i = 1; i <= depth; i += 1) {
+      zone[`hop${i}.vendor.example`] = {
+        TXT: [
+          i === depth
+            ? `v=spf1 ip4:203.0.113.${i}/32 ~all`
+            : `v=spf1 ip4:203.0.113.${i}/32 include:hop${i + 1}.vendor.example ~all`,
+        ],
+      };
+    }
+    return zone;
+  }
+
+  /** Every domain in the tree, in the order the tree lists them. */
+  function chainDomains(node: SpfChainNode, out: string[] = []) {
+    out.push(node.domain);
+    for (const child of node.children) chainDomains(child, out);
+    return out;
+  }
+
+  it('reads all twenty-five hops of a chain twenty-five deep', async () => {
+    // Twice the depth the old guard allowed, and five times the deepest chain
+    // a real SPF vendor publishes. Nothing in the walk stops before the record
+    // does.
+    const { analysis, codes } = await run(linearChain(25), { budget: 60 });
+
+    const domains = chainDomains(analysis.chain!);
+    expect(domains).toHaveLength(26);
+    expect(domains.at(-1)).toBe('hop25.vendor.example');
+    expect(analysis.lookupCountExact).toBe(true);
+    expect(analysis.lookupCount).toBe(25);
+    expect(codes).toContain('SPF_LOOKUP_LIMIT_EXCEEDED');
+  });
+
+  it('keeps the record at every hop, so the tree can show it', async () => {
+    const { analysis } = await run(linearChain(25), { budget: 60 });
+
+    let node = analysis.chain!;
+    for (let i = 1; i <= 25; i += 1) {
+      node = node.children[0]!;
+      expect(node.domain).toBe(`hop${i}.vendor.example`);
+      expect(node.record).toContain(`ip4:203.0.113.${i}/32`);
+    }
+    expect(node.children).toEqual([]);
+  });
+
+  it('still refuses to loop', async () => {
+    // Depth is not what catches a loop, the ancestor path is, and raising the
+    // depth guard must not have quietly made a circular record walk forever.
+    const looping: MockZone = {
+      'example.com': { TXT: ['v=spf1 include:a.example ~all'] },
+      'a.example': { TXT: ['v=spf1 include:b.example ~all'] },
+      'b.example': { TXT: ['v=spf1 include:a.example ~all'] },
+    };
+    const { analysis, codes } = await run(looping);
+
+    expect(codes).toContain('SPF_CIRCULAR_INCLUDE');
+    expect(chainDomains(analysis.chain!).length).toBeLessThan(10);
+  });
+
+  it('is the query budget that bounds a walk now, and it says so', async () => {
+    // The honest limit. A chain deeper than the budget can reach is reported
+    // as incomplete with a floor for a count, never as a finished tree.
+    const { analysis, codes } = await run(linearChain(25), { budget: 12 });
+
+    expect(analysis.lookupCountExact).toBe(false);
+    expect(codes.filter((code) => code === 'RESOLVER_TIMEOUT')).toHaveLength(1);
+  });
+});

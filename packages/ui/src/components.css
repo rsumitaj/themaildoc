@@ -1648,6 +1648,19 @@
   border-left: var(--md-hairline) solid var(--md-line);
 }
 
+/*
+ * Deep chains stop stepping right.
+ *
+ * Every level indents about 23px, which is right for the four or five a real
+ * vendor chain has and pushes a twenty-hop one off the side of a phone. The
+ * border is what draws the nesting and it still draws at zero indent, so past
+ * the fifth level the rule stays and the offset goes.
+ */
+.md-tree__list.is-deep {
+  margin-left: 0;
+  padding-left: var(--md-space-2);
+}
+
 /* One grid, so the two number columns line up at every depth. */
 .md-tree__row {
   display: grid;

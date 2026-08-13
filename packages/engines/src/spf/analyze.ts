@@ -11,6 +11,7 @@ import {
   SPF_APPROACHING_LOOKUP_LIMIT,
   SPF_MAX_DNS_LOOKUPS,
   SPF_MAX_MX_NAMES,
+  SPF_MAX_CHAIN_NODES,
   SPF_MAX_RECURSION_DEPTH,
   SPF_MAX_VOID_LOOKUPS,
   TXT_STRING_MAX_BYTES,
@@ -42,13 +43,15 @@ export interface SpfEngineOptions {
    * subrequest and is how we avoid diagnosing a record mid-propagation.
    */
   verifyApex?: boolean;
-  /** include/redirect recursion depth guard. */
-  maxDepth?: number;
   /**
-   * Ceiling on chain nodes expanded. A diamond-shaped include graph is
-   * legitimately re-walked (each path costs its own lookups), so this stops a
-   * pathological record from burning CPU.
+   * Runaway guards, not product limits.
+   *
+   * The walk goes to the end of every branch. Both of these sit far past
+   * anything the query budget can reach, so the budget is what actually bounds
+   * a walk and these only exist to stop a record built to be pathological. A
+   * loop is caught by the ancestor path rather than by either of them.
    */
+  maxDepth?: number;
   maxNodes?: number;
 }
 
@@ -115,7 +118,7 @@ export async function analyzeSpf(
     voidExact: true,
     notes: new Set(),
     nodes: 0,
-    maxNodes: options.maxNodes ?? 64,
+    maxNodes: options.maxNodes ?? SPF_MAX_CHAIN_NODES,
     maxDepth: options.maxDepth ?? SPF_MAX_RECURSION_DEPTH,
     verifyApex: options.verifyApex ?? true,
     circular: false,

@@ -211,8 +211,17 @@ function Node({ node, entries, depth }: NodeProps) {
 
       {open && node.record && <pre class="md-tree__record md-mono">{node.record}</pre>}
 
+      {/*
+        Past a few levels the indent stops growing.
+
+        Each nested list steps in by about 23px, which reads well for the four
+        or five levels a real chain has and walks a twenty-hop one off the right
+        edge of a phone. The rule that draws the nesting is the left border, and
+        that keeps working at zero indent, so deep chains stay readable rather
+        than becoming a horizontal scroll.
+      */}
       {open && node.children.length > 0 && (
-        <ol class="md-tree__list">
+        <ol class={`md-tree__list ${depth >= 5 ? 'is-deep' : ''}`}>
           {node.children.map((child, index) => (
             <Node key={`${child.domain}-${index}`} node={child} entries={entries} depth={depth + 1} />
           ))}
