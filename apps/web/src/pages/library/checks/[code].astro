@@ -3,6 +3,7 @@ import Base from '../../../layouts/Base.astro';
 import ConsultLine from '../../../components/ConsultLine.astro';
 import { ALL_ISSUES, TRIAGE_CHIP, TRIAGE_LABEL, deductionFor, triageFor } from '@maildoc/catalog';
 import type { Issue } from '@maildoc/catalog';
+import { INDEXABLE_CHECKS } from '../../../data/indexable-checks.mjs';
 
 /**
  * One page per condition the clinic can diagnose.
@@ -140,9 +141,22 @@ const guide = RECORD_GUIDE[issue.record] ?? {
   href: '/health-library/email-authentication-guide',
   label: 'How SPF, DKIM and DMARC fit together',
 };
+/**
+ * Siblings, indexable ones first.
+ *
+ * A record like DMARC has forty conditions and only six fit here, so which six
+ * matters. Putting the pages that are trying to rank at the front means the
+ * links these pages hand out land where they are worth something, instead of
+ * on a tag-syntax page nobody searches for.
+ */
+const indexable = INDEXABLE_CHECKS.has(issue.code);
 const related = ALL_ISSUES.filter(
   (other) => other.record === issue.record && other.code !== issue.code,
-).slice(0, 6);
+)
+  .sort(
+    (a, b) => Number(INDEXABLE_CHECKS.has(b.code)) - Number(INDEXABLE_CHECKS.has(a.code)),
+  )
+  .slice(0, 6);
 
 const site = Astro.site ?? new URL('https://themaildoc.co');
 const url = new URL(`/library/checks/${issue.code.toLowerCase().replace(/_/g, '-')}`, site).href;
@@ -192,6 +206,11 @@ function metaDescription(value: string): string {
  * Titles come from the catalog, and a few conditions are worded long enough to
  * be cut off in a search result. Trim at a word boundary rather than shipping a
  * title Google will truncate mid-word.
+ *
+ * No brand suffix on these pages. They are deep reference pages whose titles
+ * are the condition itself, and fourteen characters of branding pushed most of
+ * them past what a search result shows. The record name earns its place because
+ * it is what tells two similarly worded conditions apart.
  */
 function trimTitle(value: string): string {
   if (value.length <= 60) return value;
@@ -201,14 +220,9 @@ function trimTitle(value: string): string {
 ---
 
 <Base
-  {/*
-    No brand suffix here. These are deep reference pages whose titles are the
-    condition itself, and fourteen characters of branding pushed most of them
-    past what a search result shows. The record name earns its place because it
-    is what disambiguates two similarly worded conditions.
-  */}
   title={trimTitle(`${issue.title} | ${issue.record}`)}
   description={metaDescription(readable(issue.why))}
+  noindex={!indexable}
   extra={jsonLd}
 >
   <section class="check">

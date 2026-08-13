@@ -4,6 +4,7 @@ import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
+import { INDEXABLE_CHECK_SLUGS } from './src/data/indexable-checks.mjs';
 
 const pkg = (name, entry = 'src/index.ts') =>
   fileURLToPath(new URL(`../../packages/${name}/${entry}`, import.meta.url));
@@ -61,7 +62,14 @@ export default defineConfig({
     // hundred URLs looks equally important, and the 166 generated condition
     // pages get crawled ahead of the twenty pages that are trying to rank.
     sitemap({
-      filter: (page) => !page.includes('/api/'),
+      // A sitemap is a list of pages you are asking to have indexed, so the
+      // condition pages carrying `noindex` have no business in it. Listing
+      // them would send a crawler two opposite instructions about the same URL.
+      filter: (page) => {
+        if (page.includes('/api/')) return false;
+        const match = new URL(page).pathname.match(/^\/library\/checks\/(.+)$/);
+        return match ? INDEXABLE_CHECK_SLUGS.has(match[1]) : true;
+      },
       serialize(item) {
         const path = new URL(item.url).pathname;
 

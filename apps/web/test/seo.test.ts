@@ -159,4 +159,58 @@ describe.skipIf(!built)('the crawler files', () => {
       expect(existsSync(join(DIST, 'og', `${kind}.png`)), kind).toBe(true);
     }
   });
+
+  it('never lists a noindexed page in the sitemap', () => {
+    // Asking a crawler to index a URL that then tells it not to is the one
+    // combination guaranteed to waste crawl budget on a new domain.
+    const sitemap = read(join(DIST, 'sitemap-0.xml'));
+    const listed = new Set(
+      [...sitemap.matchAll(/<loc>https:\/\/themaildoc\.co([^<]*)<\/loc>/g)].map(
+        (match) => match[1] || '/',
+      ),
+    );
+    const offenders = all
+      .filter((file) => /name="robots" content="noindex/.test(read(file)))
+      .map(name)
+      .map((path) => path.replace(/\.html$/, '').replace(/\/index$/, '') || '/')
+      .filter((path) => listed.has(path));
+    expect(offenders.join('\n')).toBe('');
+  });
+
+  it('keeps the condition pages from being most of what is offered for indexing', () => {
+    // 166 pages off one template, on a domain with no authority yet, is how a
+    // site gets read as boilerplate. Only the conditions people search for by
+    // name are submitted; the rest stay reachable and unindexed.
+    const sitemap = read(join(DIST, 'sitemap-0.xml'));
+    const total = (sitemap.match(/<loc>/g) ?? []).length;
+    const checks = (sitemap.match(/<loc>https:\/\/themaildoc\.co\/library\/checks\//g) ?? []).length;
+    expect(checks).toBeGreaterThan(0);
+    expect(checks / total).toBeLessThan(0.6);
+  });
+});
+
+describe.skipIf(!built)('the sourced statistics on the home page', () => {
+  const home = read(join(DIST, 'index.html'));
+
+  it('shows several, not one', () => {
+    expect((home.match(/class="pill"/g) ?? []).length).toBeGreaterThan(3);
+  });
+
+  it('links every claim to the document it came from', () => {
+    // The figure that stood here originally was unsourced and wrong. Every
+    // replacement was read out of the primary document, and the link is the
+    // only thing that lets a reader check that.
+    const stat = home.slice(home.indexOf('data-stat'), home.indexOf('</h1>'));
+    const claims = (stat.match(/class="pill"/g) ?? []).length;
+    const links = [...stat.matchAll(/href="(https:\/\/[^"]+)"/g)].map((match) => match[1]);
+    expect(links.length).toBe(claims);
+    expect(links.every((href) => href?.startsWith('https://'))).toBe(true);
+  });
+
+  it('leaves exactly one active before any script runs', () => {
+    const stat = home.slice(home.indexOf('data-stat'), home.indexOf('</h1>'));
+    const claims = (stat.match(/class="pill"/g) ?? []).length;
+    const inactive = (stat.match(/class="pill" inert/g) ?? []).length;
+    expect(inactive).toBe(claims - 1);
+  });
 });
