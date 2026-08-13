@@ -3,6 +3,7 @@ import { vitals } from '@maildoc/catalog';
 import { DohResolver } from '@maildoc/resolver';
 import { createMockDoh, type MockDohOptions, type MockZone } from '@maildoc/resolver/testing';
 import { analyzeSpf, type SpfEngineOptions } from '../src/index.js';
+import type { SpfChainNode } from '../src/spf/types.js';
 
 /**
  * Golden tests for the SPF engine. Every case is a zone a real domain could
@@ -641,5 +642,179 @@ describe('SPF — never a wrong answer', () => {
     const severities = analysis.conditions.map((c) => c.severity);
     expect(severities[0]).toBe('CRITICAL');
     expect(severities[severities.length - 1]).toBe('INFO');
+  });
+});
+
+/**
+ * The shape that broke in production: four includes at the apex, one of them a
+ * five-deep linear chain of per-customer names published by an SPF flattening
+ * vendor. Twelve lookups, well over the limit, and every hop of the deep branch
+ * only discoverable by resolving the one above it.
+ */
+const deepChainZone: MockZone = {
+  'example.com': {
+    TXT: [
+      'v=spf1 include:mail.vendor-a.example include:_spf.vendor-b.example ' +
+        'include:example.com.k1.spf.vendor-c.example include:vendor-d.example ~all',
+    ],
+  },
+  'mail.vendor-a.example': { TXT: ['v=spf1 ip4:192.0.2.0/24 ~all'] },
+  '_spf.vendor-b.example': { TXT: ['v=spf1 ip4:198.51.100.0/24 ~all'] },
+  'example.com.k1.spf.vendor-c.example': {
+    TXT: ['v=spf1 ip4:203.0.113.0/24 include:p1.example.com.k1.spf.vendor-c.example ~all'],
+  },
+  'p1.example.com.k1.spf.vendor-c.example': {
+    TXT: ['v=spf1 ip4:203.0.113.1/32 include:p2.example.com.k1.spf.vendor-c.example ~all'],
+  },
+  'p2.example.com.k1.spf.vendor-c.example': {
+    TXT: ['v=spf1 ip4:203.0.113.2/32 include:p3.example.com.k1.spf.vendor-c.example ~all'],
+  },
+  'p3.example.com.k1.spf.vendor-c.example': {
+    TXT: ['v=spf1 ip4:203.0.113.3/32 ~all'],
+  },
+  'vendor-d.example': { TXT: ['v=spf1 include:_spf.vendor-d.example ~all'] },
+  '_spf.vendor-d.example': {
+    TXT: ['v=spf1 include:_spf1.vendor-d.example include:_spf2.vendor-d.example ~all'],
+  },
+  '_spf1.vendor-d.example': { TXT: ['v=spf1 ip4:209.0.113.0/24 ~all'] },
+  '_spf2.vendor-d.example': { TXT: ['v=spf1 ip4:210.0.113.0/24 ~all'] },
+};
+
+/** Every node in the chain, depth first, as [status, domain]. */
+function chainStatuses(node: SpfChainNode, out: Array<[string, string]> = []) {
+  out.push([node.status, node.domain]);
+  for (const child of node.children) chainStatuses(child, out);
+  return out;
+}
+
+describe('SPF — walking a wide, deep chain', () => {
+  it('counts every lookup in it', async () => {
+    const { analysis, codes } = await run(deepChainZone);
+
+    expect(analysis.lookupCount).toBe(10);
+    expect(analysis.lookupCountExact).toBe(true);
+    expect(chainStatuses(analysis.chain!).every(([status]) => status === 'OK')).toBe(true);
+    expect(codes).toContain('SPF_LOOKUP_APPROACHING_LIMIT');
+  });
+
+  it('keeps the children in the order the record lists them', async () => {
+    // The tree on screen has to read in record order, not in the order the
+    // network happened to answer. Walking siblings concurrently makes that a
+    // property worth asserting rather than one that falls out of the loop.
+    const { analysis } = await run(deepChainZone);
+
+    expect(analysis.chain?.children.map((child) => child.domain)).toEqual([
+      'mail.vendor-a.example',
+      '_spf.vendor-b.example',
+      'example.com.k1.spf.vendor-c.example',
+      'vendor-d.example',
+    ]);
+  });
+
+  it('walks independent branches at the same time', async () => {
+    // Serial evaluation made this chain thirteen round trips in series, which
+    // on the real domain measured over three seconds and left the engine still
+    // running long after the other nine had finished. Nothing in one include
+    // can change another's result, so nothing required them to be serial.
+    let inFlight = 0;
+    let peak = 0;
+    const mock = createMockDoh(deepChainZone);
+    const resolver = new DohResolver({
+      fetchImpl: async (url, init) => {
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        try {
+          await Promise.resolve();
+          return await mock.fetch(url, init);
+        } finally {
+          inFlight -= 1;
+        }
+      },
+      timeoutMs: 50,
+    });
+
+    await analyzeSpf('example.com', resolver, { verifyApex: false });
+    expect(peak).toBeGreaterThan(1);
+  });
+});
+
+describe('SPF — when a lookup fails on our side', () => {
+  /** What a Worker does past its subrequest ceiling: fetch throws outright. */
+  const failAfter = (n: number): MockDohOptions => {
+    let seen = 0;
+    return { fail: () => (++seen > n ? 'NETWORK' : undefined) };
+  };
+
+  it('reports the incomplete chain once, not once per name', async () => {
+    const { analysis, codes } = await run(deepChainZone, { mock: failAfter(3) });
+
+    // Several names went unanswered.
+    const unresolved = chainStatuses(analysis.chain!).filter(([s]) => s === 'UNRESOLVED');
+    expect(unresolved.length).toBeGreaterThan(1);
+
+    // One card about it. This used to be one per name, so a bad minute on our
+    // side put four or five alarming findings on somebody's chart, each naming
+    // a hostname belonging to their vendor.
+    expect(codes.filter((code) => code === 'RESOLVER_TIMEOUT')).toHaveLength(1);
+  });
+
+  it('names the domain being examined, never the vendor host that failed', async () => {
+    const { analysis } = await run(deepChainZone, { mock: failAfter(3) });
+    const note = analysis.conditions.find((c) => c.code === 'RESOLVER_TIMEOUT');
+
+    expect(note?.vars).toMatchObject({ domain: 'example.com', record: 'SPF' });
+  });
+
+  it('says the count is a floor rather than a total', async () => {
+    const { analysis } = await run(deepChainZone, { mock: failAfter(3) });
+    expect(analysis.lookupCountExact).toBe(false);
+    expect(analysis.notes).toContain('RESOLVER_ERROR');
+  });
+
+  it('does not call a partial count close to the limit', async () => {
+    // A floor of nine could be nine or could be twenty. Telling somebody they
+    // are approaching a limit they may already be past is worse than silence,
+    // and the summary renders the count as `9+` either way.
+    const { analysis, codes } = await run(deepChainZone, { mock: failAfter(3) });
+
+    expect(analysis.lookupCountExact).toBe(false);
+    expect(codes).not.toContain('SPF_LOOKUP_APPROACHING_LIMIT');
+  });
+
+  it('still reports a limit already exceeded, because that stays true', async () => {
+    // Over ten is over ten however much of the rest of the chain went unread.
+    const overZone: MockZone = {
+      'example.com': {
+        TXT: [
+          'v=spf1 a mx include:a.example include:b.example include:c.example ' +
+            'include:d.example include:e.example include:f.example include:g.example ' +
+            'include:h.example include:i.example ~all',
+        ],
+      },
+      'a.example': { TXT: ['v=spf1 ip4:192.0.2.1/32 ~all'] },
+    };
+    const { analysis, codes } = await run(overZone, { mock: failAfter(2) });
+
+    expect(analysis.lookupCount).toBeGreaterThan(10);
+    expect(analysis.lookupCountExact).toBe(false);
+    expect(codes).toContain('SPF_LOOKUP_LIMIT_EXCEEDED');
+  });
+});
+
+describe('SPF — what the analysis reports about its own cost', () => {
+  it('counts its own queries, not everything the shared resolver did', async () => {
+    // One resolver serves ten engines at once, so a delta on its counter
+    // measured whatever the other nine did while this one was walking. A
+    // fourteen-lookup domain reported twenty-nine.
+    const mock = createMockDoh(deepChainZone);
+    const resolver = new DohResolver({ fetchImpl: mock.fetch, timeoutMs: 50 });
+
+    // Something else on the same resolver, before and during.
+    await resolver.query('unrelated.example', 'A');
+    const analysis = await analyzeSpf('example.com', resolver, { verifyApex: false });
+    await resolver.query('another.example', 'A');
+
+    expect(analysis.queriesUsed).toBe(11);
+    expect(resolver.queriesIssued).toBeGreaterThan(analysis.queriesUsed);
   });
 });

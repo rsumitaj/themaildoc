@@ -52,6 +52,22 @@ export interface SpfEngineOptions {
   maxNodes?: number;
 }
 
+/**
+ * Sibling includes walked at once.
+ *
+ * Two independent includes are two independent subtrees: nothing in either can
+ * change the other's result, and RFC 7208 counts each of them as one lookup
+ * whatever order they are evaluated in. Walking them one at a time turned a
+ * chain that is four wide and five deep into thirteen round trips in series,
+ * which on a real domain measured 3.1 seconds and left this engine still
+ * running long after the other nine had finished.
+ *
+ * Four at a time collapses that to roughly the depth of the deepest branch
+ * without opening a burst of connections at a public resolver that has every
+ * reason to start refusing us.
+ */
+const SIBLING_CONCURRENCY = 4;
+
 interface WalkContext {
   resolver: DohResolver;
   conditions: Condition[];
@@ -67,6 +83,13 @@ interface WalkContext {
   verifyApex: boolean;
   /** A loop was found, so the chain can never be fully evaluated. */
   circular: boolean;
+  /**
+   * Names whose lookup failed on our side. Collected rather than reported one
+   * by one — see `analyzeSpf`.
+   */
+  unresolved: string[];
+  /** Queries this engine issued. The resolver's counter is shared. */
+  queries: number;
 }
 
 /**
@@ -82,7 +105,6 @@ export async function analyzeSpf(
   resolver: DohResolver,
   options: SpfEngineOptions = {},
 ): Promise<SpfAnalysis> {
-  const startQueries = resolver.queriesIssued;
   const context: WalkContext = {
     resolver,
     conditions: [],
@@ -97,6 +119,8 @@ export async function analyzeSpf(
     maxDepth: options.maxDepth ?? SPF_MAX_RECURSION_DEPTH,
     verifyApex: options.verifyApex ?? true,
     circular: false,
+    unresolved: [],
+    queries: 0,
   };
 
   const name = domain.trim().replace(/\.$/, '').toLowerCase();
@@ -109,6 +133,25 @@ export async function analyzeSpf(
     judgeApexPolicy(context, name, apex);
   }
   judgeLookupBudget(context);
+
+  /**
+   * One card for an incomplete walk, naming the domain being examined.
+   *
+   * This used to emit one condition per name that failed, so a bad minute on
+   * our side put four or five alarming cards on somebody's chart, each naming
+   * a hostname belonging to their SPF vendor. The finding is the same finding
+   * however many names it touched — we could not finish reading the chain —
+   * and printing it once, about their domain rather than about their vendor's
+   * infrastructure, is both the truth and far less frightening.
+   */
+  if (context.unresolved.length > 0) {
+    emit(
+      context,
+      'RESOLVER_TIMEOUT',
+      { domain: name, record: 'SPF' },
+      `Incomplete: ${context.unresolved.length} of the names in this chain did not answer`,
+    );
+  }
 
   const conditions = sortConditions(dedupeConditions(context.conditions));
 
@@ -129,7 +172,13 @@ export async function analyzeSpf(
     chain: root.node,
     conditions,
     status: rollupRecord(conditions),
-    queriesUsed: resolver.queriesIssued - startQueries,
+    /**
+     * This engine's own queries. It used to be the delta on the resolver's
+     * shared counter, which on a checkup running ten engines against one
+     * resolver measured whatever everybody else did while this one was
+     * walking. A domain whose SPF cost fourteen lookups reported twenty-nine.
+     */
+    queriesUsed: context.queries,
     notes: [...context.notes],
   };
 }
@@ -165,6 +214,7 @@ async function walk(
   }
   context.nodes += 1;
 
+  context.queries += 1;
   const result = await context.resolver.query(domain, 'TXT', {
     verify: depth === 0 && context.verifyApex,
   });
@@ -187,7 +237,9 @@ async function walk(
     node.status = 'UNRESOLVED';
     context.lookupsExact = false;
     context.voidExact = false;
-    emit(context, 'RESOLVER_TIMEOUT', { domain, record: 'SPF' });
+    // Recorded, not reported. `analyzeSpf` emits one condition for the whole
+    // chain once the walk is done.
+    if (!context.unresolved.includes(domain)) context.unresolved.push(domain);
     return { node, record: null };
   }
 
@@ -416,10 +468,53 @@ async function analyzeTerms(
     }
   }
 
-  for (const next of pending) {
-    const child = await walk(context, next.target, node.depth + 1, next.via, path);
-    node.children.push(child.node);
+  /**
+   * Siblings in parallel, children of each in turn.
+   *
+   * Nothing in one include can change what another include resolves to, and
+   * the lookup count is the same however they are ordered, so the only thing
+   * serial evaluation bought was latency. `mapWithLimit` preserves input order,
+   * which matters: the tree on screen has to read in the order the record
+   * lists its terms, not in the order the network happened to answer.
+   */
+  const children = await mapWithLimit(pending, SIBLING_CONCURRENCY, (next) =>
+    walk(context, next.target, node.depth + 1, next.via, path),
+  );
+  for (const child of children) node.children.push(child.node);
+}
+
+/**
+ * `Promise.all` with a ceiling on how many run at once, results in input order.
+ *
+ * The ceiling is the point. A record with ten includes, each with ten of their
+ * own, would otherwise open a hundred connections at a public resolver in one
+ * burst, and the answer to that is a 429 rather than an SPF chain.
+ */
+async function mapWithLimit<In, Out>(
+  items: readonly In[],
+  limit: number,
+  run: (item: In) => Promise<Out>,
+): Promise<Out[]> {
+  if (items.length <= 1) {
+    return items.length === 0 ? [] : [await run(items[0] as In)];
   }
+
+  const results = new Array<Out>(items.length);
+  let next = 0;
+
+  const worker = async (): Promise<void> => {
+    for (;;) {
+      const index = next;
+      next += 1;
+      if (index >= items.length) return;
+      results[index] = await run(items[index] as In);
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  );
+  return results;
 }
 
 interface ApexSummary {
@@ -461,13 +556,27 @@ function judgeApexPolicy(context: WalkContext, domain: string, apex: ApexSummary
   if (allQualifier === '~') emit(context, 'SPF_SOFTFAIL_ADVISORY', { domain });
 }
 
+/**
+ * The two counts RFC 7208 puts a hard limit on, judged only as far as they can
+ * honestly be judged.
+ *
+ * An interrupted walk leaves a count that is a floor rather than a total, and
+ * the two verdicts do not survive that equally. "Over ten" stays true whatever
+ * the rest of the chain would have added, so a partial count above the limit is
+ * still a finding. "Approaching ten" does not: a floor of nine could be nine or
+ * could be twenty, and telling somebody they are close to a limit they are
+ * already past is worse than saying nothing. The record summary renders the
+ * count as `9+` in that case, which is the honest way to leave it.
+ */
 function judgeLookupBudget(context: WalkContext): void {
   if (context.lookups > SPF_MAX_DNS_LOOKUPS) {
     emit(context, 'SPF_LOOKUP_LIMIT_EXCEEDED', { count: context.lookups });
-  } else if (context.lookups >= SPF_APPROACHING_LOOKUP_LIMIT) {
+  } else if (context.lookupsExact && context.lookups >= SPF_APPROACHING_LOOKUP_LIMIT) {
     emit(context, 'SPF_LOOKUP_APPROACHING_LIMIT', { count: context.lookups });
   }
 
+  // Same reasoning: over the void limit is over it, but a short count from an
+  // interrupted walk proves nothing.
   if (context.voidCount > SPF_MAX_VOID_LOOKUPS) {
     emit(context, 'SPF_VOID_LOOKUP_EXCEEDED', {
       count: context.voidCount,
@@ -558,6 +667,7 @@ async function probeTarget(
     context.voidExact = false;
     return;
   }
+  context.queries += 1;
   const result = await context.resolver.query(target, type);
   for (const note of result.notes) context.notes.add(note);
 
