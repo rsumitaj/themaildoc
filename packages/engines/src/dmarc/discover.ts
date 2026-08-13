@@ -113,6 +113,9 @@ export async function discoverDmarc(
     const isAuthor = target === authorDomain;
     const result = await resolver.query(`_dmarc.${target}`, 'TXT', {
       verify: isAuthor && (options.verify ?? false),
+      // The other lookup a diagnosis is worthless without: the policy found
+      // here is what decides whether the domain can be impersonated at all.
+      essential: true,
     });
     discovery.queries += 1;
     for (const note of result.notes) notes.add(note);

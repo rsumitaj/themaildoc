@@ -44,6 +44,22 @@ export interface ResolverOptions {
   memoize?: boolean;
   cache?: DnsCache;
   cacheTtlSeconds?: number;
+  /**
+   * Queries held back from ordinary callers, for `{ essential: true }` work.
+   *
+   * The budget was first-come-first-served, and a checkup runs ten engines
+   * against one resolver at once. Nine of them are shallow and finish in a
+   * round trip or two; the tenth walks an SPF include chain that can only be
+   * discovered one hop at a time. So the engine that needed the budget most
+   * was reliably the one still asking for it after everyone else had spent it,
+   * and a customer whose SPF is published through a flattening vendor got a
+   * chain that stopped three names in, with no explanation on the chart beyond
+   * "we stopped walking here".
+   *
+   * A reserve fixes the ordering without raising the ceiling: ordinary work
+   * stops early and leaves this much for the work a diagnosis cannot omit.
+   */
+  reserve?: number;
 }
 
 export interface QueryOptions {
@@ -53,6 +69,12 @@ export interface QueryOptions {
    * chain-walk lookups.
    */
   verify?: boolean;
+  /**
+   * May spend the reserve. For lookups the diagnosis is wrong without — the
+   * SPF chain walk and DMARC discovery — never for the optional detail around
+   * them.
+   */
+  essential?: boolean;
 }
 
 /**
@@ -75,10 +97,21 @@ export class DohResolver {
   private readonly memoize: boolean;
   private readonly cache: DnsCache | undefined;
   private readonly cacheTtlSeconds: number;
+  private readonly reserve: number;
   private readonly inFlight = new Map<string, Promise<DnsQueryResult>>();
 
   /** Upstream queries actually issued (cache and memo hits are free). */
   queriesIssued = 0;
+  /**
+   * Of those, the ones spent by ordinary callers.
+   *
+   * Counted apart from the total so the two allowances do not eat each other.
+   * A single counter with the ceiling set at `budget - reserve` looked right
+   * and was not: essential queries pushed that counter up too, so a deep SPF
+   * chain spending its own reserve pushed every other engine over the line and
+   * the checkup came back marked partial when nothing had been skipped.
+   */
+  private ordinaryIssued = 0;
   /** True once the budget stopped a query — engines report partial results. */
   budgetExhausted = false;
 
@@ -92,23 +125,55 @@ export class DohResolver {
     this.memoize = options.memoize ?? true;
     this.cache = options.cache;
     this.cacheTtlSeconds = options.cacheTtlSeconds ?? 300;
+    this.reserve = Math.max(0, Math.min(options.reserve ?? 0, this.budget));
   }
 
-  /** Queries left before the budget stops us. */
+  /**
+   * Queries left to an ordinary caller: whichever of its own allowance and the
+   * budget overall runs out first.
+   */
   get remainingBudget(): number {
+    return Math.max(
+      0,
+      Math.min(
+        this.budget - this.reserve - this.ordinaryIssued,
+        this.budget - this.queriesIssued,
+      ),
+    );
+  }
+
+  /** Queries left to essential work, which may spend the reserve. */
+  get remainingReserve(): number {
     return Math.max(0, this.budget - this.queriesIssued);
   }
 
   async query(name: string, type: DnsType, options: QueryOptions = {}): Promise<DnsQueryResult> {
     const qname = normalizeName(name);
     const key = `${type}:${qname}`;
+    const essential = options.essential ?? false;
 
     if (this.memoize) {
       const pending = this.inFlight.get(key);
-      if (pending) return pending;
+      if (pending) {
+        const settled = await pending;
+        /**
+         * A refusal is not an answer about DNS, it is an answer about us, and
+         * it must not be handed to a caller entitled to the reserve. Without
+         * this, one ordinary engine asking for a name a moment too late would
+         * poison it for the chain walk that is allowed to spend anyway.
+         */
+        if (!(essential && settled.notes.includes('BUDGET_EXCEEDED'))) return settled;
+        this.inFlight.delete(key);
+      }
     }
 
-    const promise = this.resolve(key, qname, type, options.verify ?? this.verifyByDefault);
+    const promise = this.resolve(
+      key,
+      qname,
+      type,
+      options.verify ?? this.verifyByDefault,
+      essential,
+    );
     if (this.memoize) this.inFlight.set(key, promise);
     return promise;
   }
@@ -124,13 +189,14 @@ export class DohResolver {
     qname: string,
     type: DnsType,
     verify: boolean,
+    essential: boolean,
   ): Promise<DnsQueryResult> {
     const cached = await this.cache?.get(key);
     if (cached) return cached;
 
     const result = verify
-      ? await this.resolveVerified(qname, type)
-      : await this.resolveFailover(qname, type);
+      ? await this.resolveVerified(qname, type, essential)
+      : await this.resolveFailover(qname, type, essential);
 
     if (this.cache && result.status !== 'ERROR' && result.status !== 'TIMEOUT') {
       const ttl = result.status === 'NXDOMAIN' ? Math.min(60, this.cacheTtlSeconds) : this.cacheTtlSeconds;
@@ -140,11 +206,15 @@ export class DohResolver {
   }
 
   /** Primary, then fallback. Cheapest path — one subrequest when all is well. */
-  private async resolveFailover(qname: string, type: DnsType): Promise<DnsQueryResult> {
+  private async resolveFailover(
+    qname: string,
+    type: DnsType,
+    essential: boolean,
+  ): Promise<DnsQueryResult> {
     const failures: string[] = [];
 
     for (const provider of this.providers) {
-      const attempt = await this.attempt(provider, qname, type);
+      const attempt = await this.attempt(provider, qname, type, essential);
       if (attempt === 'BUDGET') return budgetResult(qname, type);
       if (attempt.ok) return fromJson(qname, type, attempt.json, [provider], 'SINGLE');
       failures.push(attempt.reason);
@@ -153,14 +223,22 @@ export class DohResolver {
   }
 
   /** Both resolvers, in parallel, compared. Disagreement is never silent. */
-  private async resolveVerified(qname: string, type: DnsType): Promise<DnsQueryResult> {
-    if (this.providers.length < 2) return this.resolveFailover(qname, type);
-    if (this.remainingBudget < this.providers.length) return this.resolveFailover(qname, type);
+  private async resolveVerified(
+    qname: string,
+    type: DnsType,
+    essential: boolean,
+  ): Promise<DnsQueryResult> {
+    if (this.providers.length < 2) return this.resolveFailover(qname, type, essential);
+
+    // Cross-checking is a nicety. It never eats into the reserve, and it gives
+    // way to a single-provider answer rather than to no answer at all.
+    const headroom = essential ? this.remainingReserve : this.remainingBudget;
+    if (headroom < this.providers.length) return this.resolveFailover(qname, type, essential);
 
     const attempts = await Promise.all(
       this.providers.map(async (provider) => ({
         provider,
-        attempt: await this.attempt(provider, qname, type),
+        attempt: await this.attempt(provider, qname, type, essential),
       })),
     );
 
@@ -213,8 +291,22 @@ export class DohResolver {
     provider: DohProvider,
     qname: string,
     type: DnsType,
+    essential: boolean,
   ): Promise<DohAttempt | 'BUDGET'> {
-    if (this.queriesIssued >= this.budget) {
+    /**
+     * Two ceilings, checked together.
+     *
+     * Nobody gets past the budget, and an ordinary caller stops at its own
+     * allowance on top of that, which is what leaves the reserve standing for
+     * the chain walk. A refused query is a refused query either way:
+     * `meta.partial` has to keep meaning what it says.
+     */
+    const outOfRoom = essential
+      ? this.queriesIssued >= this.budget
+      : this.queriesIssued >= this.budget ||
+        this.ordinaryIssued >= this.budget - this.reserve;
+
+    if (outOfRoom) {
       this.budgetExhausted = true;
       return 'BUDGET';
     }
@@ -227,11 +319,17 @@ export class DohResolver {
       timeoutMs: this.timeoutMs,
       retries: this.retries,
       spend: () => {
-        if (this.queriesIssued >= this.budget) {
+        const spent = essential
+          ? this.queriesIssued >= this.budget
+          : this.queriesIssued >= this.budget ||
+            this.ordinaryIssued >= this.budget - this.reserve;
+
+        if (spent) {
           this.budgetExhausted = true;
           return false;
         }
         this.queriesIssued += 1;
+        if (!essential) this.ordinaryIssued += 1;
         return true;
       },
     });

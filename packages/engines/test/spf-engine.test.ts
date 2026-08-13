@@ -818,3 +818,95 @@ describe('SPF — what the analysis reports about its own cost', () => {
     expect(resolver.queriesIssued).toBeGreaterThan(analysis.queriesUsed);
   });
 });
+
+describe('SPF — the chain gets the budget it needs', () => {
+  /**
+   * The failure this reserve exists for.
+   *
+   * Ten engines share one resolver and the budget used to be
+   * first-come-first-served, which quietly meant last-served-loses. Nine of
+   * them are shallow and spend their queries at once; the SPF walk discovers
+   * its names one hop at a time and is still asking long after the others have
+   * finished. So the deepest chains — the ones most likely to be broken, since
+   * depth is what breaks them — were the ones that could not be read, and the
+   * customer got a tree ending in "we stopped walking here" three names in.
+   *
+   * `spend` here is those other nine: it takes the budget down to almost
+   * nothing before the walk gets going.
+   */
+  async function walkUnderPressure(reserve: number, spend: number) {
+    const mock = createMockDoh(deepChainZone);
+    const resolver = new DohResolver({
+      fetchImpl: mock.fetch,
+      timeoutMs: 50,
+      budget: 30,
+      ...(reserve ? { reserve } : {}),
+    });
+
+    for (let i = 0; i < spend; i += 1) {
+      await resolver.query(`filler-${i}.example`, 'A');
+    }
+
+    const analysis = await analyzeSpf('example.com', resolver, { verifyApex: false });
+    return {
+      analysis,
+      truncated: chainStatuses(analysis.chain!).filter(([status]) => status === 'TRUNCATED'),
+    };
+  }
+
+  it('walks to the last include even when everything else got there first', async () => {
+    const { analysis, truncated } = await walkUnderPressure(22, 22);
+
+    expect(truncated).toEqual([]);
+    expect(analysis.lookupCountExact).toBe(true);
+    expect(analysis.lookupCount).toBe(10);
+
+    // The deepest name in the vendor's chain, four hops down, actually read.
+    const deepest = chainStatuses(analysis.chain!).map(([, domain]) => domain);
+    expect(deepest).toContain('p3.example.com.k1.spf.vendor-c.example');
+  });
+
+  it('is the reserve doing it, not luck', async () => {
+    // Same pressure, same budget, no reserve: this is what shipped, and it is
+    // exactly the report — the walk stops part way down and the count is a
+    // floor rather than a total.
+    const { analysis, truncated } = await walkUnderPressure(0, 22);
+
+    expect(truncated.length).toBeGreaterThan(0);
+    expect(analysis.lookupCountExact).toBe(false);
+  });
+
+  it('says so on the chart when it does have to stop', async () => {
+    // "We stopped walking here" appeared in the tree with no card next to it
+    // explaining why, so the one thing the reader could see was the one thing
+    // nothing accounted for.
+    const { analysis } = await walkUnderPressure(0, 22);
+    const codes = analysis.conditions.map((c) => c.code);
+
+    expect(codes.filter((code) => code === 'RESOLVER_TIMEOUT')).toHaveLength(1);
+  });
+
+  it('does not let an ordinary caller poison a name the walk still needs', async () => {
+    // One shallow engine asking for a name a moment too late used to memoise
+    // the refusal, and the chain walk — entitled to the reserve — was handed
+    // that refusal instead of a lookup.
+    const mock = createMockDoh(deepChainZone);
+    const resolver = new DohResolver({
+      fetchImpl: mock.fetch,
+      timeoutMs: 50,
+      budget: 30,
+      reserve: 22,
+    });
+
+    for (let i = 0; i < 22; i += 1) await resolver.query(`filler-${i}.example`, 'A');
+
+    // Ordinary work is out of budget and gets turned away.
+    const refused = await resolver.query('vendor-d.example', 'TXT');
+    expect(refused.notes).toContain('BUDGET_EXCEEDED');
+
+    // The walk asks for the same name and gets a real answer.
+    const answered = await resolver.query('vendor-d.example', 'TXT', { essential: true });
+    expect(answered.notes).not.toContain('BUDGET_EXCEEDED');
+    expect(answered.txt[0]?.value).toContain('v=spf1');
+  });
+});

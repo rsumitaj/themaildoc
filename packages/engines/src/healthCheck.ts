@@ -55,6 +55,31 @@ import type { AddressAnalysis, DnssecAnalysis } from './address/analyze.js';
  */
 export const DEFAULT_HEALTH_CHECK_BUDGET = 44;
 
+/**
+ * Of that budget, the share only the SPF chain walk and DMARC discovery may
+ * spend.
+ *
+ * Ten engines share one resolver and the budget was first-come-first-served,
+ * which quietly meant last-served-loses. Nine of them are shallow: an MX
+ * lookup and its targets, a TXT at a known name, a pair of address records.
+ * They finish in a round trip or two and they spend their queries immediately.
+ * The tenth walks an include chain it can only discover one hop at a time, so
+ * it is still asking for queries long after the others have taken them.
+ *
+ * The result was that the deepest chains — exactly the records most likely to
+ * be broken, since depth is what breaks them — were the ones that could not be
+ * read. A domain publishing SPF through a flattening vendor got a tree ending
+ * in "we stopped walking here" three names in, and no card explaining why.
+ *
+ * Twenty-two covers the worst chain that can exist inside the rules: RFC 7208
+ * stops a receiver at ten lookups, each hop is one TXT query, and the leaves
+ * that consume no lookup of their own still have to be read. A record past the
+ * limit is already reported as past it, so nothing beyond that changes the
+ * verdict. The other engines keep twenty-two between them, which is more than
+ * their worst case, and they degrade into smaller answers rather than none.
+ */
+export const HEALTH_CHECK_RESERVE = 22;
+
 export interface HealthCheckOptions {
   fetchImpl?: FetchLike;
   cache?: DnsCache;
@@ -114,6 +139,9 @@ export async function healthCheck(
 
   const resolver = new DohResolver({
     budget,
+    // Scaled, so a caller that passes a smaller budget for a test or a cheaper
+    // mode still gets the same proportion held back rather than all of it.
+    reserve: Math.min(HEALTH_CHECK_RESERVE, Math.floor(budget / 2)),
     ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
     ...(options.cache ? { cache: options.cache } : {}),
     ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),

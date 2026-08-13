@@ -210,6 +210,7 @@ async function walk(
     node.status = 'TRUNCATED';
     context.lookupsExact = false;
     context.voidExact = false;
+    recordIncomplete(context, domain);
     return { node, record: null };
   }
   context.nodes += 1;
@@ -217,6 +218,17 @@ async function walk(
   context.queries += 1;
   const result = await context.resolver.query(domain, 'TXT', {
     verify: depth === 0 && context.verifyApex,
+    /**
+     * The chain walk spends the reserve.
+     *
+     * Every hop here is a name that can only be discovered by resolving the
+     * one above it, so a lookup refused part way through does not cost detail,
+     * it costs the answer: the lookup count stops being a total, the tree ends
+     * in "we stopped walking here", and the record cannot be judged against
+     * the limit that decides whether it works at all. Everything else in a
+     * checkup degrades into a smaller answer. This degrades into no answer.
+     */
+    essential: true,
   });
   for (const note of result.notes) context.notes.add(note);
 
@@ -230,6 +242,7 @@ async function walk(
     node.status = 'TRUNCATED';
     context.lookupsExact = false;
     context.voidExact = false;
+    recordIncomplete(context, domain);
     return { node, record: null };
   }
 
@@ -237,9 +250,7 @@ async function walk(
     node.status = 'UNRESOLVED';
     context.lookupsExact = false;
     context.voidExact = false;
-    // Recorded, not reported. `analyzeSpf` emits one condition for the whole
-    // chain once the walk is done.
-    if (!context.unresolved.includes(domain)) context.unresolved.push(domain);
+    recordIncomplete(context, domain);
     return { node, record: null };
   }
 
@@ -689,6 +700,19 @@ async function probeTarget(
   if (type === 'MX' && result.records.length > SPF_MAX_MX_NAMES) {
     emit(context, 'SPF_MX_LIMIT_EXCEEDED', { target, count: result.records.length });
   }
+}
+
+/**
+ * A name in the chain we did not get to the bottom of, whatever stopped us.
+ *
+ * Recorded rather than reported, so `analyzeSpf` can print one condition for
+ * the whole walk. All three causes — a failed lookup, an exhausted budget, a
+ * recursion guard — are the same fact from the reader's side: we did not
+ * finish, and the count below is a floor. The tree still shows exactly which
+ * node we stopped at, which is where that detail belongs.
+ */
+function recordIncomplete(context: WalkContext, domain: string): void {
+  if (!context.unresolved.includes(domain)) context.unresolved.push(domain);
 }
 
 function countVoid(context: WalkContext, domain: string): void {
