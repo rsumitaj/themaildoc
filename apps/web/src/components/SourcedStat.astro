@@ -1,0 +1,195 @@
+---
+/**
+ * The rotating line above the headline.
+ *
+ * Every claim on this site is meant to be checkable, and the first sentence a
+ * visitor reads is the worst possible place to break that rule. The figure that
+ * sat here originally was "4% of domains enforce DMARC", which came from
+ * nowhere and matched no published study.
+ *
+ * So each line below carries the source it came from, linked, and the numbers
+ * were read out of the primary document rather than a summary of it. Rotating
+ * them is not decoration: six different facts give six different readers a
+ * reason to care, and the one about Gmail's bulk sender rule lands with people
+ * who have never heard of DMARC.
+ *
+ * It costs one small inline script and no requests.
+ */
+interface Stat {
+  /** The sourced claim. Everything inside this is attributable to `href`. */
+  claim: string;
+  /** Ours, not theirs. Never inside the link. */
+  hook: string;
+  href: string;
+  /** Shown on hover, so the source is legible before anyone clicks. */
+  source: string;
+}
+
+const STATS: Stat[] = [
+  {
+    claim: 'Across 5.5 million domains, 12.8% enforce a DMARC policy that stops spoofing.',
+    hook: 'Is yours one of them?',
+    href: 'https://dmarcguard.io/research/email-authentication/',
+    source: 'DMARCguard, 5,499,028 domains scanned February 2026',
+  },
+  {
+    claim: 'The FBI booked $3.04 billion of business email compromise losses in 2025.',
+    hook: 'Most of it began with a From line nobody could verify.',
+    href: 'https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf',
+    source: 'FBI IC3 Annual Report 2025, BEC losses of $3,046,598,558',
+  },
+  {
+    claim: 'Gmail has required DMARC from anyone sending 5,000 messages a day since 2024.',
+    hook: 'Do you clear the bar?',
+    href: 'https://support.google.com/a/answer/81126',
+    source: 'Google Workspace Admin Help, email sender guidelines',
+  },
+  {
+    claim: '56% of domains publish SPF. Only 22.7% sign anything with DKIM.',
+    hook: 'DMARC needs one of them to line up with your From address.',
+    href: 'https://dmarcguard.io/research/email-authentication-2026/',
+    source: 'DMARCguard 2026, 3,077,219 domains with SPF against 1,249,750 with DKIM',
+  },
+  {
+    claim: 'SPF stops counting at ten DNS lookups, then fails for every message you send.',
+    hook: 'Most records go over without anyone noticing.',
+    href: 'https://www.rfc-editor.org/rfc/rfc7208#section-4.6.4',
+    source: 'RFC 7208, section 4.6.4',
+  },
+  {
+    claim: 'Of 5.5 million domains, 15,997 publish MTA-STS.',
+    hook: 'The rest take whatever certificate the connection offers.',
+    href: 'https://dmarcguard.io/research/email-authentication-2026/',
+    source: 'DMARCguard 2026, 0.3% MTA-STS adoption',
+  },
+];
+---
+
+<div class="stat" data-stat>
+  {
+    STATS.map((item, index) => (
+      /*
+        All six occupy the same grid cell, so the box is as tall as the tallest
+        line and nothing below it moves when the line changes. `inert` takes the
+        hidden ones out of the tab order and off a screen reader, which a plain
+        `visibility: hidden` would not do for the link inside.
+      */
+      <p class="pill" inert={index > 0}>
+        <span class="dot" aria-hidden="true" />
+        <span>
+          {/* Followed on purpose. These are citations to the FBI, Google and
+              the RFC editor, and refusing to pass anything to the documents an
+              argument rests on is the opposite of showing your working. */}
+          <a href={item.href} title={item.source} target="_blank" rel="noopener">
+            {item.claim}
+          </a>{' '}
+          {item.hook}
+        </span>
+      </p>
+    ))
+  }
+</div>
+
+<script is:inline>
+  /*
+    Six lines, one at a time. Held still for anyone who has asked for less
+    motion, and paused while the pointer is over it so a link stays clickable.
+  */
+  (() => {
+    const box = document.querySelector('[data-stat]');
+    if (!box) return;
+    const lines = [...box.children];
+    if (lines.length < 2) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let at = 0;
+    let held = false;
+    box.addEventListener('pointerenter', () => (held = true));
+    box.addEventListener('pointerleave', () => (held = false));
+    box.addEventListener('focusin', () => (held = true));
+    box.addEventListener('focusout', () => (held = false));
+
+    setInterval(() => {
+      if (held || document.hidden) return;
+      lines[at].inert = true;
+      at = (at + 1) % lines.length;
+      lines[at].inert = false;
+      lines[at].classList.remove('is-in');
+      void lines[at].offsetWidth;
+      lines[at].classList.add('is-in');
+    }, 6500);
+  })();
+</script>
+
+<style>
+  /*
+    One cell, six lines stacked in it. The box takes the height of the longest
+    one at whatever width the screen happens to be, so no reserved height has
+    to be guessed and nothing shifts when the line changes.
+  */
+  .stat {
+    display: grid;
+    justify-items: start;
+    margin-bottom: var(--md-space-5);
+  }
+
+  .pill {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--md-space-2);
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--md-radius-pill);
+    background: var(--md-red-tint);
+    border: var(--md-hairline) solid var(--md-red-line);
+    color: var(--md-red-ink);
+    font-size: var(--md-text-sm);
+    font-weight: var(--md-weight-semibold);
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .pill[inert] {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .pill.is-in {
+    animation: stat-in 420ms ease-out both;
+  }
+
+  @keyframes stat-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .pill a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: var(--md-red-line);
+  }
+
+  .pill a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .dot {
+    flex: none;
+    /* On the first line, not floating in the middle of a three-line pill. */
+    align-self: start;
+    margin-top: 0.42em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--md-red);
+    animation: md-pulse var(--md-pulse-duration) infinite;
+  }
+</style>

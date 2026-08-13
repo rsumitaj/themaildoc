@@ -1,6 +1,21 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import HomeCheckup from '../islands/HomeCheckup';
+import SourcedStat from '../components/SourcedStat.astro';
+
+/**
+ * The three long guides, straight off the home page.
+ *
+ * They were reachable only through the footer, which is the weakest link on
+ * any page. The home page is the one thing on this domain with authority to
+ * lend, and lending it to the pages written to rank is the cheapest ranking
+ * change available. It also answers the visitor who is not ready to type their
+ * domain into a box yet, which is most of them.
+ */
+const guides = (await getCollection('library', (entry) => !entry.data.draft))
+  .filter((entry) => entry.data.kind === 'pillar')
+  .sort((a, b) => a.data.heading.localeCompare(b.data.heading));
 
 const title = 'Free Email Authentication Check: SPF, DKIM and DMARC | MailDoc';
 const description =
@@ -85,23 +100,7 @@ const tests = [
     </svg>
 
     <div class="md-wrap">
-      <!--
-        Sourced, and linked, because the whole product is an argument that
-        numbers should be checkable. The figure that was here before was 4%,
-        which came from nowhere: published studies put p=reject adoption
-        between 2.5% and 13% depending on the sample, and none of them say 4.
-      -->
-      <p class="pill">
-        <span class="dot" aria-hidden="true"></span>
-        <a
-          href="https://dmarcguard.io/research/email-authentication/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Across 5.5 million domains, 12.8% enforce a DMARC policy that stops spoofing.
-        </a>{' '}
-        Is yours one of them?
-      </p>
+      <SourcedStat />
 
       <h1>
         Is your domain <span class="sick">sick?</span><br class="linebreak" />
@@ -160,6 +159,36 @@ const tests = [
     </div>
   </section>
 
+  <section class="read">
+    <div class="md-wrap">
+      <p class="md-eyebrow" style="color: var(--md-red-ink)">Health Library</p>
+      <h2>Understand it before you change it</h2>
+      <p class="read__lead">
+        Three guides that assume nothing, written to be read in order by somebody who has been told
+        their email has a problem and given no more detail than that.
+      </p>
+
+      <div class="md-labgrid">
+        {
+          guides.map((guide) => (
+            <a class="md-labcard" href={`/health-library/${guide.id}`}>
+              <div class="md-labcard__top">
+                <h3>{guide.data.heading}</h3>
+                <span class="md-eyebrow">Guide</span>
+              </div>
+              <p>{guide.data.standfirst}</p>
+            </a>
+          ))
+        }
+      </div>
+
+      <p class="read__more">
+        Or look a term up in <a href="/glossary">the glossary</a>, or read what a finding means in{' '}
+        <a href="/library/checks">the list of conditions</a>.
+      </p>
+    </div>
+  </section>
+
   <section class="faq">
     <div class="md-wrap">
       <h2 class="md-eyebrow">Common questions</h2>
@@ -197,28 +226,6 @@ const tests = [
     .ekg {
       display: none;
     }
-  }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--md-space-2);
-    margin-bottom: var(--md-space-5);
-    padding: 0.45rem 0.9rem;
-    border-radius: var(--md-radius-pill);
-    background: var(--md-red-tint);
-    border: var(--md-hairline) solid var(--md-red-line);
-    color: var(--md-red-ink);
-    font-size: var(--md-text-sm);
-    font-weight: var(--md-weight-semibold);
-  }
-
-  .pill .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--md-red);
-    animation: md-pulse var(--md-pulse-duration) infinite;
   }
 
   h1 {
@@ -364,6 +371,34 @@ const tests = [
 
   .test:hover {
     border-color: var(--md-red-line);
+  }
+
+  .read {
+    border-top: var(--md-hairline) solid var(--md-line);
+    padding-block: var(--md-space-12);
+  }
+
+  .read h2 {
+    font-size: var(--md-text-2xl);
+    margin-top: var(--md-space-3);
+  }
+
+  .read__lead {
+    color: var(--md-muted);
+    max-width: 560px;
+    margin: var(--md-space-3) 0 var(--md-space-8);
+  }
+
+  .read__more {
+    margin-top: var(--md-space-6);
+    font-size: var(--md-text-sm);
+    color: var(--md-muted);
+  }
+
+  .read__more a {
+    color: var(--md-red-ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   .faq {
