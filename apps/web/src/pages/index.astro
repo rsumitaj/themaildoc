@@ -36,7 +36,21 @@ const description =
  * point, means somebody arriving from that search finds their answer rather
  * than a tool they have to learn first.
  */
+/**
+ * The first one answers what the brand is, and it is here for a reason.
+ *
+ * Searching the name returns results for a different site and an offer to
+ * search for what was actually typed. That is Google saying it has low
+ * confidence the string means anything, and the site was not helping: the name
+ * appeared seven times on this page and not once in a sentence that said what
+ * it is. A definition in a question somebody actually types is the one piece of
+ * that a page can supply. The rest is corroboration from elsewhere and time.
+ */
 const faqs = [
+  {
+    q: 'What is MailDoc?',
+    a: 'MailDoc is a free email health checker at themaildoc.co. Put in a domain and it reads the records a receiving mail server reads, SPF, DKIM, DMARC, MX, PTR, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA, grades each against the specification it is judged by, and returns a 0 to 100 Vitals score with the exact line to publish for anything wrong. There is no account, no paid tier holding the real answer back, and nothing about a checkup is stored. It is run by Sumit Raj, who takes email deliverability and DMARC work directly.',
+  },
   {
     q: 'How do I know if someone can send email pretending to be my domain?',
     a: 'Put your domain in the box above. The answer depends almost entirely on one record, DMARC, and on the policy it publishes. Without DMARC, or with a policy of p=none, anyone in the world can put your domain in the From line and most inboxes will deliver it. The checkup tells you which of those you are in one line, before any of the detail.',

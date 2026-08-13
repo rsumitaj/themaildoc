@@ -110,10 +110,31 @@ const org = {
   name: BRAND,
   alternateName: BRAND_ALIASES,
   url: site.href,
-  logo: new URL('/favicon.png', site).href,
+  /**
+   * 192x192, not the 32x32 favicon.
+   *
+   * Google asks for a logo of at least 112x112 in structured data and it is the
+   * image it may show beside the brand. Pointing at a 32px icon offered it
+   * something it cannot use, on every page.
+   */
+  logo: {
+    '@type': 'ImageObject',
+    url: new URL('/favicon-192.png', site).href,
+    width: 192,
+    height: 192,
+  },
+  image: new URL('/favicon-192.png', site).href,
   email: 'support@themaildoc.co',
-  description: "The doctor for your domain's email. Free diagnosis, honest prescriptions.",
+  description:
+    'MailDoc is a free email health checker. It reads the SPF, DKIM, DMARC, MX, PTR, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA records a receiving mail server reads, grades each against the specification it is judged by, and returns a 0 to 100 score with the exact record to publish for anything wrong.',
+  slogan: "The doctor for your domain's email.",
   founder: { '@id': AUTHOR_ID, '@type': 'Person', name: 'Sumit Raj' },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: 'support@themaildoc.co',
+    availableLanguage: 'English',
+  },
   knowsAbout: ['SPF', 'DKIM', 'DMARC', 'MTA-STS', 'BIMI', 'DNSSEC', 'Email deliverability'],
   // Only profiles that exist. github.com/rsumitaj/themaildoc was listed here
   // on all 221 pages and has always returned 404, which is an entity claim
