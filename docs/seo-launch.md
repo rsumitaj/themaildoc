@@ -3,6 +3,17 @@
 Everything below is a step somebody has to take by hand. The site's own SEO is
 in the code; this is what happens after a deploy.
 
+## The one thing that actually blocks you
+
+A new domain is not in Google because Google has never been told it exists.
+There is no penalty and nothing to fix in the code: Google finds new sites
+through links from pages it already crawls, and a site with no links has none.
+
+Search Console is the only reliable way to break that circle. Everything else
+on this page is secondary to step 1 below.
+
+Expect nothing for two weeks. That is normal.
+
 ## Immediately after the domain is live
 
 1. **Google Search Console.** Add `themaildoc.co` as a **domain property**, not
@@ -22,7 +33,18 @@ in the code; this is what happens after a deploy.
 4. **Bing Webmaster Tools.** Import directly from Search Console rather than
    verifying again. Bing feeds ChatGPT search, which is worth more than its
    share of web traffic suggests.
-5. **Cloudflare Web Analytics.** Enable it in the dashboard for the zone. It
+5. **IndexNow**, for everything except Google:
+
+   ```bash
+   pnpm indexnow
+   ```
+
+   Bing, Yandex, Seznam and Naver share this endpoint and act on it in hours
+   rather than weeks. Bing feeds ChatGPT search, which for a developer tool is
+   worth more than its share of the search market suggests. Run it after every
+   deploy that adds or changes pages.
+
+6. **Cloudflare Web Analytics.** Enable it in the dashboard for the zone. It
    needs no cookie banner, which is why it is the analytics here.
 
 ## What to watch, and when
@@ -37,6 +59,32 @@ anything.
   many, and write the article the queries are asking for.
 - **Week 8:** first positions worth reading. Anything ranking 8 to 20 is a page
   worth improving rather than a new page worth writing.
+
+## What is realistic, and when
+
+Be honest about the competition before spending a month on the wrong keyword.
+
+**"DMARC checker", "SPF checker", "BIMI checker"** are held by Mimecast,
+Valimail, EasyDMARC, PowerDMARC, DNSChecker and DMARCLY. These are domains with
+years of history and thousands of referring domains. A new site does not take
+them in 2026 by being better. Target them, keep the pages excellent, and expect
+movement in twelve to eighteen months, driven by links rather than by content.
+
+**What is winnable inside three to six months** is the long tail, where intent
+is specific and the incumbents wrote nothing:
+
+- "spf too many dns lookups" and "spf permerror" (we have the article and the
+  only free flattener that refuses to emit an incomplete record)
+- "dmarc p=none vs quarantine vs reject"
+- "_report._dmarc not working" and "dmarc reports not arriving"
+- "bimi certificate expired" (nearly every checker reports an expired VMC as
+  valid; ours does not, which is a genuine differentiator worth writing about)
+- "read dmarc xml report without uploading"
+- the 166 condition pages, each of which answers one specific error
+
+The strategy is to win the long tail first, earn links from being the answer,
+and let that authority carry the head terms later. It is the only order that
+works from zero.
 
 ## Where the first links come from
 

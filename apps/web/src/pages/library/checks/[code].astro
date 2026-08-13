@@ -46,6 +46,36 @@ const RECORD_TOOL: Record<string, string> = {
 };
 
 const tool = RECORD_TOOL[issue.record] ?? '/checkup';
+
+/**
+ * The guide each record belongs to.
+ *
+ * These 166 pages are three quarters of the site and each one is a dead end
+ * that links sideways to five siblings. On a domain with no authority to spend,
+ * that spreads what little there is across the pages least likely to rank.
+ * Sending every one of them up to its pillar concentrates it where it counts,
+ * and a reader who has just learned their DMARC policy is inherited genuinely
+ * wants the DMARC guide next.
+ */
+const RECORD_GUIDE: Record<string, { href: string; label: string }> = {
+  SPF: { href: '/health-library/what-is-spf', label: 'What is SPF, and the ten-lookup limit' },
+  DKIM: { href: '/health-library/what-is-dkim', label: 'What is DKIM, selectors and key strength' },
+  DMARC: { href: '/health-library/dmarc-guide', label: 'The DMARC guide, from a first record to enforcement' },
+  RUA: { href: '/health-library/dmarc-guide', label: 'The DMARC guide, including how reporting works' },
+  MX: { href: '/health-library/email-deliverability-guide', label: 'Why mail lands in spam, in the order worth checking' },
+  PTR: { href: '/health-library/email-deliverability-guide', label: 'Why mail lands in spam, in the order worth checking' },
+  MTASTS: { href: '/glossary/mta-sts', label: 'MTA-STS, defined' },
+  TLSRPT: { href: '/glossary/tls-rpt', label: 'TLS-RPT, defined' },
+  BIMI: { href: '/glossary/bimi', label: 'BIMI, defined' },
+  CAA: { href: '/glossary/dnssec', label: 'DNSSEC and certificate authority records' },
+  DNSSEC: { href: '/glossary/dnssec', label: 'DNSSEC, defined' },
+  A: { href: '/health-library/email-deliverability-guide', label: 'Why mail lands in spam, in the order worth checking' },
+};
+
+const guide = RECORD_GUIDE[issue.record] ?? {
+  href: '/health-library/email-authentication-guide',
+  label: 'How SPF, DKIM and DMARC fit together',
+};
 const related = ALL_ISSUES.filter(
   (other) => other.record === issue.record && other.code !== issue.code,
 ).slice(0, 6);
@@ -146,6 +176,13 @@ function trimTitle(value: string): string {
           This page describes the condition. To find out whether your domain has it,
           <a href={tool}>run the {issue.record} test</a> or
           <a href="/checkup">the full checkup</a>, which examines every record at once.
+        </p>
+
+        <h2>Understand it properly</h2>
+        <p>
+          This page covers one condition. For the whole picture,
+          <a href={guide.href}>{guide.label}</a>, or start at
+          <a href="/health-library">the Health Library</a>.
         </p>
 
         <h2>Where this comes from</h2>

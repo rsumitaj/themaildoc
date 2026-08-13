@@ -33,6 +33,12 @@ const workspaceAliases = {
  * assets; only routes that opt out (`export const prerender = false`, i.e.
  * `/api/*`) consume Worker invocations. That is what keeps the clinic at $0.
  */
+/**
+ * Stamped once per build so every URL carries a real date rather than none.
+ * A sitemap without lastmod gives a crawler nothing to prioritise on.
+ */
+const BUILD_TIME = new Date().toISOString();
+
 export default defineConfig({
   site: 'https://themaildoc.co',
   output: 'static',
@@ -49,7 +55,37 @@ export default defineConfig({
     preact({ compat: false }),
     // Only real pages: API routes are not content, and a sitemap that lists a
     // 404 is worse than no sitemap.
-    sitemap({ filter: (page) => !page.includes('/api/') }),
+    //
+    // `lastmod` and `priority` are what a crawler uses to decide what to fetch
+    // first on a site it has just discovered. Without them every one of the two
+    // hundred URLs looks equally important, and the 166 generated condition
+    // pages get crawled ahead of the twenty pages that are trying to rank.
+    sitemap({
+      filter: (page) => !page.includes('/api/'),
+      serialize(item) {
+        const path = new URL(item.url).pathname;
+
+        // Deepest first, so a more specific rule wins.
+        const priority = path === '/'
+          ? 1.0
+          : path.startsWith('/library/checks/')
+            ? 0.3
+            : path.startsWith('/lab/') || path.startsWith('/health-library/')
+              ? 0.8
+              : path.startsWith('/glossary/')
+                ? 0.6
+                : ['/privacy', '/terms'].includes(path)
+                  ? 0.2
+                  : 0.7;
+
+        return {
+          ...item,
+          lastmod: item.lastmod ?? BUILD_TIME,
+          changefreq: path.startsWith('/library/checks/') ? 'yearly' : 'weekly',
+          priority,
+        };
+      },
+    }),
   ],
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   // One canonical URL per page: /lab, not /lab/ reached through a 307.
