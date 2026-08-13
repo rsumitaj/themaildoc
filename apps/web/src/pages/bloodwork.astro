@@ -48,6 +48,12 @@ const faqs = [
     { href: '/lab/spoofability', label: 'Spoofability, can someone send as you right now?' },
   ]}
 >
+  {/*
+    `load`, not `idle`: this tool is the page, and it sits above the fold. The
+    weight problem it used to have is solved where it belonged — the 35KB
+    parser is now a separate chunk fetched on the first file, so what hydrates
+    here immediately is just the drop zone.
+  */}
   <Bloodwork slot="tool" client:load />
 
   <h2>Symptoms</h2>

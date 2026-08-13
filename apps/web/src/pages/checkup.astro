@@ -33,6 +33,14 @@ const costs = [
   { severity: 'Note', cost: SEVERITY_DEDUCTION.INFO, meaning: 'An observation, not a fault.' },
 ];
 
+/**
+ * `kind="tool"`, which this page had never claimed.
+ *
+ * It is the flagship tool on the site and it was declaring itself a generic
+ * page, so the one page running a real web application was the one emitting no
+ * WebApplication schema: no free-to-use signal, no offer, none of what earns a
+ * tool its rich result. Every Lab page an eighth as important already had it.
+ */
 const bands = [
   { range: '85 to 100', name: 'Healthy', meaning: 'Nothing serious is wrong. Tune-ups at most.' },
   { range: '65 to 84', name: 'Needs care', meaning: 'Real gaps that are costing you something measurable.' },
@@ -67,6 +75,7 @@ const faqs = [
 <Base
   title={title}
   description={description}
+  kind="tool"
   faqs={faqs}
   crumbs={[{ name: 'Checkup', href: '/checkup' }]}
 >

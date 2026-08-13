@@ -223,9 +223,15 @@ const jsonLd = [
     </div>
   </section>
 
+  <!--
+    The form is the last thing on the page and nobody reaches it in the first
+    second, so it hydrates when it is scrolled to rather than on load. That
+    takes 5KB of JavaScript off this page's critical path; the markup is
+    server-rendered either way, so there is nothing to see arriving late.
+  -->
   <section class="book" id="book">
     <div class="md-wrap">
-      <Consult client:load />
+      <Consult client:visible />
     </div>
   </section>
 </Base>
