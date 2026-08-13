@@ -158,6 +158,22 @@ const faqs = [
           marked down for a missing BIMI record it has no use for.
         </p>
 
+        <h3>What absence costs</h3>
+        <p>
+          Subtraction alone cannot say <strong>you have nothing</strong>. Every finding above is a
+          fault in something you published, so a domain that publishes nothing collects almost no
+          findings and keeps almost all of its marks. A domain registered minutes ago, with no SPF,
+          no DMARC and no MX, used to score 100 out of 100 on visibility, because there was no DMARC
+          record for a missing reporting address to be a fault in.
+        </p>
+        <p>
+          So three absences hold down the pillars they belong to, whatever else is tidy. No DMARC
+          record means a receiver has no instruction to refuse forged mail and no report is ever
+          sent to you, so impersonation and visibility both answer themselves. No SPF record means
+          nothing states which servers may send for you. A domain that does not resolve at all has
+          no zone to score. The explainer beside your result names which one applied, if any.
+        </p>
+
         <h3>The floor and the ceiling</h3>
         <p>
           Two rules keep the number and the words beside it telling one story. If the spoofability

@@ -83,9 +83,11 @@ describe('SPF — missing record', () => {
     expect(analysis.found).toBe(false);
     expect(codes).toEqual(['SPF_RECORD_MISSING']);
     expect(analysis.status).toBe('CRITICAL');
-    // Impersonation is the pillar that carries this, and it carries 45 percent
-    // of the score, so a 40 point finding removes 18 rather than 40.
-    expect(vitals(analysis.conditions).score).toBe(82);
+    // No SPF record is not a fault in a record, it is the absence of one, so
+    // the two pillars that depend on having one are held down rather than
+    // merely charged: impersonation to 20, delivery to 40. This used to score
+    // 82, which said a domain nothing vouches for was in decent shape.
+    expect(vitals(analysis.conditions).score).toBe(49);
     expect(analysis.conditions[0]?.why).toContain('example.com');
   });
 

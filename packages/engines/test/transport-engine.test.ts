@@ -94,7 +94,11 @@ describe('MTA-STS', () => {
     });
 
     expect(codesOf(analysis)).toEqual(['MTASTS_MODE_TESTING']);
-    expect(analysis.status).toBe('HEALTHY');
+    // Amber, not green. Testing mode is the right first step and it still
+    // protects nothing on its own, which is why it costs eight points. A green
+    // dot beside a finding the same page is charging for was the interface
+    // disagreeing with its own arithmetic.
+    expect(analysis.status).toBe('ATTENTION');
   });
 
   it('catches a policy that omits a live mail server', async () => {

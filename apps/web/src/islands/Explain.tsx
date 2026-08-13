@@ -65,6 +65,23 @@ const BANDS: ReadonlyArray<{ range: string; name: string; meaning: string }> = [
 ];
 
 /**
+ * Why a missing record holds a pillar down, in one clause each.
+ *
+ * Subtraction cannot say "you have nothing": every finding is a fault in
+ * something published, so a domain publishing nothing collects almost no
+ * findings and keeps almost all of its marks. These are the three cases where
+ * absence itself is the answer to the question, and each one names what a
+ * receiver can no longer do.
+ */
+const ABSENCE_REASON: Record<string, string> = {
+  DOMAIN_NXDOMAIN: 'this domain does not resolve at all, so there is no zone to score.',
+  DMARC_RECORD_MISSING:
+    'with no DMARC record, a receiver has no instruction to refuse forged mail and no report is ever sent to you.',
+  SPF_RECORD_MISSING:
+    'with no SPF record, nothing states which servers may send for you.',
+};
+
+/**
  * How the score was produced, in full.
  *
  * Collapsed by default because most people want the number. Open, it is the
@@ -79,6 +96,7 @@ export function ScoreExplainer({
   spoofability?: SpoofVerdict;
 }) {
   const [open, setOpen] = useState(false);
+
   const sum = scoreBreakdown(conditions, spoofability ? { spoofability } : {});
 
   return (
@@ -123,6 +141,17 @@ export function ScoreExplainer({
                         {pillar.findings
                           .map((finding) => `${finding.code} \u2212${finding.deduction}`)
                           .join(', ')}
+                      </span>
+                    )}
+                    {/*
+                      A ceiling nobody can see is indistinguishable from a
+                      fudge, and this whole table exists so the number can be
+                      checked rather than believed. If a pillar was held down
+                      because a record is absent, it says which record.
+                    */}
+                    {pillar.ceiling !== null && !pillar.floored && (
+                      <span class="md-scorewhy__q">
+                        Held at {pillar.ceiling.limit}: {ABSENCE_REASON[pillar.ceiling.code]}
                       </span>
                     )}
                     {pillar.floored && (

@@ -65,6 +65,60 @@ const VERDICT_CEILING: Record<SpoofVerdict, number> = {
   SPOOFABLE: 39,
 };
 
+/**
+ * What a protection's total absence costs the pillars it serves.
+ *
+ * This exists because subtraction alone cannot express "you have nothing".
+ * Every finding is a fault in something published, so a domain that publishes
+ * nothing collects almost no findings and the pillars stay near a hundred. A
+ * domain registered minutes ago, with no SPF, no DMARC, no MX and no address
+ * records, scored 100 out of 100 on "would you find out if something went
+ * wrong?" — because there was no DMARC record for a missing `rua` to be a fault
+ * in. Its weighted total was 64, and the only reason the page did not print 64
+ * was the spoofable ceiling clamping it to 39. The number on screen was the
+ * clamp, not a measurement.
+ *
+ * A ceiling says the thing subtraction cannot: without this record, that
+ * question cannot be answered well however tidy everything else is. It is the
+ * same mechanism as the verdict ceiling above and it is not a fudge — each
+ * entry is a statement about what a receiver can do with the domain:
+ *
+ *   No DMARC record (RFC 9989 §6.3, §7) — a receiver has no instruction to
+ *   refuse forged mail, and no aggregate report is ever sent to anybody. Both
+ *   the impersonation and the visibility questions answer themselves.
+ *
+ *   No SPF record (RFC 7208 §2.1) — nothing states which hosts may send, so
+ *   there is no authorisation to align against and no path to the one Google
+ *   and Yahoo require of bulk senders. Impersonation is nearly all of the cost;
+ *   delivery keeps some credit because DKIM alone can still carry a message.
+ *
+ *   The domain does not resolve at all (RFC 8020) — there is no zone, so there
+ *   is nothing to score in any pillar.
+ */
+const ABSENCE_CEILING: Record<string, Partial<Record<Pillar, number>>> = {
+  DOMAIN_NXDOMAIN: { IMPERSONATION: 0, DELIVERY: 0, VISIBILITY: 0, HARDENING: 0 },
+  DMARC_RECORD_MISSING: { IMPERSONATION: 0, VISIBILITY: 0 },
+  SPF_RECORD_MISSING: { IMPERSONATION: 20, DELIVERY: 40 },
+};
+
+/** Why a pillar could not score higher, in the words the explainer prints. */
+export interface PillarCeiling {
+  /** The finding that imposed it. */
+  code: string;
+  limit: number;
+}
+
+/** The tightest ceiling the findings impose on one pillar, if any. */
+function ceilingFor(pillar: Pillar, codes: Iterable<string>): PillarCeiling | null {
+  let tightest: PillarCeiling | null = null;
+  for (const code of codes) {
+    const limit = ABSENCE_CEILING[code]?.[pillar];
+    if (limit === undefined) continue;
+    if (tightest === null || limit < tightest.limit) tightest = { code, limit };
+  }
+  return tightest;
+}
+
 export function scoreConditions(
   conditions: readonly Condition[],
   options: ScoreOptions = {},
@@ -94,6 +148,8 @@ export interface PillarBreakdown {
   score: number;
   /** Raised to a floor because the spoofability verdict says otherwise. */
   floored: boolean;
+  /** Held down because a protection this pillar depends on is absent. */
+  ceiling: PillarCeiling | null;
   findings: ChargedFinding[];
 }
 
@@ -134,11 +190,38 @@ export function scoreBreakdown(
 
   const verdict = options.spoofability;
 
+  /**
+   * Absence is judged from every finding, not only the ones that scored.
+   *
+   * "No DMARC record" is charged to impersonation, but what it says about
+   * visibility has nothing to do with which pillar it was charged to, and a
+   * finding carrying a zero deduction still states a fact about the domain.
+   */
+  const present = new Set(conditions.map((condition) => condition.code));
+
   const pillars: PillarBreakdown[] = PILLAR_ORDER.map((pillar) => {
     const findings = [...charged.values()].filter((entry) => entry.pillar === pillar);
     const deducted = findings.reduce((total, entry) => total + entry.deduction, 0);
-    const raw = Math.max(0, 100 - deducted);
+    const subtracted = Math.max(0, 100 - deducted);
 
+    // A ceiling wins over subtraction: the protection is not merely faulty.
+    const ceiling = ceilingFor(pillar, present);
+    const raw = ceiling === null ? subtracted : Math.min(subtracted, ceiling.limit);
+
+    /**
+     * The floor is applied last, and it outranks the ceiling.
+     *
+     * These two can only argue in one case, and the answer there is clear. A
+     * domain publishing no SPF but sitting at p=reject with a working signature
+     * genuinely cannot be sent as: receivers refuse the mail. The ceiling says
+     * "you published nothing", which is true and is not the question this
+     * pillar asks. The floor is read from the policy a receiver will actually
+     * apply, which is direct evidence about impersonation, so it wins.
+     *
+     * The reverse case never arises: without a DMARC record the verdict is
+     * always SPOOFABLE, whose floor is zero, so nothing is lifted over a
+     * ceiling that matters.
+     */
     const floor =
       pillar === 'IMPERSONATION' && verdict !== undefined ? IMPERSONATION_FLOOR[verdict] : 0;
 
@@ -150,6 +233,7 @@ export function scoreBreakdown(
       deducted,
       score: Math.max(raw, floor),
       floored: raw < floor,
+      ceiling,
       findings,
     };
   });
@@ -179,14 +263,25 @@ export function clampScore(score: number): number {
 }
 
 /**
- * Record rollup (context/03): any CRITICAL makes the record critical, any
- * HIGH or MEDIUM means it needs attention, anything else is healthy.
+ * Record rollup: any CRITICAL makes the record critical, any real fault makes
+ * it need attention, and only a record with nothing but notes against it is
+ * healthy.
+ *
+ * LOW used to roll up to healthy, which put a green dot beside "DNSSEC: not
+ * enabled" on a chart that was simultaneously charging eight points for it.
+ * Green is the strongest thing this interface says — it means done, nothing to
+ * do here — and a record that costs the score points has not earned it.
+ *
+ * INFO stays healthy on purpose. Those are genuinely optional: a domain with
+ * no BIMI record is not faulty, it has simply not published a logo, and
+ * colouring that amber would make the one colour that means "look at this"
+ * meaningless.
  */
 export function rollupRecord(conditions: readonly Condition[]): RecordStatus {
   let status: RecordStatus = 'HEALTHY';
   for (const condition of conditions) {
     if (condition.severity === 'CRITICAL') return 'CRITICAL';
-    if (condition.severity === 'HIGH' || condition.severity === 'MEDIUM') status = 'ATTENTION';
+    if (condition.severity !== 'INFO') status = 'ATTENTION';
   }
   return status;
 }

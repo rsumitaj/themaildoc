@@ -299,3 +299,46 @@ describe('healthCheck — partial results', () => {
     expect(result.meta.durationMs).toBeGreaterThanOrEqual(0);
   });
 });
+
+/**
+ * A domain nobody has registered.
+ *
+ * This is the case that exposed the scoring model. `abcdhsv3648193.com` came
+ * back at 39 out of 100 with seven of its ten record cards showing a green dot,
+ * and 39 was not a measurement: it was the spoofable ceiling clamping a
+ * weighted total of 64. Underneath, "would you find out if something went
+ * wrong?" had scored full marks, because there was no DMARC record for a
+ * missing reporting address to be a fault in.
+ */
+describe('a domain that does not exist', () => {
+  const nowhere: MockZone = {};
+
+  it('scores zero rather than the ceiling', async () => {
+    const mock = createMockDoh(nowhere);
+    const result = await healthCheck('abcdhsv3648193.com', { fetchImpl: mock.fetch });
+
+    expect(result.vitals.score).toBe(0);
+    expect(result.vitals.band).toBe('CRITICAL');
+  });
+
+  it('never tells it its transport security is not needed', async () => {
+    // "Not published, and not needed, this domain receives no mail" is a
+    // sentence that reads as approval, and it was being said about a zone that
+    // is not there.
+    const mock = createMockDoh(nowhere);
+    const result = await healthCheck('abcdhsv3648193.com', { fetchImpl: mock.fetch });
+
+    for (const record of result.records) {
+      expect(record.summary).not.toContain('not needed');
+    }
+    const mtasts = result.records.find((r) => r.record === 'MTASTS');
+    expect(mtasts?.summary).toBe('Not checked, this domain does not resolve');
+  });
+
+  it('says the domain does not resolve', async () => {
+    const mock = createMockDoh(nowhere);
+    const result = await healthCheck('abcdhsv3648193.com', { fetchImpl: mock.fetch });
+
+    expect(result.conditions.map((c) => c.code)).toContain('DOMAIN_NXDOMAIN');
+  });
+});

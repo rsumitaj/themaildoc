@@ -37,9 +37,12 @@ describe('scoreConditions', () => {
   });
 
   it('empties the pillar rather than the score', () => {
-    // Three findings worth 120 points between them, all about impersonation.
-    // The pillar bottoms out at zero; the domain still delivers mail and still
-    // has its hardening, and the total says so.
+    // No SPF, no DMARC, and a revoked signing key. Impersonation and
+    // visibility bottom out: there is no policy for a receiver to apply and no
+    // address for a report to go to. Hardening is untouched, because none of
+    // these findings is about hardening, and the total is a quarter rather
+    // than a zero because the score refuses to say one catastrophe is every
+    // catastrophe.
     const distinct = [
       createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
       createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' }),
@@ -48,7 +51,9 @@ describe('scoreConditions', () => {
     const sum = scoreBreakdown(distinct);
 
     expect(sum.pillars.find((p) => p.pillar === 'IMPERSONATION')?.score).toBe(0);
-    expect(sum.score).toBe(55);
+    expect(sum.pillars.find((p) => p.pillar === 'VISIBILITY')?.score).toBe(0);
+    expect(sum.pillars.find((p) => p.pillar === 'HARDENING')?.score).toBe(100);
+    expect(sum.score).toBe(25);
   });
 
   it('charges the same problem once, however many times it was found', () => {
@@ -221,6 +226,9 @@ describe('the score can never contradict the verdict', () => {
       createCondition('DMARC_POLICY_INHERITED', { domain: 'a.com', source_domain: 'b.com' }),
     ];
 
+    // The floor also outranks the ceiling that "no SPF record" imposes: a
+    // domain at p=reject with a working signature cannot be sent as, whatever
+    // it failed to publish.
     expect(scoreConditions(messy, { spoofability: 'PROTECTED' })).toBeGreaterThanOrEqual(50);
   });
 
@@ -263,10 +271,12 @@ describe('vitals', () => {
 
   it('assembles the monitor readout', () => {
     const readout = vitals([critical(), high()]);
-    // Both are impersonation findings: 100 - 65 = 35 on a pillar worth 45
-    // percent, with the other three pillars untouched.
-    expect(readout.score).toBe(71);
-    expect(readout.band).toBe('NEEDS_CARE');
+    // No SPF record at all, so the two pillars that depend on one are held
+    // down rather than merely charged: impersonation at 20, delivery at 40.
+    // Visibility and hardening are untouched, because neither finding is about
+    // them. (20x45 + 40x25 + 100x15 + 100x15) / 100.
+    expect(readout.score).toBe(49);
+    expect(readout.band).toBe('AT_RISK');
     expect(readout.counts.CRITICAL).toBe(1);
     expect(readout.counts.HIGH).toBe(1);
     expect(readout.counts.LOW).toBe(0);
@@ -288,5 +298,98 @@ describe('scoreBreakdown', () => {
     for (const sample of samples) {
       expect(scoreBreakdown(sample).score).toBe(scoreConditions(sample));
     }
+  });
+});
+
+/**
+ * The case that exposed the model.
+ *
+ * A domain registered minutes ago and configured for nothing scored 39 out of
+ * 100, and 39 was not a measurement — it was the spoofable ceiling clamping a
+ * weighted total of 64. Underneath, "would you find out if something went
+ * wrong?" scored 100 out of 100, because there was no DMARC record for a
+ * missing `rua` to be a fault in.
+ *
+ * That is the flaw in pure subtraction: every finding is a fault in something
+ * published, so a domain that publishes nothing collects almost no findings and
+ * keeps almost all of its marks. These tests pin the shape of the answer, not
+ * only the number, so the model cannot quietly go back to rewarding absence.
+ */
+describe('a domain that has published nothing', () => {
+  const nothing = [
+    createCondition('DOMAIN_NXDOMAIN', { domain: 'a.com' }),
+    createCondition('DMARC_RECORD_MISSING', { domain: 'a.com' }),
+    createCondition('MX_MISSING', { domain: 'a.com' }),
+    createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' }),
+    createCondition('BIMI_MISSING', { domain: 'a.com' }),
+    createCondition('CAA_MISSING', { domain: 'a.com' }),
+  ];
+
+  it('scores zero when the domain does not even resolve', () => {
+    const sum = scoreBreakdown(nothing, { spoofability: 'SPOOFABLE' });
+
+    expect(sum.score).toBe(0);
+    // Every pillar, not just the total: there is no zone, so there is nothing
+    // for any of the four questions to be answered from.
+    for (const pillar of sum.pillars) expect(pillar.score).toBe(0);
+  });
+
+  it('scores near zero for a domain that resolves but publishes nothing', () => {
+    const bare = nothing.filter((c) => c.code !== 'DOMAIN_NXDOMAIN');
+    bare.push(createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }));
+
+    const sum = scoreBreakdown(bare, { spoofability: 'SPOOFABLE' });
+
+    expect(sum.score).toBeLessThan(30);
+    expect(sum.pillars.find((p) => p.pillar === 'IMPERSONATION')?.score).toBe(0);
+    expect(sum.pillars.find((p) => p.pillar === 'VISIBILITY')?.score).toBe(0);
+  });
+
+  it('reaches that score by arithmetic rather than by hitting the ceiling', () => {
+    // The complaint was not really the 39. It was that the number came from a
+    // clamp, so it would have read 39 whether the domain was nearly fine or
+    // entirely absent. The weighted total now has to be low on its own.
+    const sum = scoreBreakdown(nothing, { spoofability: 'SPOOFABLE' });
+
+    expect(sum.capped).toBe(false);
+    expect(sum.weighted).toBe(sum.score);
+  });
+
+  it('says which missing record held each pillar down', () => {
+    // The explainer prints this. A ceiling nobody can see is indistinguishable
+    // from a fudge, which is the objection this whole model exists to answer.
+    const bare = nothing.filter((c) => c.code !== 'DOMAIN_NXDOMAIN');
+    const sum = scoreBreakdown(bare, { spoofability: 'SPOOFABLE' });
+
+    expect(sum.pillars.find((p) => p.pillar === 'VISIBILITY')?.ceiling).toEqual({
+      code: 'DMARC_RECORD_MISSING',
+      limit: 0,
+    });
+  });
+
+  it('leaves a well configured domain exactly where it was', () => {
+    // The ceilings only fire on absence. A domain that publishes its records
+    // and gets them right must be unaffected by any of this.
+    expect(scoreConditions([], { spoofability: 'PROTECTED' })).toBe(100);
+    expect(scoreConditions([createCondition('BIMI_MISSING', { domain: 'a.com' })])).toBe(100);
+  });
+});
+
+describe('record status matches what the record costs', () => {
+  it('does not call a record healthy while charging points for it', () => {
+    // A green dot means done, nothing to do here. DNSSEC being unsigned is
+    // eight points off the score, so green was the interface disagreeing with
+    // its own arithmetic on the same screen.
+    const unsigned = [createCondition('DNSSEC_UNSIGNED', { domain: 'a.com' })];
+
+    expect(rollupRecord(unsigned)).toBe('ATTENTION');
+    expect(unsigned[0]!.deduction).toBeGreaterThan(0);
+  });
+
+  it('still calls an optional extra healthy', () => {
+    // No BIMI record is not a fault. Colouring it amber would spend the one
+    // colour that means "look at this" on something nobody needs to look at.
+    expect(rollupRecord([createCondition('BIMI_MISSING', { domain: 'a.com' })])).toBe('HEALTHY');
+    expect(rollupRecord([])).toBe('HEALTHY');
   });
 });

@@ -225,7 +225,13 @@ export async function healthCheck(
     checkedAt: new Date(started).toISOString(),
     vitals: vitals(conditions, { spoofability: spoofability.verdict }),
     spoofability,
-    records: summarize(narrowed),
+    /**
+     * Whether the name exists at all changes what every summary is allowed to
+     * say. A domain nobody has registered was being told its MTA-STS was "not
+     * published, and not needed, this domain receives no mail" — a sentence
+     * that reads as approval, about a zone that does not exist.
+     */
+    records: summarize(narrowed, !conditions.some((c) => c.code === 'DOMAIN_NXDOMAIN')),
     conditions,
     ...narrowed,
     meta: {
@@ -369,18 +375,17 @@ interface Analyses {
   ptr: PtrAnalysis;
 }
 
-function summarize({
-  spf,
-  dmarc,
-  mx,
-  address,
-  dnssec,
-  mtasts,
-  tlsrpt,
-  bimi,
-  caa,
-  ptr,
-}: Analyses): RecordSummary[] {
+/**
+ * `resolves` is false when the apex answered NXDOMAIN, which RFC 8020 makes
+ * unambiguous: nothing exists at or below that name. Nothing about a zone that
+ * is not there can be summarised as fine, so the summaries that would otherwise
+ * read as approval say what is actually true instead.
+ */
+function summarize(
+  { spf, dmarc, mx, address, dnssec, mtasts, tlsrpt, bimi, caa, ptr }: Analyses,
+  resolves: boolean,
+): RecordSummary[] {
+  const absent = 'Not checked, this domain does not resolve';
   return [
     {
       record: 'SPF',
@@ -420,7 +425,9 @@ function summarize({
       label: 'DNSSEC',
       status: dnssec.status,
       found: dnssec.signed,
-      summary: dnssec.authenticated
+      summary: !resolves
+        ? absent
+        : dnssec.authenticated
         ? 'Signed and validating'
         : dnssec.signed
           ? 'Signed, but the chain of trust is incomplete'
@@ -432,8 +439,9 @@ function summarize({
       label: 'Address records',
       status: address.status,
       found: address.ipv4.length > 0 || address.ipv6.length > 0,
-      summary:
-        address.ipv4.length + address.ipv6.length === 0
+      summary: !resolves
+        ? absent
+        : address.ipv4.length + address.ipv6.length === 0
           ? 'No address records'
           : `${address.ipv4.length} IPv4, ${address.ipv6.length} IPv6`,
       conditionCount: address.conditions.length,
@@ -443,8 +451,10 @@ function summarize({
       label: 'Reverse DNS',
       status: ptr.status,
       found: ptr.checked.some((entry) => entry.pointer !== null),
-      summary: ptr.noOwnServers
-        ? 'No servers of your own to check, your senders are all external'
+      summary: !resolves
+        ? absent
+        : ptr.noOwnServers
+          ? 'No servers of your own to check, your senders are all external'
         : ptr.checked.length === 0
           ? 'Not checked'
           : `${ptr.checked.filter((entry) => entry.forwardConfirmed).length} of ${ptr.checked.length} confirmed both ways`,
@@ -455,7 +465,9 @@ function summarize({
       label: 'MTA-STS',
       status: mtasts.status,
       found: mtasts.announced,
-      summary: mtasts.announced
+      summary: !resolves
+        ? absent
+        : mtasts.announced
         ? mtasts.policy?.mode
           ? `Policy in ${mtasts.policy.mode} mode`
           : 'Announced, but the policy could not be read'
@@ -469,7 +481,9 @@ function summarize({
       label: 'TLS reporting',
       status: tlsrpt.status,
       found: tlsrpt.found,
-      summary: tlsrpt.found
+      summary: !resolves
+        ? absent
+        : tlsrpt.found
         ? `${tlsrpt.destinations.length} reporting destination${tlsrpt.destinations.length === 1 ? '' : 's'}`
         : mx.hosts.length === 0
           ? 'Not published, and not needed, this domain receives no mail'
@@ -481,7 +495,9 @@ function summarize({
       label: 'Brand indicator',
       status: bimi.status,
       found: bimi.found,
-      summary: bimi.found
+      summary: !resolves
+        ? absent
+        : bimi.found
         ? bimi.declined
           ? 'Published, declining to display a logo'
           : bimi.authority
@@ -495,7 +511,9 @@ function summarize({
       label: 'Certificate authority',
       status: caa.status,
       found: caa.found,
-      summary: caa.found
+      summary: !resolves
+        ? absent
+        : caa.found
         ? caa.forbidsAll
           ? 'All issuance forbidden'
           : `${caa.issuers.length} authorised issuer${caa.issuers.length === 1 ? '' : 's'}`

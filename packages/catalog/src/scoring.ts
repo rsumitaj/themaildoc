@@ -37,6 +37,7 @@ export type {
   Vitals,
   ScoreBreakdown,
   PillarBreakdown,
+  PillarCeiling,
   ChargedFinding,
   ScoreOptions,
   SpoofVerdict,
