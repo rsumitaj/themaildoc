@@ -65,6 +65,17 @@ const {
 const site = Astro.site ?? new URL('https://themaildoc.co');
 
 /**
+ * One identifier for the person, used everywhere he appears.
+ *
+ * The site named him as founder in one block and as article author in another,
+ * with nothing tying the two together, so a search engine had no reason to
+ * believe they were the same person. Giving both the same `@id` is what turns
+ * a byline into an entity, and the entity is what carries expertise from the
+ * consulting page onto the articles.
+ */
+const AUTHOR_ID = `${new URL('/practice', site).href}#person`;
+
+/**
  * `build.format: 'file'` makes `Astro.url.pathname` end in `.html`, and a
  * canonical pointing at /lab/spf-checker.html would split every page's ranking
  * signals across two URLs.
@@ -83,7 +94,7 @@ const org = {
   logo: new URL('/favicon.png', site).href,
   email: 'support@themaildoc.co',
   description: "The doctor for your domain's email. Free diagnosis, honest prescriptions.",
-  founder: { '@type': 'Person', name: 'Sumit Raj' },
+  founder: { '@id': AUTHOR_ID, '@type': 'Person', name: 'Sumit Raj' },
   sameAs: [
     'https://www.linkedin.com/in/sumit-raj-9918ba183/',
     'https://github.com/rsumitaj/themaildoc',
@@ -144,11 +155,15 @@ if (kind === 'article') {
     // A named author with a page of their own is what Google reads as
     // expertise. "The Practice" was a house byline pointing at nobody.
     author: {
+      '@id': AUTHOR_ID,
       '@type': 'Person',
       name: 'Sumit Raj',
       url: new URL('/practice', site).href,
       jobTitle: 'Email Deliverability Architect',
     },
+    // Who checked it and when. Google reads this on anything advisory, and a
+    // review date with nobody's name against it is worth nothing.
+    ...(updated ? { reviewedBy: { '@id': AUTHOR_ID } } : {}),
     publisher: { '@id': `${site.href}#organization` },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
   });

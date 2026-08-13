@@ -31,6 +31,12 @@ const libraryBySlug = new Map(library.map((item) => [item.id, item]));
 const reading = data.related.map((slug) => libraryBySlug.get(slug)).filter((item) => item !== undefined);
 
 const updated = data.updated.toISOString().slice(0, 10);
+/** Same byline as an article: a named reviewer people can go and check. */
+const reviewed = data.updated.toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
 ---
 
 <Base
@@ -56,7 +62,10 @@ const updated = data.updated.toISOString().slice(0, 10);
       <header class="head">
         <h1>{data.term}</h1>
         <p class="definition">{data.definition}</p>
-        <p class="byline md-mono">Reviewed <time datetime={updated}>{updated}</time></p>
+        <p class="byline md-mono">
+          <a href="/practice">Sumit Raj</a> · reviewed{' '}
+          <time datetime={updated}>{reviewed}</time>
+        </p>
       </header>
 
       <div class="md-prose"><Content /></div>
@@ -120,6 +129,13 @@ const updated = data.updated.toISOString().slice(0, 10);
     color: var(--md-muted);
   }
   .byline { margin-top: var(--md-space-4); font-size: var(--md-text-xs); color: var(--md-faint); }
+  .byline a {
+    color: var(--md-muted);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+  .byline a:hover { color: var(--md-red-ink); }
   .md-prose { max-width: 42rem; margin-top: var(--md-space-7); }
   .next {
     max-width: 42rem;

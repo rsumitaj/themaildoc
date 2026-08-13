@@ -82,16 +82,33 @@ const services = [
 ];
 
 const site = Astro.site ?? new URL('https://themaildoc.co');
+const profile = new URL('/practice', site).href;
+
+/**
+ * This is the page every byline on the site points at, so it is where the
+ * person is actually defined. The `@id` matches the one `Seo.astro` uses for
+ * the article author and the organisation's founder, which is what lets a
+ * search engine treat three mentions as one expert rather than three strangers
+ * who happen to share a name.
+ */
 const jsonLd = [
   {
     '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    mainEntity: { '@id': `${profile}#person` },
+    url: profile,
+  },
+  {
+    '@context': 'https://schema.org',
     '@type': 'Person',
+    '@id': `${profile}#person`,
     name: 'Sumit Raj',
     jobTitle: 'Email Deliverability Architect',
-    url: new URL('/practice', site).href,
+    url: profile,
     image: new URL('/sumit-raj.jpg', site).href,
     sameAs: [LINKEDIN],
     email: 'support@themaildoc.co',
+    worksFor: { '@id': `${site.href}#organization` },
     knowsAbout: [
       'Email deliverability',
       'DMARC',
@@ -108,6 +125,7 @@ const jsonLd = [
 <Base
   title="Email Deliverability Consultant | Sumit Raj, MailDoc"
   description="I build and fix email authentication. DMARC monitoring across 2,000+ domains, around 2M records analysed daily. Tell me what is broken."
+  crumbs={[{ name: 'The Practice', href: '/practice' }]}
   extra={jsonLd}
 >
   <section class="intro">
