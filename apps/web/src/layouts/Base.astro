@@ -24,8 +24,23 @@ const seo = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <Seo {...seo} />
 
+    <!--
+      Three icons, and the middle one is the one Google reads.
+
+      The search result showed a generic globe rather than the mark, and both
+      reasons were here. Google will only consider a favicon declared with
+      `rel` of `icon`, `shortcut icon`, `apple-touch-icon` or
+      `apple-touch-icon-precomposed`; the PNG was declared `alternate icon`,
+      which is not on that list, so the only thing Google was offered was an
+      SVG. And the PNG it would have taken was 32x32, where Google asks for a
+      square that is a multiple of 48 because it resizes to 48. Both were
+      quietly wrong and the result was no brand icon in the SERP at all.
+
+      The SVG stays first for browsers, which prefer it and render it at any
+      size. 192 is 48x4.
+    -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="alternate icon" href="/favicon.png" type="image/png" />
+    <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content={BRAND_RED} />
 

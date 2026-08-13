@@ -1,4 +1,5 @@
 // @ts-check
+import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
@@ -55,6 +56,44 @@ const aliasList = [
  */
 const BUILD_TIME = new Date().toISOString();
 
+/**
+ * Make the homepage's sitemap entry byte-identical to its canonical.
+ *
+ * `Seo.astro` declares `https://themaildoc.co/`, because `new URL('/', site)`
+ * keeps the slash and that is the form Google has indexed. The `sitemap`
+ * package writes `https://themaildoc.co`, because it normalises an empty path
+ * away, and `serialize` cannot prevent it: the URL arrives there already
+ * correct and is stripped downstream on the way out.
+ *
+ * RFC 3986 section 6.2.3 makes those two the same URL and Google treats them as
+ * one, so nothing is broken by it. But Search Console matches sitemap
+ * membership as a string, and it reported "No referring sitemaps detected"
+ * against the homepage while showing the same sitemap read successfully with
+ * 107 URLs in it. Spending one line to stop the one page that matters most
+ * looking undiscovered is worth it.
+ */
+function sitemapRootSlash() {
+  return {
+    name: 'maildoc:sitemap-root-slash',
+    hooks: {
+      'astro:build:done': async ({ dir, logger }) => {
+        const file = new URL('sitemap-0.xml', dir);
+        try {
+          const xml = await readFile(file, 'utf8');
+          const site = 'https://themaildoc.co';
+          const fixed = xml.replace(`<loc>${site}</loc>`, `<loc>${site}/</loc>`);
+          if (fixed !== xml) {
+            await writeFile(file, fixed);
+            logger.info('Root URL in sitemap-0.xml now matches the canonical.');
+          }
+        } catch {
+          // No sitemap on this build is not a reason to fail one.
+        }
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: 'https://themaildoc.co',
   output: 'static',
@@ -109,6 +148,7 @@ export default defineConfig({
         };
       },
     }),
+    sitemapRootSlash(),
   ],
   /**
    * No syntax highlighting in markdown.

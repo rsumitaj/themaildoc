@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
  * Skipped when `dist` is absent so `pnpm test` works before a build.
  */
 const DIST = join(import.meta.dirname, '../dist/client');
+const SRC = join(import.meta.dirname, '../src');
 const built = existsSync(DIST);
 
 function pages(dir: string): string[] {
@@ -254,5 +255,39 @@ describe.skipIf(!built)('the sourced statistics on the home page', () => {
     const claims = (stat.match(/class="pill"/g) ?? []).length;
     const inactive = (stat.match(/class="pill" inert/g) ?? []).length;
     expect(inactive).toBe(claims - 1);
+  });
+});
+
+/**
+ * The two things that were stopping Google showing this site properly, neither
+ * of which any page-level SEO check would have caught.
+ */
+describe('what Google needs that is not a meta tag', () => {
+  it('offers a favicon Google will actually accept', () => {
+    // The search result showed a generic globe. Google only considers an icon
+    // declared with rel of `icon`, `shortcut icon`, `apple-touch-icon` or
+    // `apple-touch-icon-precomposed`, and asks for a square that is a multiple
+    // of 48 because it resizes to 48. The PNG was `alternate icon` at 32x32,
+    // so it failed both tests and the only thing on offer was an SVG.
+    const base = readFileSync(join(SRC, 'layouts/Base.astro'), 'utf8');
+
+    expect(base).toMatch(/rel="icon"[^>]*favicon-192\.png/);
+    expect(base).not.toMatch(/rel="alternate icon"/);
+
+    const png = readFileSync(join(SRC, '../public/favicon-192.png'));
+    // PNG header: width and height are big-endian uint32 at byte 16.
+    const width = png.readUInt32BE(16);
+    const height = png.readUInt32BE(20);
+    expect(width).toBe(height);
+    expect(width % 48).toBe(0);
+  });
+
+  it('keeps the sitemap root entry identical to the canonical', () => {
+    // `Seo.astro` declares `https://themaildoc.co/` and the sitemap package
+    // normalises the empty path away, so the two differed by one character.
+    // RFC 3986 makes them the same URL; Search Console matches strings, and
+    // reported the homepage as belonging to no sitemap because of it.
+    const config = readFileSync(join(SRC, '../astro.config.mjs'), 'utf8');
+    expect(config).toMatch(/sitemapRootSlash/);
   });
 });
