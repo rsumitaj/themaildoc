@@ -14,7 +14,11 @@
 
 set -uo pipefail
 
-FORBIDDEN='kdmarc|tdmarc|threatcop|kratikal'
+# Each name is split across two adjacent quoted strings, which the shell joins
+# back together. Written out in full, this file would be the one committed file
+# containing them, the check would fail on its own source, and a code search of
+# the repo would still turn the names up. Ugly, and correct.
+FORBIDDEN="kd""marc|td""marc|threat""cop|krati""kal"
 
 cd "$(dirname "$0")/.." || exit 2
 
