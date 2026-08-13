@@ -38,19 +38,25 @@ const description =
       {
         pillars.map((pillar) => (
           <section class="cluster">
+            <p class="md-eyebrow">Guide</p>
             <h2>
               <a href={`/health-library/${pillar.id}`}>{pillar.data.heading}</a>
             </h2>
             <p class="cluster__lead">{pillar.data.standfirst}</p>
+            <p class="cluster__open">
+              <a href={`/health-library/${pillar.id}`}>Read the guide &rarr;</a>
+            </p>
 
-            <ul class="list">
+            <div class="md-labgrid">
               {clustersOf(pillar.id).map((entry) => (
-                <li>
-                  <a href={`/health-library/${entry.id}`}>{entry.data.heading}</a>
-                  <span>{entry.data.standfirst}</span>
-                </li>
+                <a class="md-labcard" href={`/health-library/${entry.id}`}>
+                  <div class="md-labcard__top">
+                    <h3>{entry.data.heading}</h3>
+                  </div>
+                  <p>{entry.data.standfirst}</p>
+                </a>
               ))}
-            </ul>
+            </div>
           </section>
         ))
       }
@@ -59,14 +65,16 @@ const description =
         orphans.length > 0 && (
           <section class="cluster">
             <h2>Everything else</h2>
-            <ul class="list">
+            <div class="md-labgrid">
               {orphans.map((entry) => (
-                <li>
-                  <a href={`/health-library/${entry.id}`}>{entry.data.heading}</a>
-                  <span>{entry.data.standfirst}</span>
-                </li>
+                <a class="md-labcard" href={`/health-library/${entry.id}`}>
+                  <div class="md-labcard__top">
+                    <h3>{entry.data.heading}</h3>
+                  </div>
+                  <p>{entry.data.standfirst}</p>
+                </a>
               ))}
-            </ul>
+            </div>
           </section>
         )
       }
@@ -107,7 +115,7 @@ const description =
     margin-top: var(--md-space-8);
     padding-top: var(--md-space-6);
     border-top: var(--md-hairline) solid var(--md-line);
-    max-width: 46rem;
+    max-width: 62rem;
   }
 
   .cluster h2 {
@@ -119,42 +127,28 @@ const description =
     color: var(--md-red-ink);
   }
 
+  .cluster__open {
+    margin-top: var(--md-space-3);
+    font-size: var(--md-text-sm);
+  }
+
+  .cluster__open a {
+    color: var(--md-red-ink);
+    font-weight: var(--md-weight-medium);
+  }
+
   .cluster__lead {
     margin-top: var(--md-space-3);
     color: var(--md-muted);
     line-height: 1.6;
   }
 
+  /* Inside a sentence, so colour alone cannot mark it (WCAG 1.4.1). */
   .cluster__lead a {
     color: var(--md-red-ink);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
   }
 
-  .list {
-    list-style: none;
-    margin-top: var(--md-space-5);
-    display: grid;
-    gap: var(--md-space-3);
-  }
-
-  .list li {
-    padding-bottom: var(--md-space-3);
-    border-bottom: var(--md-hairline) solid var(--md-line-soft);
-  }
-
-  .list a {
-    display: block;
-    font-weight: var(--md-weight-medium);
-    color: var(--md-ink);
-  }
-
-  .list a:hover {
-    color: var(--md-red-ink);
-  }
-
-  .list span {
-    display: block;
-    font-size: var(--md-text-sm);
-    color: var(--md-muted);
-    margin-top: 0.15rem;
-  }
 </style>

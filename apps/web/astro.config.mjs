@@ -87,6 +87,17 @@ export default defineConfig({
       },
     }),
   ],
+  /**
+   * No syntax highlighting in markdown.
+   *
+   * Shiki ships a `github-dark` theme by default and applies it as an inline
+   * style on every `<pre>`, which put a black terminal block in the middle of a
+   * clinical white article and beat the stylesheet trying to fix it. Nothing in
+   * these articles is code: they are DNS records, which Shiki treats as
+   * plaintext anyway. Turning it off lets records look the way records look
+   * everywhere else on the site.
+   */
+  markdown: { syntaxHighlight: false },
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   // One canonical URL per page: /lab, not /lab/ reached through a 307.
   trailingSlash: 'never',

@@ -22,11 +22,24 @@ const data = entry.data;
 
 /** Only link to entries that exist, so a rename can never leave a 404 behind. */
 const bySlug = new Map(all.map((item) => [item.id, item]));
-const related = data.related.map((slug) => bySlug.get(slug)).filter((item) => item !== undefined);
 
 const pillar = data.pillar ? bySlug.get(data.pillar) : undefined;
 const clusters =
   data.kind === 'pillar' ? all.filter((item) => item.data.pillar === entry.id) : [];
+
+/**
+ * Everything worth reading next, each entry once.
+ *
+ * The pillar was listed twice on every cluster page: once as "the full guide
+ * this belongs to", and again because articles naturally name their own pillar
+ * in `related`. Same for a pillar's own clusters. Deduplicating here means an
+ * author can list whatever is genuinely relevant without checking what the
+ * template already shows.
+ */
+const shown = new Set([entry.id, pillar?.id, ...clusters.map((item) => item.id)]);
+const related = data.related
+  .map((slug) => bySlug.get(slug))
+  .filter((item) => item !== undefined && !shown.has(item.id));
 
 /** Tool slugs resolve against the Lab, so a link can never point at an unbuilt page. */
 const labBySlug = new Map(
@@ -73,7 +86,7 @@ const readable = data.updated.toLocaleDateString('en-GB', {
         </p>
       </header>
 
-      <div class="prose">
+      <div class="md-prose">
         <Content />
       </div>
 
@@ -94,15 +107,17 @@ const readable = data.updated.toLocaleDateString('en-GB', {
       {
         tools.length > 0 && (
           <section class="next">
-            <h2>Run the test</h2>
-            <ul class="next__list">
+            <h2>Run the test on your own domain</h2>
+            <div class="md-labgrid">
               {tools.map((test) => (
-                <li>
-                  <a href={test!.href}>{test!.name}</a>
-                  <span>{test!.blurb}</span>
-                </li>
+                <a class="md-labcard" href={test!.href}>
+                  <div class="md-labcard__top">
+                    <h3>{test!.name}</h3>
+                  </div>
+                  <p>{test!.blurb}</p>
+                </a>
               ))}
-            </ul>
+            </div>
           </section>
         )
       }
@@ -111,26 +126,33 @@ const readable = data.updated.toLocaleDateString('en-GB', {
         (related.length > 0 || pillar || clusters.length > 0) && (
           <section class="next">
             <h2>Read next</h2>
-            <ul class="next__list">
+            <div class="md-labgrid">
               {pillar && (
-                <li>
-                  <a href={`/health-library/${pillar.id}`}>{pillar.data.heading}</a>
-                  <span>The full guide this belongs to.</span>
-                </li>
+                <a class="md-labcard" href={`/health-library/${pillar.id}`}>
+                  <div class="md-labcard__top">
+                    <h3>{pillar.data.heading}</h3>
+                    <span class="md-eyebrow">Guide</span>
+                  </div>
+                  <p>{pillar.data.standfirst}</p>
+                </a>
               )}
               {clusters.map((item) => (
-                <li>
-                  <a href={`/health-library/${item.id}`}>{item.data.heading}</a>
-                  <span>{item.data.standfirst}</span>
-                </li>
+                <a class="md-labcard" href={`/health-library/${item.id}`}>
+                  <div class="md-labcard__top">
+                    <h3>{item.data.heading}</h3>
+                  </div>
+                  <p>{item.data.standfirst}</p>
+                </a>
               ))}
               {related.map((item) => (
-                <li>
-                  <a href={`/health-library/${item!.id}`}>{item!.data.heading}</a>
-                  <span>{item!.data.standfirst}</span>
-                </li>
+                <a class="md-labcard" href={`/health-library/${item!.id}`}>
+                  <div class="md-labcard__top">
+                    <h3>{item!.data.heading}</h3>
+                  </div>
+                  <p>{item!.data.standfirst}</p>
+                </a>
               ))}
-            </ul>
+            </div>
           </section>
         )
       }
@@ -179,14 +201,20 @@ const readable = data.updated.toLocaleDateString('en-GB', {
     color: var(--md-faint);
   }
 
-  .prose {
+  .md-prose {
     max-width: 42rem;
     margin-top: var(--md-space-7);
   }
 
-  .faq,
-  .next {
+  .faq {
     max-width: 42rem;
+    margin-top: var(--md-space-8);
+    padding-top: var(--md-space-6);
+    border-top: var(--md-hairline) solid var(--md-line);
+  }
+
+  .next {
+    max-width: 62rem;
     margin-top: var(--md-space-8);
     padding-top: var(--md-space-6);
     border-top: var(--md-hairline) solid var(--md-line);

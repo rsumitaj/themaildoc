@@ -100,6 +100,49 @@ describe.skipIf(!built)('every built page', () => {
   });
 });
 
+describe.skipIf(!built)('long-form content', () => {
+  const articles = all.filter(
+    (file) => file.includes('/health-library/') || file.includes('/glossary/'),
+  );
+
+  it('finds the articles', () => {
+    expect(articles.length).toBeGreaterThan(20);
+  });
+
+  it('styles the markdown body rather than shipping it bare', () => {
+    // The body used to render with no styling at all: `.prose` set a max-width
+    // and nothing else, so headings, code and lists came out as one block.
+    const offenders = articles
+      .filter((file) => /<h2|<p>/.test(read(file)))
+      .filter((file) => !read(file).includes('class="md-prose'))
+      .map(name);
+    expect(offenders.join('\n')).toBe('');
+  });
+
+  it('does not let a highlighter theme paint a black block into a white page', () => {
+    // Shiki applies `github-dark` as an inline style, which beat the
+    // stylesheet and put a terminal block in the middle of a clinical article.
+    const offenders = articles.filter((file) => /astro-code|github-dark/.test(read(file))).map(name);
+    expect(offenders.join('\n')).toBe('');
+  });
+
+  it('never lists the same page twice in Read next', () => {
+    const offenders: string[] = [];
+    for (const file of articles) {
+      const hrefs = [...read(file).matchAll(/href="(\/health-library\/[a-z0-9-]+)"/g)].map(
+        (match) => match[1],
+      );
+      const counted = new Map<string, number>();
+      for (const href of hrefs) counted.set(href, (counted.get(href) ?? 0) + 1);
+      // One link in the body plus one card is fine; three is a duplicate card.
+      for (const [href, count] of counted) {
+        if (count > 2) offenders.push(`${name(file)} -> ${href} x${count}`);
+      }
+    }
+    expect(offenders.join('\n')).toBe('');
+  });
+});
+
 describe.skipIf(!built)('the crawler files', () => {
   it('publishes a sitemap, a feed and an llms.txt', () => {
     for (const file of ['sitemap-index.xml', 'rss.xml', 'llms.txt', 'robots.txt']) {

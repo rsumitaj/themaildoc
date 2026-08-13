@@ -1999,3 +1999,209 @@
   text-underline-offset: 0.18em;
   text-decoration-thickness: 1px;
 }
+
+/* ---------------------------------------------------------------------------
+   Long-form prose
+   ---------------------------------------------------------------------------
+   Markdown arrives as bare h2/p/ul/pre with no classes, and the reset strips
+   every margin, so an article rendered with nothing but a max-width comes out
+   as one undifferentiated block. Everything below is the article equivalent of
+   the chart: a clear hierarchy, records shown the way records are shown
+   everywhere else on the site, and enough air to read 1,200 words in.
+
+   Rhythm is set with margin-top only, so the first child never pushes the
+   article away from its header and two headings in a row cannot double-space.
+*/
+
+.md-prose {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--md-ink);
+}
+
+.md-prose > * + * {
+  margin-top: var(--md-space-5);
+}
+
+.md-prose h2 {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: var(--md-tracking-tight);
+  font-weight: var(--md-weight-bold);
+  margin-top: var(--md-space-10);
+  padding-top: var(--md-space-5);
+  border-top: var(--md-hairline) solid var(--md-line);
+}
+
+.md-prose h3 {
+  font-size: 1.15rem;
+  line-height: 1.3;
+  letter-spacing: var(--md-tracking-tight);
+  font-weight: var(--md-weight-bold);
+  margin-top: var(--md-space-8);
+}
+
+/* A heading immediately after another needs the gap between them, not the gap
+   before a new section. */
+.md-prose h2 + h3 {
+  margin-top: var(--md-space-5);
+}
+
+.md-prose p {
+  color: var(--md-ink);
+}
+
+/* The opening paragraph carries the answer, so it gets a little more weight. */
+.md-prose > p:first-child {
+  font-size: 1.12rem;
+  color: var(--md-muted);
+}
+
+.md-prose strong {
+  font-weight: var(--md-weight-bold);
+  color: var(--md-ink);
+}
+
+/* Inline records, tags and mechanisms. Mono is first-class here: `p=reject`
+   should look like the thing you paste, not like emphasis. */
+.md-prose code {
+  font-family: var(--md-font-mono);
+  font-size: 0.86em;
+  background: var(--md-surface);
+  border: var(--md-hairline) solid var(--md-line-soft);
+  border-radius: var(--md-radius-sm);
+  padding: 0.1em 0.36em;
+  color: var(--md-ink);
+  overflow-wrap: anywhere;
+}
+
+/* A whole record. Same treatment as a record anywhere else on the site: a
+   light clinical card, never a black terminal block. */
+.md-prose pre {
+  font-family: var(--md-font-mono);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  background: var(--md-surface);
+  border: var(--md-hairline) solid var(--md-line);
+  border-left: 3px solid var(--md-red);
+  border-radius: var(--md-radius-sm);
+  padding: var(--md-space-4) var(--md-space-5);
+  overflow-x: auto;
+  color: var(--md-ink);
+}
+
+.md-prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+
+.md-prose ul,
+.md-prose ol {
+  padding-left: var(--md-space-5);
+  display: grid;
+  gap: var(--md-space-2);
+}
+
+.md-prose ul {
+  list-style: none;
+}
+
+/* A red tick rather than a bullet: the same triage vocabulary as the chart. */
+.md-prose ul > li {
+  position: relative;
+  padding-left: var(--md-space-4);
+}
+
+.md-prose ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-red);
+}
+
+.md-prose ol {
+  list-style: decimal;
+}
+
+.md-prose ol > li::marker {
+  font-family: var(--md-font-mono);
+  font-size: 0.85em;
+  color: var(--md-faint);
+}
+
+.md-prose li > p {
+  margin: 0;
+}
+
+/* Links in a paragraph are underlined, because colour alone cannot mark a
+   link (WCAG 1.4.1). */
+.md-prose a {
+  color: var(--md-red-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+.md-prose a:hover {
+  color: var(--md-ink);
+}
+
+.md-prose blockquote {
+  border-left: 3px solid var(--md-line);
+  padding: var(--md-space-1) 0 var(--md-space-1) var(--md-space-5);
+  color: var(--md-muted);
+}
+
+.md-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--md-text-base);
+  display: block;
+  overflow-x: auto;
+}
+
+.md-prose th,
+.md-prose td {
+  text-align: left;
+  padding: var(--md-space-3) var(--md-space-4) var(--md-space-3) 0;
+  border-bottom: var(--md-hairline) solid var(--md-line-soft);
+  vertical-align: top;
+}
+
+.md-prose th {
+  font-size: var(--md-text-xs);
+  font-family: var(--md-font-mono);
+  letter-spacing: var(--md-tracking-wide);
+  text-transform: uppercase;
+  color: var(--md-faint);
+  font-weight: var(--md-weight-medium);
+  border-bottom-color: var(--md-line);
+}
+
+.md-prose hr {
+  border: 0;
+  border-top: var(--md-hairline) solid var(--md-line);
+  margin-top: var(--md-space-8);
+}
+
+@media (max-width: 640px) {
+  .md-prose {
+    font-size: 1rem;
+  }
+
+  .md-prose h2 {
+    font-size: 1.3rem;
+    margin-top: var(--md-space-8);
+  }
+
+  .md-prose pre {
+    padding: var(--md-space-3) var(--md-space-4);
+    font-size: 0.74rem;
+  }
+}

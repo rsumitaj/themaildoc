@@ -59,7 +59,7 @@ const updated = data.updated.toISOString().slice(0, 10);
         <p class="byline md-mono">Reviewed <time datetime={updated}>{updated}</time></p>
       </header>
 
-      <div class="prose"><Content /></div>
+      <div class="md-prose"><Content /></div>
 
       {
         (seeAlso.length > 0 || tools.length > 0 || reading.length > 0) && (
@@ -120,7 +120,7 @@ const updated = data.updated.toISOString().slice(0, 10);
     color: var(--md-muted);
   }
   .byline { margin-top: var(--md-space-4); font-size: var(--md-text-xs); color: var(--md-faint); }
-  .prose { max-width: 42rem; margin-top: var(--md-space-7); }
+  .md-prose { max-width: 42rem; margin-top: var(--md-space-7); }
   .next {
     max-width: 42rem;
     margin-top: var(--md-space-8);
