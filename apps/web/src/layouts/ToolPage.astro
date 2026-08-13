@@ -25,10 +25,8 @@ interface Props {
 
 const { title, description, eyebrow, heading, intro, spec, faqs, related } = Astro.props;
 
-const site = Astro.site ?? new URL('https://themaildoc.co');
+/** `build.format: 'file'` puts `.html` on the pathname; breadcrumbs must not. */
 const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') || '/';
-const url = new URL(cleanPath, site).href;
-
 ---
 
 <Base

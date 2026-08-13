@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "turbo run dev --filter=@maildoc/web",
     "build": "turbo run build",
-    "test": "pnpm run check:brands && turbo run test",
+    "test": "pnpm run check:brands && pnpm run check:tokens && turbo run test",
     "test:watch": "pnpm --filter @maildoc/engines exec vitest",
     "typecheck": "tsc -p tsconfig.check.json && turbo run typecheck",
     "lint": "turbo run lint",
@@ -21,7 +21,8 @@
     "leads": "pnpm --filter @maildoc/web run leads",
     "leads:new": "pnpm --filter @maildoc/web run leads:new",
     "db:migrate": "pnpm --filter @maildoc/web run db:migrate",
-    "check:brands": "bash scripts/check-forbidden-strings.sh"
+    "check:brands": "bash scripts/check-forbidden-strings.sh",
+    "check:tokens": "node scripts/check-design-tokens.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

@@ -1,5 +1,6 @@
 ---
 import '@maildoc/ui/maildoc.css';
+import { BRAND_RED } from '@maildoc/ui';
 import ClinicStatusBar from '../components/ClinicStatusBar.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -26,7 +27,7 @@ const seo = Astro.props;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#E5322D" />
+    <meta name="theme-color" content={BRAND_RED} />
 
     <!--
       The one font the first paint needs. Preloading the mono face too would

@@ -30,6 +30,21 @@ const workspaceAliases = {
 };
 
 /**
+ * `@maildoc/ui` has to match exactly, not as a prefix.
+ *
+ * Every other alias here is a prefix match, which is what you want when a
+ * package has one entry point. This one also publishes `@maildoc/ui/*.css` and
+ * `@maildoc/ui/EkgBackground.astro`, and a prefix rule rewrites those into
+ * `…/src/index.ts/maildoc.css`, which is not a directory and fails the build.
+ * Vite's array form takes a regex, so the bare specifier can be pinned on its
+ * own while the subpaths keep resolving through the package's own exports.
+ */
+const aliasList = [
+  ...Object.entries(workspaceAliases).map(([find, replacement]) => ({ find, replacement })),
+  { find: /^@maildoc\/ui$/, replacement: pkg('ui') },
+];
+
+/**
  * Pages are prerendered by default and served as free Cloudflare Worker static
  * assets; only routes that opt out (`export const prerender = false`, i.e.
  * `/api/*`) consume Worker invocations. That is what keeps the clinic at $0.
@@ -112,6 +127,6 @@ export default defineConfig({
   build: { inlineStylesheets: 'auto', format: 'file' },
   devToolbar: { enabled: false },
   vite: {
-    resolve: { alias: workspaceAliases },
+    resolve: { alias: aliasList },
   },
 });

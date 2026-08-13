@@ -88,6 +88,8 @@
    * White in both modes, because the fill it sits on is the same in both.
    */
   --md-on-solid: #ffffff;
+  /* The circle a mail client draws a BIMI logo on. White wherever we are. */
+  --md-avatar-bg: #ffffff;
 
   /* ---- Type ----------------------------------------------------------- */
   --md-font-display: 'Space Grotesk', ui-sans-serif, -apple-system,
@@ -214,7 +216,20 @@
   --md-gutter: 1.25rem;
   --md-header-height: 66px;
   --md-statusbar-height: 34px;
-  /* WCAG 2.5.8: the smallest an interactive target is allowed to be. */
+  /*
+   * Two target sizes, because there are two situations.
+   *
+   * `--md-tap-min` is WCAG 2.2 SC 2.5.8 (Target Size Minimum, Level AA): 24px,
+   * the floor for a control that has to sit inside dense content — a toggle in
+   * the SPF tree, the "what is this" dot in a heading. Anything larger there
+   * would reach past its own row and start swallowing the taps meant for its
+   * neighbours, which is a worse failure than the one it fixes.
+   *
+   * `--md-tap` is the comfortable size for a control with room around it, and
+   * matches SC 2.5.5 (Level AAA) and every mobile platform guideline: buttons,
+   * form fields, nav rows, disclosure summaries.
+   */
+  --md-tap-min: 24px;
   --md-tap: 44px;
 
   --md-focus-ring: 2px solid var(--md-red);

@@ -125,7 +125,7 @@ h4 {
   top: -100%;
   z-index: 100;
   background: var(--md-ink);
-  color: #fff;
+  color: var(--md-bg);
   padding: var(--md-space-2) var(--md-space-4);
   border-radius: var(--md-radius-md);
 }
