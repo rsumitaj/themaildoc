@@ -16,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.check.json && turbo run typecheck",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules/.cache .turbo",
-    "ship": "turbo run build && pnpm run check:brands && pnpm --filter @maildoc/web exec wrangler deploy",
+    "ship": "turbo run build && pnpm run check:brands && pnpm run check:tokens && turbo run test && pnpm --filter @maildoc/web exec wrangler deploy",
     "indexnow": "node scripts/indexnow.mjs",
     "leads": "pnpm --filter @maildoc/web run leads",
     "leads:new": "pnpm --filter @maildoc/web run leads:new",
