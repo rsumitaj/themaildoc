@@ -266,14 +266,14 @@ const jsonLd = [
     max-width: 62ch;
     margin-top: var(--md-space-4);
     font-size: var(--md-text-md);
-    line-height: 1.65;
+    line-height: var(--md-leading-prose);
   }
 
   /* The opening paragraph carries the numbers, so it gets the ink. */
   .lede .first {
     color: var(--md-ink);
     font-size: var(--md-text-lg);
-    line-height: 1.6;
+    line-height: var(--md-leading-body);
   }
 
   .lede b {
@@ -302,7 +302,7 @@ const jsonLd = [
     font-size: var(--md-text-sm);
     color: var(--md-ink);
     border-bottom: var(--md-hairline) solid var(--md-line);
-    padding-bottom: 0.2rem;
+    padding-bottom: var(--md-space-half);
   }
 
   .linked:hover {
@@ -330,7 +330,7 @@ const jsonLd = [
   .row p {
     color: var(--md-muted);
     font-size: var(--md-text-base);
-    line-height: 1.65;
+    line-height: var(--md-leading-prose);
     margin-top: var(--md-space-2);
   }
 
@@ -371,8 +371,8 @@ const jsonLd = [
   .col li {
     font-size: var(--md-text-sm);
     color: var(--md-muted);
-    line-height: 1.5;
-    padding-left: 0.9rem;
+    line-height: var(--md-leading-body);
+    padding-left: var(--md-space-3);
     position: relative;
   }
 

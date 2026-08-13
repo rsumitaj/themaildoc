@@ -112,7 +112,7 @@ const description =
   }
 
   h1 {
-    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    font-size: var(--md-text-3xl);
     letter-spacing: var(--md-tracking-tight);
     margin-top: var(--md-space-2);
   }
@@ -120,9 +120,9 @@ const description =
   .lead {
     max-width: 46rem;
     margin-top: var(--md-space-4);
-    font-size: 1.08rem;
+    font-size: var(--md-text-17);
     color: var(--md-muted);
-    line-height: 1.6;
+    line-height: var(--md-leading-body);
   }
 
   .cluster {
@@ -133,7 +133,7 @@ const description =
   }
 
   .cluster h2 {
-    font-size: 1.4rem;
+    font-size: var(--md-text-22);
     letter-spacing: var(--md-tracking-tight);
   }
 
@@ -156,7 +156,7 @@ const description =
     color: var(--md-muted);
     border: var(--md-hairline) solid var(--md-line);
     border-radius: var(--md-radius-sm);
-    padding: 0.3rem 0.7rem;
+    padding: var(--md-space-1) var(--md-space-3);
     transition: border-color var(--md-duration-fast) var(--md-ease);
   }
 
@@ -178,7 +178,7 @@ const description =
   .cluster__lead {
     margin-top: var(--md-space-3);
     color: var(--md-muted);
-    line-height: 1.6;
+    line-height: var(--md-leading-body);
   }
 
   /* Inside a sentence, so colour alone cannot mark it (WCAG 1.4.1). */

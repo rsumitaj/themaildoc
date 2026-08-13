@@ -163,6 +163,19 @@ export async function safeFetch(raw: string, options: SafeFetchOptions): Promise
   const maxRedirects = options.maxRedirects ?? 0;
   const timeoutMs = options.timeoutMs ?? 6_000;
 
+  /**
+   * Hoisted out of `options` on purpose, and it must stay that way.
+   *
+   * `options.fetchImpl(url, init)` is a method call, so `this` is the options
+   * object. When the implementation is the runtime's own `fetch`, workerd
+   * rejects that with "Illegal invocation: function called with incorrect
+   * `this` reference" and every policy and logo fetch fails as UNREACHABLE.
+   * Node does not care, so it passes locally and breaks only once deployed.
+   * A plain call through a local leaves `this` undefined, which is what the
+   * runtime expects.
+   */
+  const doFetch = options.fetchImpl;
+
   let target = raw;
 
   for (let hop = 0; hop <= maxRedirects; hop += 1) {
@@ -185,7 +198,7 @@ export async function safeFetch(raw: string, options: SafeFetchOptions): Promise
 
     let response: Response;
     try {
-      response = await options.fetchImpl(inspected.url.href, {
+      response = await doFetch(inspected.url.href, {
         // Never `follow`. A followed redirect is a fetch this function never
         // got to check, which is the entire hole being closed here.
         redirect: 'manual',

@@ -184,15 +184,15 @@ const readable = data.updated.toLocaleDateString('en-GB', {
   }
 
   h1 {
-    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    font-size: var(--md-text-3xl);
     letter-spacing: var(--md-tracking-tight);
     line-height: 1.12;
   }
 
   .standfirst {
     margin-top: var(--md-space-4);
-    font-size: 1.12rem;
-    line-height: 1.55;
+    font-size: var(--md-text-19);
+    line-height: var(--md-leading-body);
     color: var(--md-muted);
   }
 
@@ -236,7 +236,7 @@ const readable = data.updated.toLocaleDateString('en-GB', {
 
   .faq h2,
   .next h2 {
-    font-size: 1.25rem;
+    font-size: var(--md-text-19);
     margin-bottom: var(--md-space-4);
   }
 
@@ -268,7 +268,7 @@ const readable = data.updated.toLocaleDateString('en-GB', {
   .faq__item p {
     padding-bottom: var(--md-space-4);
     color: var(--md-muted);
-    line-height: 1.65;
+    line-height: var(--md-leading-prose);
   }
 
   .next__list {
@@ -296,6 +296,6 @@ const readable = data.updated.toLocaleDateString('en-GB', {
     display: block;
     font-size: var(--md-text-sm);
     color: var(--md-muted);
-    margin-top: 0.15rem;
+    margin-top: var(--md-space-half);
   }
 </style>

@@ -119,13 +119,13 @@ const reviewed = data.updated.toLocaleDateString('en-GB', {
     padding-bottom: var(--md-space-6);
   }
   h1 {
-    font-size: clamp(1.8rem, 4.2vw, 2.6rem);
+    font-size: var(--md-text-3xl);
     letter-spacing: var(--md-tracking-tight);
   }
   .definition {
     margin-top: var(--md-space-4);
-    font-size: 1.1rem;
-    line-height: 1.55;
+    font-size: var(--md-text-17);
+    line-height: var(--md-leading-body);
     color: var(--md-muted);
   }
   .byline { margin-top: var(--md-space-4); font-size: var(--md-text-xs); color: var(--md-faint); }
@@ -143,7 +143,7 @@ const reviewed = data.updated.toLocaleDateString('en-GB', {
     padding-top: var(--md-space-6);
     border-top: var(--md-hairline) solid var(--md-line);
   }
-  .next h2 { font-size: 1.25rem; margin-bottom: var(--md-space-4); }
+  .next h2 { font-size: var(--md-text-19); margin-bottom: var(--md-space-4); }
   .next__list { list-style: none; display: grid; gap: var(--md-space-3); }
   .next__list li {
     padding-bottom: var(--md-space-3);
@@ -155,6 +155,6 @@ const reviewed = data.updated.toLocaleDateString('en-GB', {
     display: block;
     font-size: var(--md-text-sm);
     color: var(--md-muted);
-    margin-top: 0.15rem;
+    margin-top: var(--md-space-half);
   }
 </style>

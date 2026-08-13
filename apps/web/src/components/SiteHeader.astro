@@ -150,7 +150,7 @@ const isCurrent = (href: string): boolean =>
     align-items: center;
     gap: var(--md-space-3);
     font-weight: var(--md-weight-bold);
-    font-size: 1.1875rem;
+    font-size: var(--md-text-19);
     letter-spacing: var(--md-tracking-tight);
   }
 
@@ -161,21 +161,21 @@ const isCurrent = (href: string): boolean =>
   .tld {
     color: var(--md-faint);
     font-weight: var(--md-weight-medium);
-    font-size: 0.875rem;
+    font-size: var(--md-text-14);
   }
 
   .links {
     display: flex;
     gap: var(--md-space-6);
     list-style: none;
-    font-size: 0.9rem;
+    font-size: var(--md-text-15);
     color: var(--md-muted);
   }
 
   /* A 1px rule that draws in from the left — the EKG line, in miniature. */
   .links a {
     position: relative;
-    padding-block: 0.35rem;
+    padding-block: var(--md-space-1);
   }
 
   .links a::after {
@@ -202,7 +202,7 @@ const isCurrent = (href: string): boolean =>
   }
 
   .mega__tag {
-    font-size: 0.7rem;
+    font-size: var(--md-text-12);
     color: var(--md-faint);
     white-space: nowrap;
   }
@@ -213,7 +213,7 @@ const isCurrent = (href: string): boolean =>
   }
 
   .caret {
-    font-size: 0.6rem;
+    font-size: var(--md-text-10);
     color: var(--md-faint);
   }
 
@@ -250,9 +250,9 @@ const isCurrent = (href: string): boolean =>
 
   .mega__item {
     display: block;
-    font-size: 0.85rem;
+    font-size: var(--md-text-13);
     color: var(--md-ink);
-    padding: 0.45rem 0;
+    padding: var(--md-space-2) 0;
     border-bottom: var(--md-hairline) solid var(--md-line-soft);
   }
 
@@ -292,14 +292,14 @@ const isCurrent = (href: string): boolean =>
       justify-content: center;
       width: 1.5rem;
       height: 1.5rem;
-      margin-left: 0.1rem;
+      margin-left: var(--md-space-half);
       border: var(--md-hairline) solid var(--md-line);
       border-radius: 50%;
       color: var(--md-muted);
     }
 
     .tap .caret {
-      font-size: 0.8rem;
+      font-size: var(--md-text-13);
       line-height: 1;
       color: inherit;
       transition: transform var(--md-duration-base) var(--md-ease);
@@ -360,8 +360,8 @@ const isCurrent = (href: string): boolean =>
 
     .sheet__primary a {
       display: block;
-      padding: 0.7rem 0;
-      font-size: 1.05rem;
+      padding: var(--md-space-3) 0;
+      font-size: var(--md-text-17);
       font-weight: var(--md-weight-medium);
       color: var(--md-ink);
       border-bottom: var(--md-hairline) solid var(--md-line-soft);
@@ -388,8 +388,8 @@ const isCurrent = (href: string): boolean =>
 
     .sheet__group a {
       display: block;
-      padding: 0.4rem 0;
-      font-size: 0.85rem;
+      padding: var(--md-space-1) 0;
+      font-size: var(--md-text-13);
       color: var(--md-muted);
       border-bottom: var(--md-hairline) solid var(--md-line-soft);
     }
@@ -429,11 +429,11 @@ const isCurrent = (href: string): boolean =>
 
   @media (max-width: 480px) {
     .brand {
-      font-size: 1rem;
+      font-size: var(--md-text-16);
     }
 
     .tld {
-      font-size: 0.78rem;
+      font-size: var(--md-text-12);
     }
   }
 

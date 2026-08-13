@@ -17,7 +17,7 @@
 <style>
   .statusbar {
     background: var(--md-ink);
-    color: #cfd4da;
+    color: var(--md-onink-muted);
     font-family: var(--md-font-mono);
     font-size: var(--md-text-xs);
   }
@@ -34,7 +34,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--md-space-2);
-    color: #e7eaee;
+    color: var(--md-onink);
   }
 
   .dot {
@@ -46,8 +46,9 @@
     animation: md-pulse var(--md-pulse-duration) infinite;
   }
 
+  /* Tokenised so the dark mode can move it; 6.98:1 on the ink strip. */
   .treated {
-    color: #8a93a6;
+    color: var(--md-onink-faint);
   }
 
   @media (max-width: 720px) {

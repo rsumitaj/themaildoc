@@ -11,6 +11,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./EkgBackground.astro": "./src/EkgBackground.astro",
     "./tokens.css": "./src/tokens.css",
     "./fonts.css": "./src/fonts.css",
     "./base.css": "./src/base.css",

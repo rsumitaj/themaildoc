@@ -11,12 +11,12 @@
 .md-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--md-space-1);
   font-family: var(--md-font-mono);
-  font-size: 0.65rem;
+  font-size: var(--md-text-10);
   font-weight: var(--md-weight-bold);
-  letter-spacing: 0.08em;
-  padding: 0.25rem 0.5rem;
+  letter-spacing: var(--md-tracking-wide);
+  padding: var(--md-space-1) var(--md-space-2);
   border-radius: var(--md-radius-sm);
   white-space: nowrap;
 }
@@ -80,8 +80,8 @@
   display: inline-block;
   font-weight: var(--md-weight-bold);
   font-size: var(--md-text-sm);
-  color: #fff;
-  padding: 0.45rem 0.9rem;
+  color: var(--md-on-solid);
+  padding: var(--md-space-2) var(--md-space-4);
   border-radius: var(--md-radius-pill);
 }
 
@@ -89,7 +89,7 @@
   margin-top: var(--md-space-3);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.45;
+  line-height: var(--md-leading-ui);
 }
 
 .md-vitals__counts {
@@ -107,7 +107,7 @@
 .md-exam {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--md-space-half);
   max-width: 620px;
   margin-top: var(--md-space-6);
 }
@@ -119,7 +119,7 @@
   font-family: var(--md-font-mono);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  padding: 0.45rem 0;
+  padding: var(--md-space-2) 0;
 }
 
 .md-exam__row.is-pending { opacity: 0.55; }
@@ -167,21 +167,21 @@
   gap: var(--md-space-2);
   font-family: var(--md-font-mono);
   font-size: var(--md-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--md-tracking-wide);
   color: var(--md-faint);
 }
 
 .md-record__label {
-  margin-top: 0.35rem;
-  font-size: 0.875rem;
+  margin-top: var(--md-space-1);
+  font-size: var(--md-text-14);
   font-weight: var(--md-weight-semibold);
 }
 
 .md-record__summary {
-  margin-top: 0.15rem;
+  margin-top: var(--md-space-half);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.35;
+  line-height: var(--md-leading-ui);
 }
 
 /* ---- Spoofability ------------------------------------------------------ */
@@ -195,35 +195,39 @@
   margin-bottom: var(--md-space-5);
 }
 
-.md-spoof.is-bad { background: #1b1113; border: var(--md-hairline) solid #3a1f22; }
-.md-spoof.is-partial { background: var(--md-urgent-bg); border: var(--md-hairline) solid #f3d5b5; }
+.md-spoof.is-bad { background: var(--md-alarm-bg); border: var(--md-hairline) solid var(--md-alarm-line); }
+.md-spoof.is-partial { background: var(--md-urgent-bg); border: var(--md-hairline) solid var(--md-urgent-line); }
 .md-spoof.is-good { background: var(--md-healthy-tint); border: var(--md-hairline) solid var(--md-healthy-line); }
 
-.md-spoof__icon { flex: none; margin-top: 2px; }
+.md-spoof__icon { flex: none; margin-top: var(--md-space-half); }
 .md-spoof.is-bad .md-spoof__icon { color: var(--md-red); }
 .md-spoof.is-partial .md-spoof__icon { color: var(--md-urgent-text); }
 .md-spoof.is-good .md-spoof__icon { color: var(--md-healthy-text); }
 
 .md-spoof__title { font-weight: var(--md-weight-bold); font-size: var(--md-text-md); }
-.md-spoof.is-bad .md-spoof__title { color: #fff; }
+.md-spoof.is-bad .md-spoof__title { color: var(--md-alarm-title); }
 .md-spoof.is-partial .md-spoof__title { color: var(--md-urgent-text); }
 .md-spoof.is-good .md-spoof__title { color: var(--md-healthy-text); }
 
-.md-spoof__detail { font-size: var(--md-text-sm); margin-top: 0.25rem; line-height: 1.45; }
-.md-spoof.is-bad .md-spoof__detail { color: #c9a6a8; }
-.md-spoof.is-partial .md-spoof__detail { color: #7a4a12; }
-.md-spoof.is-good .md-spoof__detail { color: #3f7a5f; }
+.md-spoof__detail {
+  font-size: var(--md-text-sm);
+  margin-top: var(--md-space-1);
+  line-height: var(--md-leading-ui);
+}
+.md-spoof.is-bad .md-spoof__detail { color: var(--md-alarm-text); }
+.md-spoof.is-partial .md-spoof__detail { color: var(--md-urgent-body); }
+.md-spoof.is-good .md-spoof__detail { color: var(--md-healthy-body); }
 
 .md-spoof__reasons {
   margin-top: var(--md-space-3);
-  padding-left: 1.05rem;
+  padding-left: var(--md-space-4);
   font-size: var(--md-text-sm);
-  line-height: 1.5;
+  line-height: var(--md-leading-body);
 }
 
-.md-spoof.is-bad .md-spoof__reasons { color: #a98d8f; }
-.md-spoof.is-partial .md-spoof__reasons { color: #7a4a12; }
-.md-spoof.is-good .md-spoof__reasons { color: #3f7a5f; }
+.md-spoof.is-bad .md-spoof__reasons { color: var(--md-alarm-faint); }
+.md-spoof.is-partial .md-spoof__reasons { color: var(--md-urgent-body); }
+.md-spoof.is-good .md-spoof__reasons { color: var(--md-healthy-body); }
 
 /* ---- Condition card ---------------------------------------------------- */
 
@@ -257,14 +261,14 @@
 .md-condition__title {
   font-size: var(--md-text-md);
   font-weight: var(--md-weight-bold);
-  line-height: 1.3;
+  line-height: var(--md-leading-snug);
 }
 
 .md-condition__why {
   color: var(--md-muted);
-  font-size: 0.875rem;
-  margin-top: 0.4rem;
-  line-height: 1.5;
+  font-size: var(--md-text-14);
+  margin-top: var(--md-space-1);
+  line-height: var(--md-leading-body);
 }
 
 .md-condition__rx {
@@ -274,23 +278,23 @@
   gap: var(--md-space-3);
   margin-top: var(--md-space-3);
   background: var(--md-healthy-tint);
-  border: var(--md-hairline) solid #dcf0e6;
+  border: var(--md-hairline) solid var(--md-rx-line);
   border-radius: var(--md-radius-sm);
   padding: var(--md-space-3) var(--md-space-4);
 }
 
 .md-condition__rxtext {
   font-family: var(--md-font-mono);
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: #166b45;
+  font-size: var(--md-text-12);
+  line-height: var(--md-leading-body);
+  color: var(--md-rx-text);
   overflow-wrap: anywhere;
 }
 
 .md-condition__rxlabel {
   font-weight: var(--md-weight-bold);
   color: var(--md-healthy-text);
-  margin-right: 0.4rem;
+  margin-right: var(--md-space-1);
 }
 
 .md-condition__foot {
@@ -300,14 +304,14 @@
   gap: var(--md-space-3);
   margin-top: var(--md-space-3);
   font-family: var(--md-font-mono);
-  font-size: 0.68rem;
+  font-size: var(--md-text-10);
   color: var(--md-faint);
 }
 
 .md-condition__evidence {
   margin-top: var(--md-space-3);
   font-family: var(--md-font-mono);
-  font-size: 0.72rem;
+  font-size: var(--md-text-12);
   color: var(--md-muted);
   background: var(--md-surface);
   border-radius: var(--md-radius-sm);
@@ -315,21 +319,42 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * The copy button.
+ *
+ * Its box is deliberately small — it sits inside a prescription and must not
+ * compete with it — so the 44px touch target is given by a pseudo-element
+ * rather than by padding. The thing you can hit is the size WCAG 2.5.8 asks
+ * for; the thing you can see is the size the card can afford.
+ */
 .md-copy {
+  position: relative;
   flex: none;
   cursor: pointer;
   font-family: var(--md-font-mono);
-  font-size: 0.65rem;
+  font-size: var(--md-text-10);
   color: var(--md-muted);
   background: var(--md-card);
   border: var(--md-hairline) solid var(--md-line);
   border-radius: var(--md-radius-sm);
-  padding: 0.25rem 0.5rem;
+  padding: var(--md-space-1) var(--md-space-2);
+  transition:
+    color var(--md-duration-fast) var(--md-ease),
+    border-color var(--md-duration-fast) var(--md-ease);
+}
+
+.md-copy::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--md-tap));
+  height: var(--md-tap);
+  transform: translate(-50%, -50%);
 }
 
 .md-copy:hover { color: var(--md-ink); border-color: var(--md-muted); }
-
-/* ---- Consult block ----------------------------------------------------- */
+.md-copy:active { background: var(--md-surface); }
 
 /* ---- Buttons ----------------------------------------------------------- */
 
@@ -338,29 +363,55 @@
   align-items: center;
   justify-content: center;
   gap: var(--md-space-2);
+  min-height: var(--md-tap);
   border: 0;
   cursor: pointer;
   font-family: var(--md-font-display);
   font-weight: var(--md-weight-semibold);
-  font-size: 0.94rem;
-  padding: 0.8rem 1.25rem;
+  font-size: var(--md-text-15);
+  padding: var(--md-space-3) var(--md-space-5);
   border-radius: var(--md-radius-md);
   background: var(--md-red-ink);
-  color: #fff;
-  transition: transform var(--md-duration-fast) var(--md-ease),
-    background var(--md-duration-fast) var(--md-ease);
+  color: var(--md-on-solid);
+  transition:
+    transform var(--md-duration-fast) var(--md-ease),
+    background var(--md-duration-fast) var(--md-ease),
+    border-color var(--md-duration-fast) var(--md-ease);
 }
 
-.md-btn:hover { transform: translateY(-1px); background: var(--md-red-deep); }
-.md-btn[disabled] { opacity: 0.6; cursor: progress; transform: none; }
+/*
+ * Lift on hover only where hovering is a thing. On a touch screen `:hover`
+ * sticks after a tap, so the button stays 1px up until something else is
+ * touched, which reads as a rendering fault rather than as feedback.
+ */
+@media (hover: hover) {
+  .md-btn:hover { transform: translateY(-1px); background: var(--md-red-deep); }
+  .md-btn.is-ghost:hover {
+    border-color: var(--md-red-ink);
+    color: var(--md-red-ink);
+    background: transparent;
+  }
+}
+
+.md-btn:active { transform: none; }
+
+/*
+ * Busy and disabled are different states and used to look identical.
+ *
+ * A button that is working says so with a progress cursor and keeps its colour;
+ * one that cannot be pressed goes flat and takes the not-allowed cursor. The
+ * islands set `aria-busy` while a request is in flight, so the distinction is
+ * announced as well as drawn.
+ */
+.md-btn[disabled] { transform: none; }
+.md-btn[disabled]:not([aria-busy='true']) { opacity: 0.5; cursor: not-allowed; }
+.md-btn[aria-busy='true'] { opacity: 0.75; cursor: progress; }
 
 .md-btn.is-ghost {
   background: transparent;
   color: var(--md-ink);
   border: var(--md-hairline) solid var(--md-line);
 }
-
-.md-btn.is-ghost:hover { border-color: var(--md-red-ink); color: var(--md-red-ink); background: transparent; }
 
 /* ---- The domain input -------------------------------------------------- */
 /* Lives here rather than in a scoped Astro block because the island owns this
@@ -399,7 +450,11 @@
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: 1.0625rem;
+  /*
+   * 17px, not 16, and never below it. iOS Safari zooms the whole page when a
+   * field smaller than 16px takes focus, and the zoom does not come back.
+   */
+  font-size: var(--md-text-17);
   padding: var(--md-space-3) var(--md-space-1);
   color: var(--md-ink);
 }
@@ -453,7 +508,7 @@
 }
 
 .md-testresult__head .md-dot {
-  margin-top: 0.5rem;
+  margin-top: var(--md-space-2);
 }
 
 .md-testresult__head h2 {
@@ -464,7 +519,7 @@
 .md-testresult__summary {
   color: var(--md-muted);
   font-size: var(--md-text-sm);
-  margin-top: 0.25rem;
+  margin-top: var(--md-space-1);
 }
 
 .md-testresult__score {
@@ -476,8 +531,8 @@
 
 .md-testresult__record {
   font-family: var(--md-font-mono);
-  font-size: 0.75rem;
-  line-height: 1.6;
+  font-size: var(--md-text-12);
+  line-height: var(--md-leading-body);
   color: var(--md-muted);
   background: var(--md-surface);
   border: var(--md-hairline) solid var(--md-line);
@@ -531,14 +586,14 @@
 }
 
 .md-req h3 {
-  font-size: 0.9375rem;
+  font-size: var(--md-text-15);
 }
 
 .md-req p {
   color: var(--md-muted);
   font-size: var(--md-text-sm);
-  line-height: 1.55;
-  margin-top: 0.25rem;
+  line-height: var(--md-leading-body);
+  margin-top: var(--md-space-1);
 }
 
 .md-req__fix {
@@ -562,15 +617,22 @@
   margin-top: var(--md-space-4);
 }
 
+/* A record-type filter. 44px tall so it can be hit with a thumb. */
 .md-type {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--md-tap);
   font-family: var(--md-font-mono);
   font-size: var(--md-text-xs);
-  padding: 0.3rem 0.6rem;
+  padding: var(--md-space-2) var(--md-space-3);
   border-radius: var(--md-radius-sm);
   border: var(--md-hairline) solid var(--md-line);
   background: var(--md-card);
   color: var(--md-muted);
   cursor: pointer;
+  transition:
+    color var(--md-duration-fast) var(--md-ease),
+    border-color var(--md-duration-fast) var(--md-ease);
 }
 
 .md-type:hover {
@@ -581,7 +643,7 @@
 .md-type.is-active {
   background: var(--md-ink);
   border-color: var(--md-ink);
-  color: #fff;
+  color: var(--md-bg);
 }
 
 .md-answer {
@@ -640,7 +702,7 @@
 .md-field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--md-space-1);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
 }
@@ -650,17 +712,39 @@
 .md-field textarea {
   border: var(--md-hairline) solid var(--md-line);
   border-radius: var(--md-radius-sm);
-  padding: 0.55rem 0.7rem;
+  padding: var(--md-space-3);
+  min-height: var(--md-tap);
   background: var(--md-bg);
   color: var(--md-ink);
-  font-size: 0.875rem;
+  /* 16px minimum, or iOS zooms the page on focus and never zooms back. */
+  font-size: var(--md-text-16);
   width: 100%;
+  transition: border-color var(--md-duration-fast) var(--md-ease);
+}
+
+.md-field textarea {
+  /* A textarea's min-height is its own business; the tap rule is for the
+     single-line controls that would otherwise be 30px tall. */
+  min-height: auto;
+}
+
+/*
+ * Focus draws the red border *and* keeps the ring.
+ *
+ * `outline: none` on its own is the single most common way a form becomes
+ * unusable by keyboard: a border colour change is invisible to anyone who
+ * cannot separate red from grey. The ring in base.css handles that, so it must
+ * not be cancelled here.
+ */
+.md-field input:focus-visible,
+.md-field select:focus-visible,
+.md-field textarea:focus-visible {
+  border-color: var(--md-red-ink);
 }
 
 .md-field input:focus,
 .md-field select:focus,
 .md-field textarea:focus {
-  outline: none;
   border-color: var(--md-red-ink);
 }
 
@@ -671,11 +755,15 @@
   font-size: var(--md-text-sm);
   color: var(--md-muted);
   cursor: pointer;
-  line-height: 1.45;
+  line-height: var(--md-leading-ui);
+  /* The label is the target, so the target is at least a thumb tall. */
+  min-height: var(--md-tap);
+  padding-block: var(--md-space-2);
 }
 
 .md-check input {
-  margin-top: 0.2rem;
+  margin-top: var(--md-space-half);
+  width: auto;
   accent-color: var(--md-red-ink);
 }
 
@@ -690,21 +778,21 @@
   gap: var(--md-space-3);
   font-family: var(--md-font-mono);
   font-size: var(--md-text-xs);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--md-tracking-wide);
   text-transform: uppercase;
   color: var(--md-faint);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--md-space-1);
 }
 
 .md-testresult__record.is-big {
-  font-size: 0.8rem;
+  font-size: var(--md-text-13);
   padding: var(--md-space-4);
 }
 
 .md-gen__hint {
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.55;
+  line-height: var(--md-leading-body);
   padding: var(--md-space-3) var(--md-space-4);
   background: var(--md-surface);
   border-radius: var(--md-radius-sm);
@@ -715,55 +803,7 @@
   color: var(--md-critical-text);
 }
 
-/* ---- Long-form page body (the SEO half of a Lab page) ------------------- */
-
-.md-prose {
-  max-width: 68ch;
-}
-
-.md-prose h2 {
-  font-size: var(--md-text-xl);
-  margin-top: var(--md-space-10);
-  letter-spacing: var(--md-tracking-tight);
-}
-
-.md-prose h3 {
-  font-size: var(--md-text-md);
-  margin-top: var(--md-space-6);
-}
-
-.md-prose p,
-.md-prose li {
-  color: var(--md-muted);
-  font-size: 0.9375rem;
-  line-height: 1.7;
-  margin-top: var(--md-space-3);
-}
-
-.md-prose ul,
-.md-prose ol {
-  padding-left: 1.2rem;
-  margin-top: var(--md-space-2);
-}
-
-.md-prose li::marker {
-  color: var(--md-red-ink);
-}
-
-.md-prose code {
-  font-family: var(--md-font-mono);
-  font-size: 0.85em;
-  background: var(--md-surface);
-  border-radius: var(--md-radius-sm);
-  padding: 0.1rem 0.35rem;
-  /* A DMARC report filename is 52 characters and has no spaces in it. */
-  overflow-wrap: anywhere;
-}
-
-.md-prose strong {
-  color: var(--md-ink);
-  font-weight: var(--md-weight-semibold);
-}
+/* ---- The disclosure used for every FAQ on the site ---------------------- */
 
 .md-faq {
   border-top: var(--md-hairline) solid var(--md-line);
@@ -774,11 +814,14 @@
 .md-faq summary {
   cursor: pointer;
   font-weight: var(--md-weight-semibold);
-  font-size: 0.9375rem;
+  font-size: var(--md-text-15);
   list-style: none;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--md-space-3);
+  /* The whole summary is the target, and it has to be thumb-sized. */
+  min-height: var(--md-tap);
 }
 
 .md-faq summary::-webkit-details-marker {
@@ -791,8 +834,12 @@
   color: var(--md-red-ink);
 }
 
+/*
+ * U+2212 MINUS SIGN. This read `', '` — a comma and a space — so every opened
+ * FAQ on every Lab page showed a stray comma where the minus belongs.
+ */
 .md-faq[open] summary::after {
-  content: ', ';
+  content: '\2212';
 }
 
 /* ---- Lab index --------------------------------------------------------- */
@@ -829,9 +876,11 @@
     transform var(--md-duration-fast) var(--md-ease);
 }
 
-.md-labcard:hover {
-  border-color: var(--md-red-ink);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .md-labcard:hover {
+    border-color: var(--md-red-ink);
+    transform: translateY(-2px);
+  }
 }
 
 .md-labcard__top {
@@ -842,14 +891,14 @@
 }
 
 .md-labcard h3 {
-  font-size: 0.9375rem;
+  font-size: var(--md-text-15);
 }
 
 .md-labcard p {
   color: var(--md-muted);
   font-size: var(--md-text-sm);
-  margin-top: 0.35rem;
-  line-height: 1.5;
+  margin-top: var(--md-space-1);
+  line-height: var(--md-leading-body);
 }
 
 /* ---- Result layout ----------------------------------------------------- */
@@ -863,9 +912,7 @@
 
 /* The header is sticky, so anything we scroll to must clear it. */
 .md-result {
-  scroll-margin-top: calc(
-    var(--md-header-height) + var(--md-statusbar-height) + var(--md-space-4)
-  );
+  scroll-margin-top: calc( var(--md-header-height) + var(--md-statusbar-height) + var(--md-space-4) );
 }
 
 .md-chart__head {
@@ -873,13 +920,13 @@
   align-items: baseline;
   gap: var(--md-space-3);
   flex-wrap: wrap;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--md-space-1);
 }
 
 .md-chart__label {
   font-family: var(--md-font-mono);
   font-size: var(--md-text-sm);
-  letter-spacing: 0.1em;
+  letter-spacing: var(--md-tracking-mono);
   color: var(--md-red-ink);
 }
 
@@ -901,7 +948,7 @@
   color: var(--md-critical-text);
   border-radius: var(--md-radius-md);
   padding: var(--md-space-3) var(--md-space-4);
-  font-size: 0.875rem;
+  font-size: var(--md-text-14);
   margin-top: var(--md-space-4);
   max-width: 620px;
 }
@@ -963,11 +1010,11 @@
 .md-drop__privacy {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--md-space-1);
   margin-top: var(--md-space-5);
   font-family: var(--md-font-mono);
   font-size: var(--md-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--md-tracking-wide);
   color: var(--md-healthy-text);
 }
 
@@ -1288,7 +1335,7 @@
   flex-wrap: wrap;
   font-size: var(--md-text-xs);
   color: var(--md-faint);
-  margin-top: 0.15rem;
+  margin-top: var(--md-space-half);
 }
 
 .md-bwrow__hint { color: var(--md-faint); font-size: var(--md-text-xs); }
@@ -1305,7 +1352,7 @@
 .md-bwmark {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--md-space-1);
   min-width: 0;
   font-size: var(--md-text-xs);
 }
@@ -1359,7 +1406,7 @@
 }
 
 .md-bwdetail__grid dd {
-  margin-top: 0.3rem;
+  margin-top: var(--md-space-1);
   font-size: var(--md-text-base);
   overflow-wrap: anywhere;
 }
@@ -1456,7 +1503,7 @@
   display: block;
   font-size: var(--md-text-xs);
   color: var(--md-faint);
-  margin-top: 0.15rem;
+  margin-top: var(--md-space-half);
 }
 
 .md-flath {
@@ -1475,8 +1522,8 @@
 .md-flatwarn li {
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.6;
-  padding-left: 1rem;
+  line-height: var(--md-leading-body);
+  padding-left: var(--md-space-4);
   position: relative;
 }
 
@@ -1495,7 +1542,7 @@
   margin-top: var(--md-space-3);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.6;
+  line-height: var(--md-leading-body);
   max-width: 76ch;
 }
 
@@ -1589,15 +1636,15 @@
   font-size: var(--md-text-sm);
   color: var(--md-faint);
   margin-top: var(--md-space-3);
-  line-height: 1.55;
+  line-height: var(--md-leading-body);
 }
 
 .md-tree__list { list-style: none; }
 
 /* Nested levels get a rule so the shape of the chain reads at a glance. */
 .md-tree__list .md-tree__list {
-  margin-left: 0.55rem;
-  padding-left: 0.9rem;
+  margin-left: var(--md-space-2);
+  padding-left: var(--md-space-3);
   border-left: var(--md-hairline) solid var(--md-line);
 }
 
@@ -1607,7 +1654,7 @@
   grid-template-columns: 18px 1fr 3.5rem 3.5rem;
   gap: var(--md-space-2);
   align-items: center;
-  padding: 0.45rem 0;
+  padding: var(--md-space-2) 0;
   border-bottom: var(--md-hairline) solid var(--md-line-soft);
 }
 
@@ -1619,7 +1666,9 @@
   border-radius: var(--md-radius-sm);
 }
 
+/* 18px box, 44px target — the tree has to stay dense enough to read as a tree. */
 .md-tree__toggle {
+  position: relative;
   width: 18px;
   height: 18px;
   display: grid;
@@ -1629,10 +1678,23 @@
   background: var(--md-bg);
   color: var(--md-muted);
   font-family: var(--md-font-mono);
-  font-size: 0.7rem;
+  font-size: var(--md-text-12);
   line-height: 1;
   cursor: pointer;
   padding: 0;
+  transition:
+    color var(--md-duration-fast) var(--md-ease),
+    border-color var(--md-duration-fast) var(--md-ease);
+}
+
+.md-tree__toggle:not(.is-leaf)::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--md-tap);
+  height: var(--md-tap);
+  transform: translate(-50%, -50%);
 }
 
 .md-tree__toggle:hover {
@@ -1680,7 +1742,7 @@
   background: var(--md-surface);
   font-size: var(--md-text-xs);
   color: var(--md-muted);
-  line-height: 1.65;
+  line-height: var(--md-leading-prose);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1692,7 +1754,7 @@
   background: var(--md-red-tint);
   font-size: var(--md-text-sm);
   color: var(--md-critical-text);
-  line-height: 1.5;
+  line-height: var(--md-leading-body);
 }
 
 @media (max-width: 620px) {
@@ -1709,21 +1771,43 @@
   position: relative;
 }
 
+/*
+ * The inline "what is this" button.
+ *
+ * 15px on screen, because it sits inside a heading and anything larger becomes
+ * the heading. 44px to a finger, through the same pseudo-element the copy
+ * button uses: what you can see and what you can hit are allowed to be
+ * different sizes, and on a phone they have to be.
+ */
 .md-explain__button {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 15px;
   height: 15px;
-  margin-left: 0.3rem;
+  margin-left: var(--md-space-1);
   vertical-align: baseline;
   border: var(--md-hairline) solid var(--md-line);
   border-radius: 50%;
   background: var(--md-bg);
   color: var(--md-faint);
   font-family: var(--md-font-mono);
-  font-size: 0.62rem;
+  font-size: var(--md-text-10);
   line-height: 1;
   cursor: pointer;
+  transition:
+    color var(--md-duration-fast) var(--md-ease),
+    border-color var(--md-duration-fast) var(--md-ease);
+}
+
+.md-explain__button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--md-tap);
+  height: var(--md-tap);
+  transform: translate(-50%, -50%);
 }
 
 .md-explain__button:hover,
@@ -1744,7 +1828,7 @@
   font-size: var(--md-text-sm);
   font-weight: var(--md-weight-regular);
   color: var(--md-muted);
-  line-height: 1.55;
+  line-height: var(--md-leading-body);
   letter-spacing: normal;
   text-transform: none;
   max-width: 46ch;
@@ -1783,7 +1867,7 @@
   background: var(--md-card);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.6;
+  line-height: var(--md-leading-body);
 }
 
 .md-scorewhy__body h4 {
@@ -1800,7 +1884,7 @@
 }
 
 .md-scorewhy__body li {
-  padding-left: 0.9rem;
+  padding-left: var(--md-space-3);
   position: relative;
 }
 
@@ -1897,7 +1981,7 @@
 .md-bimi__previews figcaption {
   font-size: var(--md-text-xs);
   color: var(--md-faint);
-  margin-top: 0.3rem;
+  margin-top: var(--md-space-1);
 }
 
 .md-bimi__facts {
@@ -1914,9 +1998,9 @@
 .md-bimi__fact dd {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: var(--md-space-1);
   font-size: var(--md-text-sm);
-  margin-top: 0.1rem;
+  margin-top: var(--md-space-half);
   overflow-wrap: anywhere;
 }
 
@@ -1932,14 +2016,14 @@
   margin-top: var(--md-space-3);
   font-size: var(--md-text-sm);
   color: var(--md-critical-text);
-  line-height: 1.5;
+  line-height: var(--md-leading-body);
 }
 
 .md-bimi__policy {
   margin-top: var(--md-space-4);
   font-size: var(--md-text-sm);
   color: var(--md-muted);
-  line-height: 1.6;
+  line-height: var(--md-leading-body);
 }
 
 @media (max-width: 700px) {
@@ -1955,10 +2039,10 @@
 
 .md-field__error {
   display: block;
-  margin-top: 0.35rem;
+  margin-top: var(--md-space-1);
   font-size: var(--md-text-xs);
   color: var(--md-critical-text);
-  line-height: 1.4;
+  line-height: var(--md-leading-ui);
 }
 
 /* The score explainer's pillar table: a question under each pillar name, and
@@ -1966,16 +2050,16 @@
    believed. */
 .md-scorewhy__q {
   display: block;
-  margin-top: 0.2rem;
-  font-size: 0.78rem;
+  margin-top: var(--md-space-half);
+  font-size: var(--md-text-12);
   color: var(--md-muted);
   font-weight: var(--md-weight-regular);
 }
 
 .md-scorewhy__codes {
   display: block;
-  margin-top: 0.3rem;
-  font-size: 0.7rem;
+  margin-top: var(--md-space-1);
+  font-size: var(--md-text-12);
   color: var(--md-faint);
   overflow-wrap: anywhere;
 }
@@ -2014,8 +2098,10 @@
 */
 
 .md-prose {
-  font-size: 1.0625rem;
-  line-height: 1.7;
+  /* 65–75 characters is the readable measure; at 17px this lands at ~68. */
+  max-width: 68ch;
+  font-size: var(--md-text-17);
+  line-height: var(--md-leading-prose);
   color: var(--md-ink);
 }
 
@@ -2024,7 +2110,7 @@
 }
 
 .md-prose h2 {
-  font-size: 1.5rem;
+  font-size: var(--md-text-24);
   line-height: 1.25;
   letter-spacing: var(--md-tracking-tight);
   font-weight: var(--md-weight-bold);
@@ -2034,8 +2120,8 @@
 }
 
 .md-prose h3 {
-  font-size: 1.15rem;
-  line-height: 1.3;
+  font-size: var(--md-text-19);
+  line-height: var(--md-leading-snug);
   letter-spacing: var(--md-tracking-tight);
   font-weight: var(--md-weight-bold);
   margin-top: var(--md-space-8);
@@ -2053,7 +2139,7 @@
 
 /* The opening paragraph carries the answer, so it gets a little more weight. */
 .md-prose > p:first-child {
-  font-size: 1.12rem;
+  font-size: var(--md-text-19);
   color: var(--md-muted);
 }
 
@@ -2066,7 +2152,7 @@
    should look like the thing you paste, not like emphasis. */
 .md-prose code {
   font-family: var(--md-font-mono);
-  font-size: 0.86em;
+  font-size: 0.875em;
   background: var(--md-surface);
   border: var(--md-hairline) solid var(--md-line-soft);
   border-radius: var(--md-radius-sm);
@@ -2079,8 +2165,8 @@
    light clinical card, never a black terminal block. */
 .md-prose pre {
   font-family: var(--md-font-mono);
-  font-size: 0.8rem;
-  line-height: 1.65;
+  font-size: var(--md-text-13);
+  line-height: var(--md-leading-body);
   background: var(--md-surface);
   border: var(--md-hairline) solid var(--md-line);
   border-left: 3px solid var(--md-red);
@@ -2131,7 +2217,7 @@
 
 .md-prose ol > li::marker {
   font-family: var(--md-font-mono);
-  font-size: 0.85em;
+  font-size: 0.875em;
   color: var(--md-faint);
 }
 
@@ -2192,16 +2278,120 @@
 
 @media (max-width: 640px) {
   .md-prose {
-    font-size: 1rem;
+    font-size: var(--md-text-16);
   }
 
   .md-prose h2 {
-    font-size: 1.3rem;
+    font-size: var(--md-text-22);
     margin-top: var(--md-space-8);
   }
 
   .md-prose pre {
     padding: var(--md-space-3) var(--md-space-4);
-    font-size: 0.74rem;
+    font-size: var(--md-text-12);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The monitor sweep
+   ---------------------------------------------------------------------------
+   A ventilator trace running behind the hero. Two rules govern it: it must
+   never be readable *as* content, and it must never cost anything.
+
+   Not readable: it sits at 0.055 opacity in a red that is already the page's
+   only accent, which is a change of about 1.02:1 against the background — far
+   below the point at which it could move a text contrast ratio. Nothing is
+   ever placed on it that is not also on the page background.
+
+   Not costly: the only thing that animates is `transform` on a single element,
+   which the compositor owns, so no frame of this ever touches layout, paint or
+   the main thread. The element is absolutely positioned inside a clipped
+   parent, so it contributes nothing to layout and cannot shift anything —
+   CLS stays zero whether it renders or not.
+   --------------------------------------------------------------------------- */
+
+.md-ekg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  color: var(--md-ekg-color);
+  opacity: var(--md-ekg-opacity);
+  /* Isolate it from the rest of the page's paint work. */
+  contain: strict;
+}
+
+/*
+ * Two identical tiles side by side in a 200%-wide track. The track travels
+ * exactly one tile, so the moment it wraps, tile two is sitting precisely
+ * where tile one was and the seam is not merely hidden — it does not exist.
+ */
+.md-ekg__track {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  will-change: transform;
+  transform: translate3d(-50%, 0, 0);
+  animation: md-ekg-sweep var(--md-ekg-duration) linear infinite;
+}
+
+.md-ekg__tile {
+  width: 50%;
+  height: 100%;
+  flex: none;
+}
+
+@keyframes md-ekg-sweep {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+/*
+ * The writing head: a soft dot travelling with the beat, the way a real
+ * monitor draws. Same duration as the sweep, so the two read as one movement.
+ */
+.md-ekg__head {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  border-radius: 50%;
+  background: radial-gradient(circle, currentColor 0%, transparent 62%);
+  will-change: transform;
+  animation: md-ekg-head var(--md-ekg-duration) linear infinite;
+}
+
+@keyframes md-ekg-head {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(100vw, 0, 0); }
+}
+
+/*
+ * Paused when the tab is in the background or the hero has scrolled away.
+ * A monitor nobody is looking at is a monitor spending somebody's battery.
+ */
+.md-ekg[data-paused='true'] .md-ekg__track,
+.md-ekg[data-paused='true'] .md-ekg__head {
+  animation-play-state: paused;
+}
+
+/*
+ * Asked for no motion: the trace freezes into a static waveform. It is still
+ * drawn, because the texture is part of the design; it simply stops moving,
+ * and the travelling head is removed entirely rather than parked somewhere
+ * arbitrary.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .md-ekg__track {
+    animation: none;
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  .md-ekg__head {
+    display: none;
   }
 }

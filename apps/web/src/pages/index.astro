@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import EkgBackground from '@maildoc/ui/EkgBackground.astro';
 import Base from '../layouts/Base.astro';
 import HomeCheckup from '../islands/HomeCheckup';
 import SourcedStat from '../components/SourcedStat.astro';
@@ -98,14 +99,7 @@ const tests = [
   faqs={faqs}
 >
   <section class="hero">
-    <svg class="ekg" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
-      <path
-        d="M0 100 H420 L440 100 L460 40 L490 160 L515 100 H640 L660 100 L680 60 L710 140 L735 100 H1200"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="3"
-      />
-    </svg>
+    <EkgBackground />
 
     <div class="md-wrap">
       <SourcedStat />
@@ -219,25 +213,13 @@ const tests = [
     padding-block: var(--md-space-12) var(--md-space-16);
   }
 
-  /* The pulse runs behind the lead and the input, never across the headline. */
-  .ekg {
-    position: absolute;
-    inset-inline: 0;
-    top: 340px;
-    height: 200px;
-    color: var(--md-red-ink);
-    opacity: 0.06;
-    pointer-events: none;
-  }
-
-  @media (max-width: 720px) {
-    .ekg {
-      display: none;
-    }
+  /* Everything in the hero sits above the trace, in its own stacking context. */
+  .hero > .md-wrap {
+    position: relative;
+    z-index: 1;
   }
 
   h1 {
-    position: relative;
     font-size: var(--md-text-hero);
     line-height: var(--md-leading-tight);
     letter-spacing: var(--md-tracking-hero);
@@ -259,9 +241,9 @@ const tests = [
   }
 
   .lead {
-    position: relative;
     margin-top: var(--md-space-5);
-    max-width: 600px;
+    /* 65–75 characters. Past that a reader loses the start of the next line. */
+    max-width: 62ch;
     font-size: var(--md-text-lg);
     color: var(--md-muted);
   }
@@ -292,13 +274,13 @@ const tests = [
 
   .step h3 {
     font-size: var(--md-text-md);
-    margin: var(--md-space-2) 0 0.35rem;
+    margin: var(--md-space-2) 0 var(--md-space-1);
   }
 
   .step p {
     color: var(--md-muted);
     font-size: var(--md-text-sm);
-    line-height: 1.55;
+    line-height: var(--md-leading-body);
   }
 
   .lab {
@@ -314,7 +296,7 @@ const tests = [
 
   .lab__lead {
     color: var(--md-muted);
-    max-width: 560px;
+    max-width: 62ch;
     margin-top: var(--md-space-3);
   }
 
@@ -342,6 +324,9 @@ const tests = [
     border-radius: var(--md-radius-md);
     padding: var(--md-space-4) var(--md-space-5);
     background: var(--md-bg);
+    transition:
+      border-color var(--md-duration-fast) var(--md-ease),
+      transform var(--md-duration-fast) var(--md-ease);
   }
 
   .test__head {
@@ -352,11 +337,11 @@ const tests = [
   }
 
   .test h3 {
-    font-size: 0.94rem;
+    font-size: var(--md-text-15);
   }
 
   .test__tag {
-    font-size: 0.62rem;
+    font-size: var(--md-text-10);
     color: var(--md-faint);
     white-space: nowrap;
   }
@@ -364,8 +349,8 @@ const tests = [
   .test p {
     color: var(--md-muted);
     font-size: var(--md-text-sm);
-    margin-top: 0.4rem;
-    line-height: 1.5;
+    margin-top: var(--md-space-1);
+    line-height: var(--md-leading-body);
   }
 
   .lab__more {
@@ -377,8 +362,11 @@ const tests = [
     color: var(--md-red-ink);
   }
 
-  .test:hover {
-    border-color: var(--md-red-line);
+  @media (hover: hover) {
+    .test:hover {
+      border-color: var(--md-red-ink);
+      transform: translateY(-2px);
+    }
   }
 
   .read {
@@ -393,7 +381,7 @@ const tests = [
 
   .read__lead {
     color: var(--md-muted);
-    max-width: 560px;
+    max-width: 62ch;
     margin: var(--md-space-3) 0 var(--md-space-8);
   }
 
@@ -406,11 +394,11 @@ const tests = [
   .read__more a {
     color: var(--md-red-ink);
     text-decoration: underline;
-    text-underline-offset: 0.2em;
+    text-underline-offset: 0.18em;
   }
 
   .faq {
-    padding-block: var(--md-space-9);
+    padding-block: var(--md-space-12);
     border-top: var(--md-hairline) solid var(--md-line);
   }
 
@@ -419,6 +407,11 @@ const tests = [
   }
 
   .faq__item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--md-space-4);
+    min-height: var(--md-tap);
     padding: var(--md-space-4) 0;
     font-weight: var(--md-weight-medium);
     cursor: pointer;
@@ -431,8 +424,8 @@ const tests = [
 
   .faq__item summary::after {
     content: '+';
-    float: right;
-    color: var(--md-faint);
+    font-family: var(--md-font-mono);
+    color: var(--md-red-ink);
   }
 
   .faq__item[open] summary::after {
@@ -443,6 +436,6 @@ const tests = [
     padding-bottom: var(--md-space-4);
     color: var(--md-muted);
     max-width: 68ch;
-    line-height: 1.65;
+    line-height: var(--md-leading-prose);
   }
 </style>

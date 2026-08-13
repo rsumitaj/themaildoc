@@ -248,6 +248,24 @@ describe('safeFetch', () => {
     if (!result.ok) expect(result.refusal).toBe('UNREACHABLE');
   });
 
+  it('calls the fetch implementation with no receiver', async () => {
+    // workerd rejects `fetch` invoked with the wrong `this` and every policy
+    // and logo fetch comes back UNREACHABLE. Node does not care, so this broke
+    // only in production and passed every local test. `options.fetchImpl(...)`
+    // is a method call and sets `this` to the options object; going through a
+    // local does not. This asserts the call shape rather than the runtime.
+    let receiver: unknown = 'never set';
+    const impl = function (this: unknown) {
+      receiver = this;
+      return Promise.resolve(ok('hi'));
+    } as unknown as (url: string, init?: RequestInit) => Promise<Response>;
+
+    const result = await safeFetch('https://example.com/a', { ...base, fetchImpl: impl });
+
+    expect(result.ok).toBe(true);
+    expect(receiver).toBeUndefined();
+  });
+
   it('passes an abort signal so a slow host cannot hold a subrequest open', async () => {
     const { impl } = spy([ok('hello')]);
     await safeFetch('https://example.com/a', { ...base, fetchImpl: impl });

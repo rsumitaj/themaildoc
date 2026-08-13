@@ -1,0 +1,161 @@
+---
+/**
+ * The monitor sweep — a live EKG running across the full width, behind the
+ * content.
+ *
+ * The home page used to carry a single static SVG pinned at `top: 340px`, a
+ * magic number that only lined up at one viewport width and was hidden
+ * altogether below 720px. This replaces it with something that actually reads
+ * as a hospital monitor: one PQRST cycle, tiled twice and swept left to right
+ * on an infinite loop.
+ *
+ * How the loop is seamless: the track is 200% wide and holds two identical
+ * tiles. It travels exactly one tile-width, from -50% to 0, so at the instant
+ * the animation restarts, tile two is occupying the pixels tile one just left.
+ * There is nothing to blend, because the two frames are the same image.
+ *
+ * What it costs: one `transform` on one element. Transforms are composited, so
+ * no frame of this touches layout, paint or the main thread. The whole thing is
+ * `position: absolute` inside a clipped parent, contributes nothing to layout,
+ * and therefore cannot shift a single pixel of content — CLS is zero with it or
+ * without it. The script below is 500 bytes and does one job: stop the
+ * animation when nobody can see it.
+ *
+ * Usage: the parent must be `position: relative` and should clip, and the
+ * content beside it needs a stacking context above zero.
+ *
+ *   <section class="hero">
+ *     <EkgBackground />
+ *     <div class="md-wrap">…</div>   <!-- position: relative; z-index: 1 -->
+ *   </section>
+ */
+interface Props {
+  /** Seconds for one full pass. Slow is the point; 8–14 reads as a heartbeat. */
+  duration?: number;
+  /** Overrides the mode's default. Never take this above ~0.09. */
+  opacity?: number;
+  /** The travelling writing head. Off for thin section bands. */
+  head?: boolean;
+  class?: string;
+}
+
+const { duration = 12, opacity, head = true, class: className = '' } = Astro.props;
+
+/**
+ * One PQRST cycle, twice, across a 600-unit tile.
+ *
+ * The path starts and ends on the same baseline (y=60) at the tile's edges,
+ * which is what lets two copies sit next to each other without a step in the
+ * line. `preserveAspectRatio="none"` lets the tile stretch to whatever width
+ * the hero happens to be; the stroke is drawn with a non-scaling width so it
+ * stays a crisp hairline on every display and at every viewport.
+ */
+const WAVE = [
+  'M0 60',
+  'H120',
+  // P wave
+  'q10 -10 20 0',
+  'H165',
+  // QRS complex
+  'l8 12 l10 -46 l12 74 l10 -40 l8 0',
+  'H240',
+  // T wave
+  'q16 -16 32 0',
+  'H420',
+  'q10 -10 20 0',
+  'H465',
+  'l8 12 l10 -46 l12 74 l10 -40 l8 0',
+  'H540',
+  'q16 -16 32 0',
+  'H600',
+].join(' ');
+
+const style = [
+  `--md-ekg-duration: ${duration}s`,
+  opacity === undefined ? '' : `--md-ekg-opacity: ${opacity}`,
+]
+  .filter(Boolean)
+  .join('; ');
+---
+
+<div class:list={['md-ekg', className]} style={style} aria-hidden="true" data-ekg>
+  <div class="md-ekg__track">
+    <svg
+      class="md-ekg__tile"
+      viewBox="0 0 600 120"
+      preserveAspectRatio="none"
+      focusable="false"
+      aria-hidden="true"
+    >
+      <path
+        d={WAVE}
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        vector-effect="non-scaling-stroke"></path>
+    </svg>
+    <svg
+      class="md-ekg__tile"
+      viewBox="0 0 600 120"
+      preserveAspectRatio="none"
+      focusable="false"
+      aria-hidden="true"
+    >
+      <path
+        d={WAVE}
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        vector-effect="non-scaling-stroke"></path>
+    </svg>
+  </div>
+
+  {head && <span class="md-ekg__head"></span>}
+</div>
+
+<script>
+  /**
+   * Stop the trace when nobody is watching it.
+   *
+   * Two conditions, both cheap: the tab is hidden, or the hero has scrolled out
+   * of view. Either one parks the animation with `animation-play-state`, which
+   * the compositor honours without a repaint. Nothing here reads layout, so it
+   * cannot cause a reflow.
+   *
+   * Reduced motion is handled entirely in CSS — the animation never starts, so
+   * there is nothing here to pause and no reason to ask.
+   */
+  const monitors = document.querySelectorAll<HTMLElement>('[data-ekg]');
+
+  if (monitors.length > 0) {
+    const onScreen = new WeakSet<Element>();
+
+    const sync = () => {
+      for (const monitor of monitors) {
+        const visible = !document.hidden && onScreen.has(monitor);
+        monitor.dataset.paused = String(!visible);
+      }
+    };
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) onScreen.add(entry.target);
+          else onScreen.delete(entry.target);
+        }
+        sync();
+      });
+      for (const monitor of monitors) observer.observe(monitor);
+    } else {
+      // No observer: the tab check alone still saves the background case.
+      for (const monitor of monitors) onScreen.add(monitor);
+    }
+
+    document.addEventListener('visibilitychange', sync);
+    sync();
+  }
+</script>

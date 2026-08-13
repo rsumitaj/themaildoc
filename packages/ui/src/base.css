@@ -42,9 +42,21 @@ a {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
   color: inherit;
+}
+
+/*
+ * A pointer over anything you can act on, and never over anything you cannot.
+ * `cursor: pointer` on a disabled control is the interface lying about itself.
+ */
+button:not([disabled]),
+summary,
+[role='button'] {
+  cursor: pointer;
 }
 
 h1,
@@ -55,6 +67,8 @@ h4 {
   font-weight: var(--md-weight-bold);
   line-height: var(--md-leading-snug);
   letter-spacing: var(--md-tracking-tight);
+  /* No one-word last line on a headline, where it is most obvious. */
+  text-wrap: balance;
 }
 
 /* Keyboard focus is always visible; pointer focus never draws a ring. */
@@ -66,7 +80,7 @@ h4 {
 
 ::selection {
   background: var(--md-red);
-  color: #fff;
+  color: var(--md-on-solid);
 }
 
 /* ---- Primitives ------------------------------------------------------- */
