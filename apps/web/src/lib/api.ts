@@ -111,38 +111,69 @@ export async function readDomain(
 }
 
 /**
- * Best-effort per-IP throttle.
+ * Best-effort per-IP throttle, counted separately per endpoint.
  *
  * Worker isolates are per-colo and short-lived, so this is a speed bump rather
  * than a guarantee — the durable control is the Cloudflare rate-limiting rule
  * on /api/*, which runs before the Worker is ever invoked. This exists so a
  * single client cannot spin the DNS resolvers inside one isolate.
+ *
+ * The buckets are the point. There used to be one counter for the whole API,
+ * which meant that running a dozen checkups — the behaviour of exactly the
+ * person this site is built to reach — spent the budget that the consultation
+ * form then needed, and their request to hire us came back 429. The busiest
+ * visitor was the one most likely to be turned away at the only door that
+ * matters. Reading DNS and asking to be contacted are different activities
+ * with different abuse profiles, so they get different counters.
  */
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 30;
+
+/** Per-minute allowance for each bucket. */
+const LIMITS = {
+  /**
+   * A checkup is ~20 DoH queries. Thirty a minute is far more than a person
+   * types and still bounded enough that one client cannot lean on the public
+   * resolvers through us.
+   */
+  check: 30,
+  /**
+   * Writing a row is cheap; the abuse we care about is volume, and the daily
+   * per-address and per-day caps in the endpoint handle that. This only needs
+   * to stop a script, so it can be generous enough that no real person, however
+   * many times they mistype their email, ever meets it.
+   */
+  lead: 10,
+} as const;
+
+export type RateLimitBucket = keyof typeof LIMITS;
+
 const hits = new Map<string, number[]>();
 
-export function rateLimit(request: Request): { allowed: boolean; retryAfter: number } {
+export function rateLimit(
+  request: Request,
+  bucket: RateLimitBucket = 'check',
+): { allowed: boolean; retryAfter: number } {
   const ip =
     request.headers.get('cf-connecting-ip') ??
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     'unknown';
 
+  const key = `${bucket}:${ip}`;
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
+  const recent = (hits.get(key) ?? []).filter((time) => now - time < WINDOW_MS);
 
-  if (recent.length >= MAX_PER_WINDOW) {
+  if (recent.length >= LIMITS[bucket]) {
     const oldest = recent[0] ?? now;
-    return { allowed: false, retryAfter: Math.ceil((WINDOW_MS - (now - oldest)) / 1000) };
+    return { allowed: false, retryAfter: Math.max(1, Math.ceil((WINDOW_MS - (now - oldest)) / 1000)) };
   }
 
   recent.push(now);
-  hits.set(ip, recent);
+  hits.set(key, recent);
 
   // Keep the map from growing without bound inside a long-lived isolate.
   if (hits.size > 5_000) {
-    for (const [key, times] of hits) {
-      if (times.every((time) => now - time >= WINDOW_MS)) hits.delete(key);
+    for (const [entry, times] of hits) {
+      if (times.every((time) => now - time >= WINDOW_MS)) hits.delete(entry);
     }
   }
 

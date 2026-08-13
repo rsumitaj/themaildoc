@@ -38,7 +38,8 @@ interface Env {
 }
 
 export const POST: APIRoute = async ({ request }) => {
-  const limit = rateLimit(request);
+  // Its own bucket: a visitor who ran twenty checkups has spent nothing here.
+  const limit = rateLimit(request, 'lead');
   if (!limit.allowed) {
     return error('RATE_LIMITED', 'That is a lot of requests. Give it a moment.', 429, {
       'retry-after': String(limit.retryAfter),
