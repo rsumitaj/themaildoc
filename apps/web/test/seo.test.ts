@@ -189,6 +189,48 @@ describe.skipIf(!built)('the crawler files', () => {
   });
 });
 
+describe.skipIf(!built)('the brand as an entity', () => {
+  // Google returns results for a different site when the brand is searched,
+  // because it has never seen the word. Three different spellings of it across
+  // the structured data made three weak entities out of one.
+  it('calls itself the same thing on every page', () => {
+    const names = new Set<string>();
+    const siteNames = new Set<string>();
+    for (const file of all) {
+      const html = read(file);
+      for (const match of html.matchAll(/"@type":"Organization","@id":"[^"]*","name":"([^"]*)"/g)) {
+        names.add(match[1] ?? '');
+      }
+      const og = /property="og:site_name" content="([^"]*)"/.exec(html)?.[1];
+      if (og) siteNames.add(og);
+    }
+    expect([...names]).toEqual(['MailDoc']);
+    expect([...siteNames]).toEqual(['MailDoc']);
+  });
+
+  it('declares the spellings people will type', () => {
+    const home = read(join(DIST, 'index.html'));
+    for (const alias of ['The MailDoc', 'themaildoc', 'themaildoc.co']) {
+      expect(home, alias).toContain(alias);
+    }
+    expect(home).toMatch(/"alternateName":\[/);
+  });
+
+  it('claims no profile that does not exist', () => {
+    // github.com/rsumitaj/themaildoc was declared as sameAs on all 221 pages
+    // and has always 404ed. An entity claim pointing at nothing is worse than
+    // no claim, so anything added here has to be checked first.
+    const known = ['https://www.linkedin.com/in/sumit-raj-9918ba183/'];
+    const claimed = new Set<string>();
+    for (const file of all) {
+      for (const match of read(file).matchAll(/"sameAs":\[([^\]]*)\]/g)) {
+        for (const url of (match[1] ?? '').split(',')) claimed.add(url.replace(/"/g, ''));
+      }
+    }
+    expect([...claimed].filter((url) => url && !known.includes(url))).toEqual([]);
+  });
+});
+
 describe.skipIf(!built)('the sourced statistics on the home page', () => {
   const home = read(join(DIST, 'index.html'));
 

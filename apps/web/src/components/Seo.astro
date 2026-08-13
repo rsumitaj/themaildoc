@@ -86,25 +86,46 @@ const canonical = new URL(cleanPath, site).href;
 /** One card per page type, rendered ahead of the build into /og/. */
 const ogImage = new URL(`/og/${kind === 'website' ? 'home' : kind}.png`, site).href;
 
+/**
+ * Every way the brand is written, in one place.
+ *
+ * Searching "themaildoc" returns results for "themelock" and offers to search
+ * for what was actually typed. That is Google saying it has never seen this
+ * word: the site is not indexed, and the name has no corpus behind it. The
+ * spelling correction is a symptom of that rather than a thing to fix on its
+ * own, but the site was making it worse by calling itself three different
+ * things. The header says "The MailDoc.co", the titles said "MailDoc", and the
+ * structured data said "The MailDoc".
+ *
+ * One canonical name, with every variant declared as an alternate, is what
+ * lets a search engine collapse them into one entity instead of three weak
+ * ones. The wordmark on screen is unchanged; this is what machines read.
+ */
+const BRAND = 'MailDoc';
+const BRAND_ALIASES = ['The MailDoc', 'themaildoc', 'themaildoc.co', 'The MailDoc.co'];
+
 const org = {
   '@type': 'Organization',
   '@id': `${site.href}#organization`,
-  name: 'The MailDoc',
+  name: BRAND,
+  alternateName: BRAND_ALIASES,
   url: site.href,
   logo: new URL('/favicon.png', site).href,
   email: 'support@themaildoc.co',
   description: "The doctor for your domain's email. Free diagnosis, honest prescriptions.",
   founder: { '@id': AUTHOR_ID, '@type': 'Person', name: 'Sumit Raj' },
-  sameAs: [
-    'https://www.linkedin.com/in/sumit-raj-9918ba183/',
-    'https://github.com/rsumitaj/themaildoc',
-  ],
+  knowsAbout: ['SPF', 'DKIM', 'DMARC', 'MTA-STS', 'BIMI', 'DNSSEC', 'Email deliverability'],
+  // Only profiles that exist. github.com/rsumitaj/themaildoc was listed here
+  // on all 221 pages and has always returned 404, which is an entity claim
+  // pointing at nothing.
+  sameAs: ['https://www.linkedin.com/in/sumit-raj-9918ba183/'],
 };
 
 const blocks: unknown[] = [];
 
-// The entity itself, on every page, so Google learns "The MailDoc" is a thing
-// rather than a phrase. The brand SERP does not resolve until it does.
+// The entity itself, on every page, so Google learns MailDoc is a thing rather
+// than a misspelling of something else. The brand SERP does not resolve until
+// it does.
 blocks.push({ '@context': 'https://schema.org', ...org });
 
 if (kind === 'website') {
@@ -112,7 +133,8 @@ if (kind === 'website') {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     '@id': `${site.href}#website`,
-    name: 'The MailDoc',
+    name: BRAND,
+    alternateName: BRAND_ALIASES,
     url: site.href,
     publisher: { '@id': `${site.href}#organization` },
     potentialAction: {
@@ -178,7 +200,7 @@ if (kind === 'term' && term) {
     url: canonical,
     inDefinedTermSet: {
       '@type': 'DefinedTermSet',
-      name: 'The MailDoc glossary of email authentication',
+      name: `${BRAND} glossary of email authentication`,
       url: new URL('/glossary', site).href,
     },
   });
@@ -215,7 +237,7 @@ if (crumbs.length > 0) {
   blocks.push({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: [{ name: 'The MailDoc', href: '/' }, ...crumbs].map((crumb, index) => ({
+    itemListElement: [{ name: BRAND, href: '/' }, ...crumbs].map((crumb, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: crumb.name,
@@ -240,8 +262,8 @@ blocks.push(...extra);
 <meta property="og:image" content={ogImage} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="The MailDoc. The doctor for your domain's email." />
-<meta property="og:site_name" content="The MailDoc" />
+<meta property="og:image:alt" content="MailDoc. The doctor for your domain's email." />
+<meta property="og:site_name" content="MailDoc" />
 <meta property="og:locale" content="en_GB" />
 
 <meta name="twitter:card" content="summary_large_image" />

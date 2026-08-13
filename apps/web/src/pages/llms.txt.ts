@@ -20,7 +20,7 @@ export async function GET(context: APIContext) {
 
   const line = (path: string, name: string, note: string) => `- [${name}](${site}${path}): ${note}`;
 
-  const body = `# The MailDoc
+  const body = `# MailDoc
 
 > A free email authentication analyser. Enter a domain and get a full diagnosis
 > of SPF, DKIM, DMARC, MX, DNSSEC, MTA-STS, TLS-RPT, BIMI, CAA and reverse DNS,

@@ -13,7 +13,7 @@ export async function GET(context: APIContext) {
   const entries = await getCollection('library', (entry) => !entry.data.draft);
 
   return rss({
-    title: 'The MailDoc Health Library',
+    title: 'MailDoc Health Library',
     description:
       'Guides and answers on SPF, DKIM, DMARC and email deliverability, written from the RFCs.',
     site: context.site ?? 'https://themaildoc.co',

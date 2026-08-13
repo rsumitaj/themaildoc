@@ -17,7 +17,15 @@ const guides = (await getCollection('library', (entry) => !entry.data.draft))
   .filter((entry) => entry.data.kind === 'pillar')
   .sort((a, b) => a.data.heading.localeCompare(b.data.heading));
 
-const title = 'Free Email Authentication Check: SPF, DKIM and DMARC | MailDoc';
+/**
+ * The brand leads here, and only here.
+ *
+ * Searching the brand name today returns results for a different site
+ * entirely, because Google has no document anywhere that puts the word next
+ * to what it means. The home page is the one that has to establish it; every
+ * other page keeps the keyword first, where it belongs.
+ */
+const title = 'MailDoc: free email health check for SPF, DKIM and DMARC';
 const description =
   "Free email checkup: enter your domain for a full diagnosis of SPF, DKIM, DMARC, MX and DNSSEC in seconds, with the exact fix for what is wrong.";
 

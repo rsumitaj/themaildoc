@@ -107,10 +107,13 @@ describe('titles and descriptions', () => {
     // result shows. The condition pages carry the record name instead, because
     // that is what tells two similarly worded conditions apart, and they are
     // reference pages nobody reaches from a brand search.
+    // The home page leads with the brand instead of trailing it, because it is
+    // the page that has to teach a search engine the word exists at all.
     const orphan = metas.filter(
       (meta) =>
         meta.kind === 'title' &&
         !/\| (MailDoc|Sumit Raj, MailDoc)$/.test(meta.value) &&
+        !/^MailDoc[:,] /.test(meta.value) &&
         !meta.file.includes('checks/[code]'),
     );
     expect(orphan.map((m) => `${m.file}: ${m.value}`).join('\n')).toBe('');
