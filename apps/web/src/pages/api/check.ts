@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { healthCheck } from '@maildoc/engines';
 import { apiError, jsonResponse, rateLimit, readDomain } from '../../lib/api';
 import { cachedResponse, createDnsCache, storeResponse } from '../../lib/dnsCache';
+import { countryOf, recordCheckup } from '../../lib/checkups';
 
 /** The checkup itself. Runs on the Worker; everything else on the site is static. */
 export const prerender = false;
@@ -54,6 +55,21 @@ async function handle(request: Request): Promise<Response> {
       200,
       { 'cache-control': `public, max-age=${RESULT_TTL_SECONDS}` },
     );
+
+    /**
+     * Recorded after the answer is built, so nothing a stranger is waiting for
+     * depends on it. A cache hit returns above this line and is not recorded,
+     * which is right: the same domain checked twice inside a minute is one
+     * visit, and the row already exists.
+     */
+    await recordCheckup({
+      domain: result.domain,
+      source: 'checkup',
+      vitalsScore: result.vitals.score,
+      vitalsBand: result.vitals.band,
+      spoofable: result.spoofability.verdict,
+      country: countryOf(request),
+    });
 
     await storeResponse(request, response);
     return response;

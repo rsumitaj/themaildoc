@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { DohResolver, type DnsType } from '@maildoc/resolver';
 import { apiError, jsonResponse, rateLimit, readDomain } from '../../lib/api';
 import { createDnsCache } from '../../lib/dnsCache';
+import { countryOf, recordCheckup } from '../../lib/checkups';
 
 /**
  * A plain DNS record lookup.
@@ -69,6 +70,12 @@ async function handle(request: Request): Promise<Response> {
         };
       }),
     );
+
+    await recordCheckup({
+      domain: parsed.domain,
+      source: 'lookup',
+      country: countryOf(request),
+    });
 
     return jsonResponse(
       {

@@ -9,9 +9,10 @@ import { validateLead, type Lead } from '../../lib/leads';
 /**
  * Consultation requests.
  *
- * The only endpoint in the product that writes anything down. Everything else
- * reads public DNS and forgets; this stores a name and an address because
- * somebody asked to be contacted.
+ * The only endpoint that writes down anything about a *person*. The checkers
+ * record the domain they examined and its score, which is a fact about a name
+ * on the internet; this stores a name and an address because somebody asked to
+ * be contacted.
  *
  * It writes to D1 with bound parameters — a lead is untrusted input from a
  * public form, and this is the one place in the codebase where string

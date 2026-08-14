@@ -3,6 +3,7 @@ import { flattenSpf } from '@maildoc/engines';
 import { DohResolver } from '@maildoc/resolver';
 import { apiError, jsonResponse, rateLimit, readDomain } from '../../lib/api';
 import { cachedResponse, createDnsCache, storeResponse } from '../../lib/dnsCache';
+import { countryOf, recordCheckup } from '../../lib/checkups';
 
 /**
  * SPF flattening.
@@ -59,6 +60,12 @@ async function handle(request: Request): Promise<Response> {
       200,
       { 'cache-control': `public, max-age=${RESULT_TTL_SECONDS}` },
     );
+
+    await recordCheckup({
+      domain: parsed.domain,
+      source: 'flatten',
+      country: countryOf(request),
+    });
 
     await storeResponse(request, response);
     return response;

@@ -3,6 +3,7 @@ import { analyzeBimi, analyzeDmarc, resolverAddressLookup } from '@maildoc/engin
 import { DohResolver } from '@maildoc/resolver';
 import { apiError, jsonResponse, rateLimit, readDomain } from '../../lib/api';
 import { cachedResponse, createDnsCache, storeResponse } from '../../lib/dnsCache';
+import { countryOf, recordCheckup } from '../../lib/checkups';
 
 /**
  * BIMI, checked properly.
@@ -63,6 +64,12 @@ async function handle(request: Request): Promise<Response> {
       200,
       { 'cache-control': `public, max-age=${RESULT_TTL_SECONDS}` },
     );
+
+    await recordCheckup({
+      domain: parsed.domain,
+      source: 'bimi',
+      country: countryOf(request),
+    });
 
     await storeResponse(request, response);
     return response;

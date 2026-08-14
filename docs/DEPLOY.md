@@ -13,7 +13,36 @@ npx wrangler d1 create maildoc-leads     # copy the database_id it prints
 #   paste it over PLACEHOLDER_RUN_WRANGLER_D1_CREATE in wrangler.jsonc
 
 pnpm db:migrate                          # creates the leads table remotely
+pnpm db:migrate:checkups                 # creates the checkups table remotely
 pnpm ship                                # builds and pushes
+```
+
+## The two tables
+
+`leads` is consultation requests: a name, an address and what they asked for.
+Written only by `/api/consult`, only when somebody submits the form.
+
+`checkups` is one row per domain examined, with the score it got and the date.
+Written by `/api/check`, `/api/lookup`, `/api/flatten` and `/api/bimi`. It holds
+nothing identifying a person, no address and no session, and rows are deleted 90
+days after the domain was last checked. `/privacy` states all of that, and the
+two have to change together: the page is the disclosure that makes the table
+legitimate.
+
+```bash
+pnpm checkups        # worst score first, the working order
+pnpm checkups:hot    # spoofable or under 40, the ones worth a conversation
+pnpm domains         # live tail, as checks happen
+```
+
+Pruning is opportunistic: every hundredth write deletes anything past the
+window. There is no cron trigger, because the static adapter gives no scheduled
+handler to hang one on. If traffic ever stops for months, run the delete by
+hand:
+
+```bash
+pnpm --filter @maildoc/web exec wrangler d1 execute maildoc-leads --remote \
+  --command "DELETE FROM checkups WHERE last_seen < date('now','-90 days');"
 ```
 
 The deploy prints a `*.workers.dev` URL. Smoke test that before attaching the

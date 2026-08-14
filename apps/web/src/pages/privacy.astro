@@ -7,7 +7,7 @@ const updated = 'August 2026';
 
 <Base
   title="Privacy | MailDoc"
-  description="What The MailDoc stores, what it does not, and how long anything is kept. The tools store nothing. The consultation form stores what you type, so we can reply."
+  description="What MailDoc keeps and for how long: checked domains and their scores for 90 days, consultation requests for 24 months, nothing that identifies you."
 >
   <section class="page">
     <div class="md-wrap md-prose">
@@ -15,12 +15,31 @@ const updated = 'August 2026';
       <h1>What we keep, and what we do not.</h1>
       <p class="lead">Last updated {updated}.</p>
 
-      <h2>The tools store nothing</h2>
+      <h2>We keep the domain you check. We do not keep you.</h2>
       <p>
-        Every checker on this site reads public DNS and answers. We do not keep the domain you
-        typed, we do not build a history against your IP address, and there is no account to
-        create. Results are cached for a minute at the edge so a popular domain does not get looked
-        up a thousand times, and that cache holds the DNS answer, not you.
+        Every checker on this site reads public DNS and answers. When a domain is checked we write
+        down three things: the domain, the score it received, and the date. Nothing else about the
+        check is stored, and nothing about you is: no account, no IP address, no cookie, no session,
+        no history tied to whoever ran it. The row says <em>example.com scored 42 on Tuesday</em>,
+        and there is no way to get from it to the person who typed it.
+      </p>
+      <p>
+        We keep it because it tells us which domains are struggling, and that is how this site finds
+        the people worth offering help to. It is the honest version of what most free tools do
+        without saying so. If you would rather not be on that list, write to{' '}
+        <a href="mailto:support@themaildoc.co">support@themaildoc.co</a> with the domain and it is
+        removed the same day, no questions and no reply needed beyond confirming it is done.
+      </p>
+      <p>
+        A domain drops off by itself <strong>90 days</strong> after it was last checked. There is no
+        archive behind that: the row is deleted, not hidden.
+      </p>
+      <p>
+        Results are also cached for a minute at the edge so a popular domain does not get looked up
+        a thousand times, and that cache holds the DNS answer, not you. Separately, Cloudflare keeps
+        request logs for a few days for debugging, which include the address the request came from.
+        Those are Cloudflare's, we do not read them for anything but faults, and they expire on
+        their own.
       </p>
 
       <h2>Your DMARC reports never leave your browser</h2>

@@ -49,7 +49,7 @@ const description =
 const faqs = [
   {
     q: 'What is MailDoc?',
-    a: 'MailDoc is a free email health checker at themaildoc.co. Put in a domain and it reads the records a receiving mail server reads, SPF, DKIM, DMARC, MX, PTR, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA, grades each against the specification it is judged by, and returns a 0 to 100 Vitals score with the exact line to publish for anything wrong. There is no account, no paid tier holding the real answer back, and nothing about a checkup is stored. It is run by Sumit Raj, who takes email deliverability and DMARC work directly.',
+    a: 'MailDoc is a free email health checker at themaildoc.co. Put in a domain and it reads the records a receiving mail server reads, SPF, DKIM, DMARC, MX, PTR, DNSSEC, MTA-STS, TLS-RPT, BIMI and CAA, grades each against the specification it is judged by, and returns a 0 to 100 Vitals score with the exact line to publish for anything wrong. There is no account and no paid tier holding the real answer back. The domain you check and the score it got are kept for 90 days, and nothing that identifies you is kept at all. It is run by Sumit Raj, who takes email deliverability and DMARC work directly.',
   },
   {
     q: 'How do I know if someone can send email pretending to be my domain?',
@@ -61,7 +61,7 @@ const faqs = [
   },
   {
     q: 'Is this actually free, and do you store my domain?',
-    a: 'It is free with no account, and there is no paid tier holding the real answer back. Every check reads public DNS, the same records any mail server reads when it decides what to do with your mail. Nothing about a checkup is stored. The only thing this site keeps is a consultation request, and only if you fill one in.',
+    a: 'It is free with no account, and there is no paid tier holding the real answer back. Every check reads public DNS, the same records any mail server reads when it decides what to do with your mail. We do keep one thing: the domain you check, the score it got and the date, for 90 days, because that is how this site finds the people worth offering help to. Nothing that identifies you is stored with it, and the privacy page says exactly what the row contains.',
   },
   {
     q: 'Why does another tool say my SPF is fine when this one does not?',

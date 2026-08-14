@@ -25,8 +25,9 @@
 	// The Astro adapter generates `main` and `assets` itself. Prerendered pages
 	// are served as free static assets and only /api/* invokes the Worker.
 	//
-	// The only stored data in the product is consultation requests from
-	// /practice. Everything else reads public DNS and forgets.
+	// Two tables. `leads` is consultation requests from /practice. `checkups`
+	// is one row per domain examined, with its score and the date, kept for 90
+	// days and stated on /privacy. Neither holds anything identifying a person.
 	//
 	// `remote` is deliberately absent: `wrangler dev` uses a local SQLite file,
 	// so testing the form does not write rows into the real database. Read the
