@@ -44,8 +44,9 @@ nothing about a checkup is stored.
 ${line('/', 'Full checkup', 'every record at once, scored, with prescriptions')}
 ${line('/lab', 'The Lab', 'index of every individual test')}
 ${line('/lab/spf-checker', 'SPF checker', 'walks the whole include chain and gives the exact lookup count against the limit of ten')}
+${line('/lab/spf-ip-checker', 'SPF sender checker', 'evaluates one IP against the record the way a receiver does, first match wins, with the full trace')}
 ${line('/lab/dmarc-checker', 'DMARC checker', 'policy discovery by DNS tree walk, inheritance, test mode, alignment')}
-${line('/lab/dkim-checker', 'DKIM checker', 'selector discovery and real key length from the published key')}
+${line('/lab/dkim-checker', 'DKIM checker', 'selector discovery, selectors you supply and keep, and real key length from the published key')}
 ${line('/lab/spoofability', 'Spoofability test', 'one verdict on whether the domain can be sent as right now')}
 ${line('/lab/spf-flattener', 'SPF flattener', 'expands includes into addresses to get back under the lookup limit')}
 ${line('/lab/sender-readiness', 'Sender readiness', 'the Google, Yahoo and Microsoft bulk sender requirements visible in DNS')}

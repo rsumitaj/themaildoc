@@ -2448,3 +2448,255 @@
   color: var(--md-faint);
   line-height: var(--md-leading-ui);
 }
+
+/* ---- SPF sender evaluation ---------------------------------------------- */
+
+/*
+ * The trace is the product here. A verdict on its own is a claim; the terms a
+ * receiver walked, in the order it walked them, is the same verdict somebody
+ * can check. Indentation carries include depth, so a match inside a vendor's
+ * record reads as being inside it.
+ */
+.md-verdictline {
+  color: var(--md-muted);
+  font-size: var(--md-text-sm);
+  margin-bottom: var(--md-space-6);
+}
+
+.md-tracehead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--md-space-4);
+  font-size: var(--md-text-sm);
+  letter-spacing: var(--md-tracking-tight);
+  padding-bottom: var(--md-space-2);
+  border-bottom: var(--md-hairline) solid var(--md-line);
+  margin-bottom: var(--md-space-3);
+}
+
+.md-tracehead span {
+  color: var(--md-faint);
+  font-size: var(--md-text-12);
+  white-space: nowrap;
+}
+
+.md-trace {
+  list-style: none;
+  margin: 0 0 var(--md-space-5);
+  padding: 0;
+}
+
+.md-trace__step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--md-space-3);
+  padding-top: var(--md-space-3);
+  padding-bottom: var(--md-space-3);
+  border-bottom: var(--md-hairline) solid var(--md-line);
+}
+
+.md-trace__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1em;
+  margin-top: 0.15em;
+  color: var(--md-faint);
+}
+
+/* A step a receiver considered and moved past: present, not shouting. */
+.md-trace__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--md-radius-pill);
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.md-trace__step.is-match .md-trace__mark { color: var(--md-healthy); }
+.md-trace__step.is-error .md-trace__mark { color: var(--md-critical); }
+
+.md-trace__step.is-not-reached { opacity: 0.6; }
+
+.md-trace__term {
+  font-family: var(--md-font-mono);
+  font-size: var(--md-text-sm);
+  color: var(--md-ink);
+  overflow-wrap: anywhere;
+}
+
+.md-trace__where {
+  font-size: var(--md-text-12);
+  color: var(--md-faint);
+  margin-left: var(--md-space-2);
+}
+
+.md-trace__detail {
+  font-size: var(--md-text-sm);
+  color: var(--md-muted);
+  margin-top: var(--md-space-1);
+}
+
+.md-optional {
+  margin-top: var(--md-space-3);
+  font-size: var(--md-text-sm);
+}
+
+.md-optional summary {
+  cursor: pointer;
+  color: var(--md-muted);
+}
+
+/* ---- DKIM selectors ----------------------------------------------------- */
+
+/*
+ * Selectors are the difference between "we guessed and missed" and "your key is
+ * not published", so they get real estate in the form rather than hiding behind
+ * an advanced toggle.
+ */
+.md-selectors {
+  margin-top: var(--md-space-4);
+  padding-top: var(--md-space-4);
+  border-top: var(--md-hairline) solid var(--md-line);
+}
+
+.md-selectors__head {
+  display: flex;
+  align-items: center;
+  gap: var(--md-space-2);
+  font-size: var(--md-text-12);
+  letter-spacing: var(--md-tracking-wide);
+  text-transform: uppercase;
+  color: var(--md-faint);
+  margin-bottom: var(--md-space-3);
+}
+
+.md-selectors__list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-space-2);
+  margin: 0 0 var(--md-space-3);
+  padding: 0;
+}
+
+.md-selectors__list li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md-space-2);
+  background: var(--md-surface);
+  border: var(--md-hairline) solid var(--md-line);
+  border-radius: var(--md-radius-pill);
+  padding: var(--md-space-1) var(--md-space-1) var(--md-space-1) var(--md-space-3);
+  font-family: var(--md-font-mono);
+  font-size: var(--md-text-12);
+}
+
+.md-selectors__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--md-radius-pill);
+  color: var(--md-faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--md-text-sm);
+  line-height: 1;
+}
+
+.md-selectors__remove:hover,
+.md-selectors__remove:focus-visible {
+  color: var(--md-red-ink);
+  background: var(--md-critical-bg);
+}
+
+.md-selectors__add {
+  display: flex;
+  gap: var(--md-space-2);
+}
+
+.md-selectors__add input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--md-surface);
+  border: var(--md-hairline) solid var(--md-line);
+  border-radius: var(--md-radius-sm);
+  padding: var(--md-space-2) var(--md-space-3);
+  font-size: var(--md-text-sm);
+  color: var(--md-ink);
+}
+
+.md-selectors__add input::placeholder {
+  color: var(--md-faint);
+}
+
+.md-selectors__note {
+  margin-top: var(--md-space-3);
+  font-size: var(--md-text-12);
+  color: var(--md-faint);
+  line-height: var(--md-leading-body);
+}
+
+.md-keylist {
+  list-style: none;
+  margin: 0 0 var(--md-space-5);
+  padding: 0;
+}
+
+.md-keylist__row {
+  display: flex;
+  align-items: center;
+  gap: var(--md-space-3);
+  padding: var(--md-space-3) 0;
+  border-bottom: var(--md-hairline) solid var(--md-line);
+  font-size: var(--md-text-sm);
+}
+
+.md-keylist__row code {
+  font-family: var(--md-font-mono);
+  color: var(--md-ink);
+}
+
+.md-keylist__row.is-found svg { color: var(--md-healthy); }
+.md-keylist__row.is-missing svg { color: var(--md-critical); }
+
+.md-keylist__detail {
+  margin-left: auto;
+  color: var(--md-muted);
+  font-size: var(--md-text-12);
+  text-align: right;
+}
+
+/*
+ * Whose problem is it? A permanent error over the lookup limit condemns the
+ * record for every sender; one that ran out of void lookups is usually about
+ * the address being checked and nothing else. Same result word, opposite
+ * instructions, so they do not share a colour.
+ */
+.md-scope {
+  font-size: var(--md-text-sm);
+  line-height: var(--md-leading-body);
+  border-left: 2px solid currentColor;
+  padding: var(--md-space-3) var(--md-space-4);
+  margin-bottom: var(--md-space-6);
+  border-radius: 0 var(--md-radius-sm) var(--md-radius-sm) 0;
+}
+
+.md-scope.is-critical {
+  color: var(--md-critical-text);
+  background: var(--md-critical-bg);
+}
+
+.md-scope.is-attention {
+  color: var(--md-attention-text);
+  background: var(--md-attention-bg);
+}
+
+.md-scope strong {
+  font-weight: var(--md-weight-semibold);
+}

@@ -99,7 +99,8 @@ const steps = [
 const tests = [
   { name: 'SPF Test', href: '/lab/spf-checker', tag: 'RFC 7208', body: 'Full chain walk with the exact 10-lookup count. Catches the PermError other checkers miss.' },
   { name: 'DMARC Test', href: '/lab/dmarc-checker', tag: 'RFC 9989', body: 'Tree walk, inheritance, alignment and reporting. Is your policy actually being applied?' },
-  { name: 'DKIM Test', href: '/lab/dkim-checker', tag: 'RFC 6376', body: 'Selector discovery and real key strength. Weak keys fail silently for years.' },
+  { name: 'DKIM Test', href: '/lab/dkim-checker', tag: 'RFC 6376', body: 'Selector discovery and real key strength. Add your own selectors and a miss starts meaning something.' },
+  { name: 'SPF Sender Test', href: '/lab/spf-ip-checker', tag: 'RFC 7208 \u00a74', body: 'Is this IP allowed to send as you? The evaluation a receiver runs, traced.' },
   { name: 'Spoofability', href: '/lab/spoofability', tag: 'the scary one', body: 'Can somebody send as you right now? One verdict, no hedging.' },
   { name: 'Sender Readiness', href: '/lab/sender-readiness', tag: 'Google, Yahoo, Microsoft', body: 'Will the bulk sender rules reject you? Find out before they do.' },
   { name: 'Bloodwork', href: '/bloodwork', tag: 'DMARC reports', body: 'Read your aggregate reports and see who is sending as you. Parsed in your browser.' },

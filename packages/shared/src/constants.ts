@@ -40,6 +40,19 @@ export const SPF_MAX_MX_NAMES = 10;
 export const SPF_DEEP_WALK_BUDGET = 46;
 
 /**
+ * Queries one `check_host()` evaluation may spend.
+ *
+ * The ten-lookup limit bounds the *terms* a receiver may evaluate, not the
+ * queries those terms cost. One `mx` is a single lookup and up to eleven
+ * queries: the MX set, then an address record for each of the ten names it is
+ * allowed to examine. `ptr` is the same shape. Ten such terms cannot happen in
+ * a record that also resolves, but two or three can, so the ceiling is set from
+ * what the platform allows rather than from the RFC's count, with four held
+ * back for a retry or a failover on a slow name.
+ */
+export const SPF_EVALUATE_BUDGET = 46;
+
+/**
  * Runaway guard for include:/redirect= recursion. Not a product limit.
  *
  * This was 10, borrowed from the lookup limit, and it was the wrong number for

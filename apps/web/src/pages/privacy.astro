@@ -26,6 +26,12 @@ const updated = 'August 2026';
         it to the person who typed it.
       </p>
       <p>
+        The sender check takes an IP address as well as a domain. That address is not stored: it is
+        used for the evaluation and forgotten, and the row records only that the domain was
+        examined. The same is true of a selector you add to the DKIM check, which stays in your own
+        browser and is never sent anywhere but the lookup itself.
+      </p>
+      <p>
         A checkup runs as three requests, and the score is only final once all three have answered.
         The row records which of the two it is, so a provisional number is never read as a settled
         one. Correcting it changes the score in the row and nothing else.

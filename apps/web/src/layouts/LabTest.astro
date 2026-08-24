@@ -2,6 +2,8 @@
 import Base from './Base.astro';
 import ConsultLine from '../components/ConsultLine.astro';
 import RecordCheck from '../islands/RecordCheck';
+import DkimSelectors from '../islands/DkimSelectors';
+import SpfIpCheck from '../islands/SpfIpCheck';
 
 /**
  * One Lab test page.
@@ -21,6 +23,17 @@ interface Props {
   label: string;
   action: string;
   endpoint?: 'check' | 'dkim';
+  /**
+   * Which tool sits above the explainer.
+   *
+   * Most tests are one record read out of the shared checkup, which is what
+   * `record` does. Two are not: DKIM needs somewhere to keep the selectors that
+   * make a miss mean anything, and the sender check takes an address as well as
+   * a domain. They get their own islands and everything below the fold —
+   * breadcrumbs, FAQ schema, the symptoms-diagnosis-cure arc — stays shared,
+   * because that is what earns the ranking and it should not be copied per page.
+   */
+  tool?: 'record' | 'dkim-selectors' | 'spf-ip';
   title: string;
   description: string;
   eyebrow: string;
@@ -36,6 +49,7 @@ const {
   label,
   action,
   endpoint = 'check',
+  tool = 'record',
   title,
   description,
   eyebrow,
@@ -80,7 +94,13 @@ const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html
       <p class="intro">{intro}</p>
       <p class="spec md-mono">Judged against {spec}</p>
 
-      <RecordCheck record={record} label={label} action={action} endpoint={endpoint} client:load />
+      {tool === 'dkim-selectors' && <DkimSelectors client:load />}
+      {tool === 'spf-ip' && <SpfIpCheck client:load />}
+      {
+        tool === 'record' && (
+          <RecordCheck record={record} label={label} action={action} endpoint={endpoint} client:load />
+        )
+      }
     </div>
   </section>
 

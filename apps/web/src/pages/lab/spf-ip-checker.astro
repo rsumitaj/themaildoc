@@ -1,0 +1,149 @@
+---
+import LabTest from '../../layouts/LabTest.astro';
+
+const faqs = [
+  {
+    q: 'Where do I find the IP that sent the mail?',
+    a: 'In the bounce message, or in the Received headers of a message that arrived. The bounce usually names it directly, along the lines of "client host 203.0.113.9 blocked". In headers, read the topmost Received line that came from outside your network.',
+  },
+  {
+    q: 'My SPF record lists the sender, so why does this say fail?',
+    a: 'Three usual causes. The record costs more than ten DNS lookups, which makes it a permanent error for every sender including that one. The address is listed in an include that itself does not resolve. Or the mechanism that lists it sits after a mechanism that already matched, and SPF stops at the first match.',
+  },
+  {
+    q: 'What is the difference between fail and softfail?',
+    a: 'The qualifier on the mechanism that matched. A leading minus is fail, which asks receivers to reject. A tilde is softfail, which asks them to accept the mail and mark it as suspicious. Most receivers do not reject on softfail, which is why a record ending in ~all protects far less than people expect.',
+  },
+  {
+    q: 'Does a pass here mean my mail will be delivered?',
+    a: 'No. It means SPF authorises that server. Delivery also depends on DKIM, on DMARC alignment, and on the reputation of the sending address. SPF passing is necessary for some receivers and sufficient for none.',
+  },
+  {
+    q: 'Why does the trace stop before the end of my record?',
+    a: 'Because a receiver stops there too. SPF evaluation returns the result of the first mechanism that matches, and never reads the terms after it. If the trace is two lines long, the other terms in your record played no part in the decision.',
+  },
+  {
+    q: 'What is the envelope sender for, and do I need it?',
+    a: 'Only if your record uses macros. A mechanism like exists:%{l}.%{o}._spf.example.com expands differently for every sending address, so the answer genuinely depends on it. Records without a % character give the same answer whatever you put there.',
+  },
+];
+---
+
+<LabTest
+  record="SPF"
+  label="SPF authorisation"
+  action="Check this sender"
+  tool="spf-ip"
+  title="SPF IP Checker: is this sender authorised? | MailDoc"
+  description="Free SPF sender check: evaluate one IP against a domain’s live SPF record the way a receiver does, with the trace of every mechanism it walked."
+  eyebrow="SPF Sender Test"
+  heading="Is this IP allowed to send as you?"
+  intro="Evaluates your live record against one address, first match wins, and shows every term a receiver walked to reach its answer."
+  spec="RFC 7208 section 4, the check_host() evaluation a receiver performs"
+  faqs={faqs}
+  related={[
+    { href: '/lab/spf-checker', label: 'SPF checker, the record itself and its lookup count' },
+    { href: '/lab/spf-flattener', label: 'SPF flattener, for a record over the limit' },
+    { href: '/lab/dkim-checker', label: 'DKIM checker, the signature that survives forwarding' },
+    { href: '/checkup', label: 'Full checkup, every record at once' },
+  ]}
+>
+  <h2>Symptoms</h2>
+  <p>
+    This is the test for a specific moment: mail from a service you set up is bouncing, or landing
+    in spam, and the rejection mentions SPF. The record looks right when you read it. The address is
+    in there somewhere. It still fails.
+  </p>
+  <ul>
+    <li>A new sending platform was added to the record and its mail still fails.</li>
+    <li>Mail from your own server passes and mail from your invoicing tool does not.</li>
+    <li>A bounce says <code>SPF PermError</code> and nothing in DNS was changed.</li>
+    <li>A record that worked for years began failing when a vendor grew its include chain.</li>
+  </ul>
+
+  <h2>Diagnosis</h2>
+  <p>
+    Every other SPF tool, here and elsewhere, describes a record. It reads the terms, counts the
+    lookups and draws the chain. That is worth doing and it cannot answer this question, because a
+    record is not a verdict: the same record passes one server and fails another, and which one it
+    does depends on evaluation order, on qualifiers, and on lookups that either resolve or do not at
+    the moment the mail arrives.
+  </p>
+  <p>
+    So this runs the evaluation itself. It walks the terms in the order they are published, stops at
+    the first one that matches, and reports the qualifier that term carries. That is
+    <code>check_host()</code>, the function RFC 7208 section 4 defines, and it is what the server
+    that bounced your mail ran.
+  </p>
+  <p>Three things follow from doing it properly, and each one catches a case that catches people out.</p>
+  <p>
+    <strong>The first match wins.</strong> A record that authorises an address and then denies it
+    authorises it. Terms after the match are never read, so a fix appended to the end of a record
+    does nothing if something earlier already matched.
+  </p>
+  <p>
+    <strong>An include that fails is not a failure.</strong> Section 5.2 says an
+    <code>include</code> matches only when the recursion passes; anything else moves evaluation on
+    to the next term. Checkers that return the inner failure turn every domain with two vendors into
+    a failure on the second one.
+  </p>
+  <p>
+    <strong>Over ten lookups, nothing passes.</strong> Section 4.6.4 makes an eleventh lookup a
+    permanent error, and a permanent error is not a partial credit. Your own mail server fails too.
+    Tools that report this as "your record is long" are describing a record that receivers are
+    already refusing.
+  </p>
+  <p>
+    Mechanisms that depend on the connection are evaluated rather than skipped.
+    <code>exists:</code> with a macro expands to a different name for every sender, so nothing that
+    only reads a record can say what it does; here the address is known, so the name is expanded and
+    queried. <code>ptr</code> reverses the address and forward-confirms it, the way section 5.5
+    requires, rather than being waved through.
+  </p>
+  <p>
+    When a lookup does not answer, the result is <code>temperror</code> and never a fail. Reporting
+    "not authorised" for a name that simply failed to resolve is the most expensive mistake this
+    tool could make: somebody would remove a sender that was authorised all along.
+  </p>
+
+  <h2>Cure</h2>
+  <p>
+    Read the trace from the top. The line marked with a tick is the one that decided the answer, and
+    the lines above it are terms a receiver considered and moved past.
+  </p>
+  <p>
+    <strong>If the result is fail or softfail</strong> and the sender is legitimate, the address is
+    not covered by any mechanism. Add the include your provider documents rather than pasting their
+    IP addresses, which change without telling you. If you have to use addresses, use
+    <code>ip4:</code> with the narrowest prefix that covers them.
+  </p>
+  <p>
+    <strong>If the result is permerror</strong>, the record cannot be evaluated by anybody and no
+    sender passes. Get the lookup count under ten first, then re-test. The
+    <a href="/lab/spf-flattener">flattener</a> does that by expanding stable includes into
+    addresses, with the staleness cost stated up front.
+  </p>
+  <p>
+    <strong>If the result is pass but mail still fails</strong>, the problem is not SPF. Check DMARC
+    alignment: SPF passing on the envelope domain does nothing for DMARC if the From header shows a
+    different domain. The <a href="/checkup">full checkup</a> shows both together.
+  </p>
+  <p>
+    <strong>If the result is neutral or none</strong>, the record either says nothing about this
+    address or does not exist. Neutral is the default when nothing matches and there is no
+    <code>all</code> mechanism, which is worth fixing on its own: a record without a closing
+    <code>all</code> gives receivers no instruction about everybody else.
+  </p>
+
+  <h2>What this test does not do</h2>
+  <p>
+    It evaluates the record as published right now, against an address you supply. It does not send
+    mail, does not connect to the address, and does not know whether that server really was the one
+    that sent the message. A pass means the record authorises the address, which is a statement
+    about DNS rather than about what happened.
+  </p>
+  <p>
+    Nothing about the address you type is stored. We record that the domain was checked, which
+    <a href="/privacy">the privacy page</a> states in full, and the IP is not part of that row.
+  </p>
+</LabTest>

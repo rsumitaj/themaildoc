@@ -14,6 +14,7 @@ Browser (static HTML, no JS until the patient types)
    │                              └─ Cache API: DoH ≤300s · result 60s
    ├─ POST /api/check/dkim ─► Worker: selector probe (own subrequest budget)
    ├─ POST /api/check/spf ──► Worker: the whole include chain, to the end
+   ├─ GET  /api/spf/ip ─────► Worker: check_host() for one address
    │
    │   finalizeCheckup(core, deepSpf, dkim) in the browser
    │     one merge, one score, one verdict, read by every consumer
@@ -168,6 +169,13 @@ probes speculative selectors. `/api/check/spf` walks the include chain to the
 end, spending `SPF_DEEP_WALK_BUDGET` on nothing else, and is authoritative over
 the bounded chain the checkup itself walks. The result screen fires all three
 together.
+
+`/api/spf/ip` is not one of those legs and never joins the merge. It answers a
+different question — whether one address may send as the domain — and its answer
+is a fact about a sender rather than about the domain's health. A perfectly
+configured domain returns `fail` for every address it does not authorise, so
+letting it near Vitals would score domains down for working correctly. It
+records the domain as examined and writes no score.
 
 `finalizeCheckup` in `engines/src/finalize.ts` is the one place those three legs
 are merged, and every consumer reads its result rather than merging for itself.

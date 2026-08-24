@@ -27,7 +27,17 @@ export {
   isPrivateIpv4,
   isPrivateIpv6,
 } from './spf/ip.js';
-export { containsMacro, isValidMacroString } from './spf/macro.js';
+export { containsMacro, isValidMacroString, expandMacros } from './spf/macro.js';
+export type { MacroContext, MacroExpansion, MacroFailure } from './spf/macro.js';
+
+export { evaluateSpf } from './spf/evaluate.js';
+export type {
+  SpfResult,
+  SpfErrorCause,
+  SpfEvaluation,
+  SpfEvalStep,
+  SpfEvaluateOptions,
+} from './spf/evaluate.js';
 
 export {
   flattenSpf,

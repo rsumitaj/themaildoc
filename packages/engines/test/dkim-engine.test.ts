@@ -80,7 +80,7 @@ describe('DKIM — discovery', () => {
 
   it('treats a selector the patient supplied as authoritative', async () => {
     const { codes } = await run({ 'example.com': { A: ['203.0.113.1'] } }, {
-      explicitSelector: 'mysel',
+      explicitSelectors: ['mysel'],
     });
     expect(codes).toEqual(['DKIM_RECORD_MISSING']);
   });
@@ -222,9 +222,66 @@ describe('wildcard selectors', () => {
   });
 
   it('leaves an explicitly asked-for selector alone', async () => {
-    const { codes } = await run(wildcardZone('v=DKIM1; p='), { explicitSelector: 'google' });
+    const { codes } = await run(wildcardZone('v=DKIM1; p='), { explicitSelectors: ['google'] });
     // The patient asked about one selector, so answer about that selector.
     expect(codes).toContain('DKIM_KEY_REVOKED');
     expect(codes).not.toContain('DKIM_WILDCARD_REVOKED');
+  });
+});
+
+/**
+ * Selectors somebody told us about.
+ *
+ * A probe that finds nothing at `google` means we guessed and missed. Nothing
+ * at a selector read off a DKIM-Signature header means the key that signs their
+ * mail is not published, which is a different fact with a different severity,
+ * and it has to name the selector or somebody who supplied three cannot tell
+ * which one is missing.
+ */
+describe('DKIM — checking selectors we were given', () => {
+  const zone: MockZone = {
+    'k1._domainkey.example.com': { TXT: [`v=DKIM1; k=rsa; p=${RSA_2048}`] },
+    's1._domainkey.example.com': { TXT: [`v=DKIM1; k=rsa; p=${RSA_2048}`] },
+  };
+
+  it('checks every selector it was given, not just the first', async () => {
+    const { analysis } = await run(zone, { explicitSelectors: ['k1', 's1'] });
+
+    expect(analysis.probed).toEqual(['k1', 's1']);
+    expect(analysis.keys.map((key) => key.selector)).toEqual(['k1', 's1']);
+    expect(analysis.found).toBe(true);
+  });
+
+  it('names the one that is missing rather than the domain', async () => {
+    const { analysis, codes } = await run(zone, {
+      explicitSelectors: ['k1', 'missing', 's1'],
+    });
+
+    expect(codes).toContain('DKIM_RECORD_MISSING');
+    expect(codes).not.toContain('DKIM_SELECTOR_NOT_FOUND');
+    const missing = analysis.conditions.filter((c) => c.code === 'DKIM_RECORD_MISSING');
+    expect(missing).toHaveLength(1);
+    expect(missing[0]?.vars.selector).toBe('missing');
+  });
+
+  it('still reports the keys it did find alongside the one it did not', async () => {
+    // A partial answer is the common one: a rotation half finished, or a
+    // provider removed without its selector being cleaned up.
+    const { analysis } = await run(zone, { explicitSelectors: ['k1', 'missing'] });
+
+    expect(analysis.found).toBe(true);
+    expect(analysis.keys).toHaveLength(1);
+  });
+
+  it('ignores blanks and repeats rather than probing them', async () => {
+    const { analysis } = await run(zone, {
+      explicitSelectors: ['k1', '  ', 'K1', 'k1'],
+    });
+    expect(analysis.probed).toEqual(['k1']);
+  });
+
+  it('falls back to guessing when it is given nothing', async () => {
+    const { codes } = await run({}, { explicitSelectors: [] });
+    expect(codes).toContain('DKIM_SELECTOR_NOT_FOUND');
   });
 });

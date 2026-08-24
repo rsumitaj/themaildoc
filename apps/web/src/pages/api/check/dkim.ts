@@ -29,8 +29,20 @@ async function handle(request: Request): Promise<Response> {
   if (!parsed.ok) return parsed.response;
 
   const url = new URL(request.url);
-  const selector = url.searchParams.get('selector')?.trim().toLowerCase();
-  const validSelector = selector && /^[a-z0-9._-]{1,63}$/.test(selector) ? selector : undefined;
+  /**
+   * `selector` for one, `selectors` for a list.
+   *
+   * A domain with more than one sender has more than one selector: marketing
+   * signs with one, the helpdesk with another, the transactional provider with
+   * a third, and "is my DKIM working" has a separate answer for each. Both
+   * parameters feed the same list so an old link with `?selector=` keeps
+   * working.
+   */
+  const requested = [
+    ...(url.searchParams.get('selector') ?? '').split(','),
+    ...(url.searchParams.get('selectors') ?? '').split(','),
+  ];
+  const explicitSelectors = validSelectors(requested);
 
   const cached = await cachedResponse(request);
   if (cached) return cached;
@@ -38,7 +50,7 @@ async function handle(request: Request): Promise<Response> {
   try {
     const resolver = new DohResolver({ budget: DKIM_BUDGET, cache: createDnsCache() });
     const result = await analyzeDkim(parsed.domain, resolver, {
-      ...(validSelector ? { explicitSelector: validSelector } : {}),
+      ...(explicitSelectors.length > 0 ? { explicitSelectors } : {}),
     });
 
     const response = jsonResponse(
@@ -50,6 +62,12 @@ async function handle(request: Request): Promise<Response> {
         probed: result.probed,
         status: result.status,
         conditions: result.conditions,
+        /**
+         * Echoed back so the page can say which selectors were checked because
+         * it was told to, as against which were guesses. The difference is the
+         * whole meaning of a miss.
+         */
+        explicit: explicitSelectors,
         meta: { queriesUsed: result.queriesUsed, notes: result.notes },
       },
       200,
@@ -61,6 +79,28 @@ async function handle(request: Request): Promise<Response> {
   } catch {
     return apiError('CHECK_FAILED', 'The DKIM check couldn’t complete. Let’s try again.', 502);
   }
+}
+
+/**
+ * A selector is one or more dot-separated labels (RFC 6376 §3.1), and it goes
+ * in front of `._domainkey.<domain>`, so the labels have to be real ones. The
+ * cap on how many is ours: each is a subrequest, and somebody pasting a
+ * hundred would spend the endpoint's whole budget on one request.
+ */
+const SELECTOR_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+const MAX_SELECTORS = 10;
+
+function validSelectors(raw: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const entry of raw) {
+    const selector = entry.trim().toLowerCase();
+    if (selector === '' || selector.length > 253) continue;
+    if (!selector.split('.').every((label) => SELECTOR_LABEL.test(label))) continue;
+    if (out.includes(selector)) continue;
+    out.push(selector);
+    if (out.length === MAX_SELECTORS) break;
+  }
+  return out;
 }
 
 export const GET: APIRoute = ({ request }) => handle(request);

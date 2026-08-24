@@ -15,7 +15,7 @@ import { env } from 'cloudflare:workers';
  */
 
 /** Which tool the domain came through. Also the column's allowed values. */
-export type CheckupSource = 'checkup' | 'lookup' | 'flatten' | 'bimi';
+export type CheckupSource = 'checkup' | 'lookup' | 'flatten' | 'bimi' | 'spf-ip';
 
 export interface CheckupRecord {
   domain: string;
@@ -114,7 +114,7 @@ export function normalizeCheckup(entry: CheckupRecord): CheckupRecord | null {
   };
 }
 
-const SOURCES = new Set<CheckupSource>(['checkup', 'lookup', 'flatten', 'bimi']);
+const SOURCES = new Set<CheckupSource>(['checkup', 'lookup', 'flatten', 'bimi', 'spf-ip']);
 
 /** Takes the database rather than reading it, so a test can pass a fake one. */
 export async function writeCheckup(

@@ -12,6 +12,9 @@ import type {
   RecordSummary,
   Spoofability,
   SpfAnalysis,
+  SpfErrorCause,
+  SpfEvalStep,
+  SpfResult,
   TlsRptAnalysis,
 } from '@maildoc/engines';
 
@@ -84,9 +87,43 @@ export interface DkimSuccess {
   found: boolean;
   keys: DkimAnalysis['keys'];
   probed: string[];
+  /**
+   * The selectors we were told to check, as opposed to the ones we guessed.
+   * Empty means every probe was a guess, which is what makes a miss mean
+   * "we guessed wrong" rather than "your key is not published".
+   */
+  explicit: string[];
   status: DkimAnalysis['status'];
   conditions: Condition[];
   meta: { queriesUsed: number; notes: string[] };
+}
+
+/**
+ * One address, evaluated against one domain's record the way a receiver does.
+ *
+ * Distinct from every other SPF response here: the others describe a record,
+ * this one is a decision about a sender, and it carries the trace that produced
+ * it rather than a chain diagram.
+ */
+export interface SpfIpSuccess {
+  ok: true;
+  domain: string;
+  ip: string;
+  ipVersion: 4 | 6;
+  sender: string;
+  helo: string;
+  result: SpfResult;
+  matched: { domain: string; term: string; qualifier: string } | null;
+  /** Why an error happened, so the page can say whose problem it is. */
+  cause: SpfErrorCause | null;
+  /** True when the error condemns the record for every sender, not just this one. */
+  breaksEverySender: boolean;
+  summary: string;
+  trace: SpfEvalStep[];
+  lookups: number;
+  voidLookups: number;
+  complete: boolean;
+  meta: { queriesUsed: number; budget: number; notes: string[] };
 }
 
 export interface ApiFailure {
@@ -97,5 +134,14 @@ export interface ApiFailure {
 export type CheckResponse = CheckSuccess | ApiFailure;
 export type DkimResponse = DkimSuccess | ApiFailure;
 export type SpfResponse = SpfSuccess | ApiFailure;
+export type SpfIpResponse = SpfIpSuccess | ApiFailure;
 
-export type { Condition, Vitals, RecordSummary, Spoofability };
+export type {
+  Condition,
+  Vitals,
+  RecordSummary,
+  Spoofability,
+  SpfEvalStep,
+  SpfResult,
+  SpfErrorCause,
+};

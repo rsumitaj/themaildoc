@@ -31,6 +31,12 @@ export const LAB_GROUPS: readonly LabGroup[] = [
         blurb: 'Full chain walk with the exact 10-lookup count, plus the void lookups nobody else checks.',
       },
       {
+        name: 'SPF Sender Test',
+        href: '/lab/spf-ip-checker',
+        tag: 'RFC 7208 §4',
+        blurb: 'Is this IP allowed to send as you? The evaluation a receiver runs, with the trace.',
+      },
+      {
         name: 'DMARC Test',
         href: '/lab/dmarc-checker',
         tag: 'RFC 9989',

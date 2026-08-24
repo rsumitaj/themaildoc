@@ -67,8 +67,14 @@ export interface DkimEngineOptions {
   /**
    * The patient told us their selector (from a DKIM-Signature header). Then a
    * missing key is a real fault, not "we guessed and missed".
+   *
+   * More than one is allowed, because a domain with more than one sender has
+   * more than one selector: the marketing platform signs with `k1`, the
+   * helpdesk with `zoho`, the transactional provider with `s1`, and the
+   * question "is my DKIM set up" has a different answer for each. Checking them
+   * one at a time is how a rotation that half-finished goes unnoticed.
    */
-  explicitSelector?: string;
+  explicitSelectors?: readonly string[];
 }
 
 interface Ctx {
@@ -85,8 +91,23 @@ export async function analyzeDkim(
   const name = domain.trim().replace(/\.$/, '').toLowerCase();
   const ctx: Ctx = { conditions: [], notes: new Set() };
 
-  const explicit = options.explicitSelector?.trim().toLowerCase();
-  const selectors = explicit ? [explicit] : (options.selectors ?? COMMON_SELECTORS);
+  /**
+   * Selectors we were told about, deduped and in the order they were given.
+   *
+   * Told-about selectors change the meaning of a miss. A probe that finds
+   * nothing at `google` means we guessed and missed; nothing at a selector
+   * read off a DKIM-Signature header means the key that signs their mail is
+   * not published, which is a fault worth a condition of its own.
+   */
+  const explicitList = [
+    ...new Set(
+      (options.explicitSelectors ?? [])
+        .map((selector) => selector.trim().toLowerCase())
+        .filter((selector) => selector !== ''),
+    ),
+  ];
+  const explicit = explicitList.length > 0;
+  const selectors = explicit ? explicitList : (options.selectors ?? COMMON_SELECTORS);
   const maxProbes = options.maxProbes ?? selectors.length;
   const probed: string[] = [];
   const keys: DkimKeyRecord[] = [];
@@ -116,6 +137,7 @@ export async function analyzeDkim(
   // dozen conditions for a single fact and charge the score for all of them.
   const wildcard = explicit ? null : await confirmWildcard(resolver, name, answered);
 
+
   if (wildcard) {
     emit(
       ctx,
@@ -137,9 +159,23 @@ export async function analyzeDkim(
     }
   }
 
-  if (keys.length === 0) {
-    if (explicit) emit(ctx, 'DKIM_RECORD_MISSING', { selector: explicit, domain: name });
-    else emit(ctx, 'DKIM_SELECTOR_NOT_FOUND', { domain: name, count: probed.length });
+  /**
+   * A miss is reported per selector when we were told which ones to look at,
+   * and once for the whole probe when we were guessing.
+   *
+   * Naming the selector matters: somebody who supplied three and got two keys
+   * needs to know which of the three is missing, and a single "no key found"
+   * for a domain that plainly has DKIM reads as a broken checker.
+   */
+  if (explicit) {
+    const found = new Set(keys.map((key) => key.selector));
+    for (const selector of probed) {
+      if (!found.has(selector)) {
+        emit(ctx, 'DKIM_RECORD_MISSING', { selector, domain: name });
+      }
+    }
+  } else if (keys.length === 0) {
+    emit(ctx, 'DKIM_SELECTOR_NOT_FOUND', { domain: name, count: probed.length });
   }
 
   const conditions = sortConditions(dedupeConditions(ctx.conditions));

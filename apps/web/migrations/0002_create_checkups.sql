@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS checkups (
   -- no history is built against an address stays true, and an address is the
   -- one field here that would make this personal data rather than a list of
   -- domains.
-  source        TEXT    NOT NULL,   -- checkup | lookup | flatten | bimi
+  source        TEXT    NOT NULL,   -- checkup | lookup | flatten | bimi | spf-ip
   country       TEXT
 );
 

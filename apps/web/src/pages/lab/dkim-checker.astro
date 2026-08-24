@@ -4,7 +4,7 @@ import LabTest from '../../layouts/LabTest.astro';
 const faqs = [
   {
     q: 'How do I find my DKIM selector?',
-    a: 'Open a message you sent, view its full headers, and look at the DKIM-Signature line. The s= value is the selector and the d= value is the signing domain. That is the only reliable way, DNS gives no index of selectors.',
+    a: 'Open a message you sent, view its full headers, and look at the DKIM-Signature line. The s= value is the selector and the d= value is the signing domain. That is the only reliable way, DNS gives no index of selectors. Add it above and this browser keeps it, so the next check knows where to look.',
   },
   {
     q: 'Is a 1024-bit DKIM key still acceptable?',
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: 'Why does this test say no key found when I have DKIM?',
-    a: 'Because we probe the selectors common providers use, and yours may be custom. That result means "we guessed and missed", not "you have no DKIM", check your DKIM-Signature header and enter the selector directly.',
+    a: 'Because we probe the selectors common providers use, and yours may be custom. That result means "we guessed and missed", not "you have no DKIM". Read the s= value off a DKIM-Signature header and add it above: this browser remembers it, and from then on a miss at that selector means the key is genuinely not published.',
   },
   {
     q: 'Do I need DKIM if I already have SPF?',
@@ -30,6 +30,7 @@ const faqs = [
   label="DKIM signing"
   action="Check my DKIM"
   endpoint="dkim"
+  tool="dkim-selectors"
   title="DKIM Checker: free DKIM record and key strength test | MailDoc"
   description="Free DKIM checker: discovers your selectors, reads the real key length from the published key, and flags revoked, weak or malformed records."
   eyebrow="DKIM Test"

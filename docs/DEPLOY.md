@@ -24,7 +24,11 @@ pnpm ship                                # builds and pushes
 Written only by `/api/consult`, only when somebody submits the form.
 
 `checkups` is one row per domain examined, with the score it got and the date.
-Written by `/api/check`, `/api/lookup`, `/api/flatten` and `/api/bimi`. It holds
+Written by `/api/check`, `/api/lookup`, `/api/flatten`, `/api/bimi` and
+`/api/spf/ip`. Only `/api/check` writes a score: the others examine one record
+or one sender and have no total to give, and `/api/spf/ip` least of all, since a
+`fail` there is a correctly configured domain refusing an address it never
+authorised. It holds
 nothing identifying a person, no address and no session, and rows are deleted 90
 days after the domain was last checked. `/privacy` states all of that, and the
 two have to change together: the page is the disclosure that makes the table
@@ -33,7 +37,7 @@ legitimate.
 ```bash
 pnpm checkups        # worst score first, the working order
 pnpm checkups:hot    # spoofable or under 40, the ones worth a conversation
-pnpm domains         # live tail, as checks happen
+pnpm domains         # live tail, as checks happen, with the tool each came through
 ```
 
 ### Provisional and final scores

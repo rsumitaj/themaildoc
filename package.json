@@ -22,7 +22,7 @@
     "leads:new": "pnpm --filter @maildoc/web run leads:new",
     "checkups": "pnpm --filter @maildoc/web run checkups",
     "checkups:hot": "pnpm --filter @maildoc/web run checkups:hot",
-    "domains": "pnpm --filter @maildoc/web exec wrangler tail --format json --method GET | jq -r --unbuffered 'select(.event.request.url | test(\"/api/check\")) | [(.eventTimestamp/1000 | todate), (.event.request.url | capture(\"domain=(?<d>[^&]*)\").d)] | @tsv'",
+    "domains": "pnpm --filter @maildoc/web exec wrangler tail --format json --method GET | jq -r --unbuffered 'select(.event.request.url | test(\"/api/(check|spf/ip|lookup|flatten|bimi)\")) | [(.eventTimestamp/1000 | todate), (.event.request.url | capture(\"domain=(?<d>[^&]*)\").d), (.event.request.url | capture(\"/api/(?<t>[a-z/]+)\").t)] | @tsv'",
     "db:migrate": "pnpm --filter @maildoc/web run db:migrate",
     "db:migrate:checkups": "pnpm --filter @maildoc/web exec wrangler d1 execute maildoc-leads --remote --file=migrations/0002_create_checkups.sql",
     "db:migrate:score": "pnpm --filter @maildoc/web run db:migrate:score",
