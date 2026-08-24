@@ -46,6 +46,8 @@ export interface CheckSuccess {
     queriesUsed: number;
     budget: number;
     partial: boolean;
+    /** Whether the budget ran out, as opposed to SPF running past its share. */
+    budgetExhausted: boolean;
     notes: string[];
     durationMs: number;
   };

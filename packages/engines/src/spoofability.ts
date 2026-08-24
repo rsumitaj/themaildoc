@@ -1,7 +1,30 @@
-import type { DmarcAnalysis } from './dmarc/types.js';
-import type { SpfAnalysis } from './spf/types.js';
-
 export type SpoofVerdict = 'SPOOFABLE' | 'PARTIAL' | 'PROTECTED';
+
+/**
+ * Just enough of a DMARC analysis to reach a verdict.
+ *
+ * Stated structurally rather than as `DmarcAnalysis` so this file imports
+ * nothing. It is the one engine the browser has to run for itself: the deep SPF
+ * chain walk lands after the checkup, and the banner, the reasons and the
+ * impersonation floor all have to be recomputed from it or they describe a
+ * shallower walk than the chart beside them. A full `DmarcAnalysis` satisfies
+ * this shape, so the Worker's call site is unchanged.
+ */
+export interface SpoofDmarc {
+  found: boolean;
+  ignored: boolean;
+  testMode: boolean;
+  appliedPolicy: 'none' | 'quarantine' | 'reject';
+  effectivePolicy: 'none' | 'quarantine' | 'reject';
+  discovery: { source: string; foundAt: string | null };
+}
+
+/** Just enough of an SPF analysis, from either the bounded or the deep walk. */
+export interface SpoofSpf {
+  found: boolean;
+  allQualifier: string | null;
+  lookupCount: number;
+}
 
 export interface Spoofability {
   verdict: SpoofVerdict;
@@ -23,8 +46,8 @@ export interface Spoofability {
  */
 export function assessSpoofability(
   domain: string,
-  dmarc: DmarcAnalysis,
-  spf: SpfAnalysis | null,
+  dmarc: SpoofDmarc,
+  spf: SpoofSpf | null,
 ): Spoofability {
   const reasons: string[] = [];
 

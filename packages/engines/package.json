@@ -12,6 +12,14 @@
     "./readiness": {
       "types": "./dist/readiness.d.ts",
       "default": "./dist/readiness.js"
+    },
+    "./spoofability": {
+      "types": "./dist/spoofability.d.ts",
+      "default": "./dist/spoofability.js"
+    },
+    "./finalize": {
+      "types": "./dist/finalize.d.ts",
+      "default": "./dist/finalize.js"
     }
   },
   "scripts": {

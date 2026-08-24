@@ -13,6 +13,12 @@ Browser (static HTML, no JS until the patient types)
    │                              ├─ spoofability (derived, no extra queries)
    │                              └─ Cache API: DoH ≤300s · result 60s
    ├─ POST /api/check/dkim ─► Worker: selector probe (own subrequest budget)
+   ├─ POST /api/check/spf ──► Worker: the whole include chain, to the end
+   │
+   │   finalizeCheckup(core, deepSpf, dkim) in the browser
+   │     one merge, one score, one verdict, read by every consumer
+   │
+   ├─ POST /api/checkup/score ► Worker: corrects the recorded row to what was read
    └─ RUA / EML files ──────► parsed in the browser. They never reach us.
 ```
 
@@ -161,5 +167,21 @@ subrequests and neither fits inside the checkup's share. `/api/check/dkim`
 probes speculative selectors. `/api/check/spf` walks the include chain to the
 end, spending `SPF_DEEP_WALK_BUDGET` on nothing else, and is authoritative over
 the bounded chain the checkup itself walks. The result screen fires all three
-together and re-scores in the browser with the same catalog function, so the
-number never depends on which one answered first.
+together.
+
+`finalizeCheckup` in `engines/src/finalize.ts` is the one place those three legs
+are merged, and every consumer reads its result rather than merging for itself.
+That rule is the whole point of the file. When it did not exist, the result
+screen merged correctly, `/api/check` recorded a score with no DKIM in it, the
+readiness page read an SPF chain the deep walk had already superseded, the spoof
+banner kept the bounded walk's reasons, and "partial result" stayed on screen
+after the walk that completed it had landed. A fourth leg added later means
+changing that file and nothing else.
+
+Because both later legs can only *add* findings, the score `/api/check` records
+is an over-estimate of health by construction. `/api/checkup/score` is how the
+finished number gets back: it updates an existing row, never inserts, never
+touches `checks`, and enum-checks its input. It is the only value in either
+table that arrives from a page rather than from an engine, which is why it is
+the most tightly bounded write in the codebase. See `docs/DEPLOY.md` for what
+provisional and final rows mean when reading the table.

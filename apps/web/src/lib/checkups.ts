@@ -27,6 +27,38 @@ export interface CheckupRecord {
   country?: string | null;
 }
 
+/** The bands a Vitals score can fall in. Also the column's allowed values. */
+const BANDS = new Set(['HEALTHY', 'NEEDS_CARE', 'AT_RISK', 'CRITICAL']);
+
+/** The spoofability verdicts. Also the column's allowed values. */
+const VERDICTS = new Set(['PROTECTED', 'PARTIAL', 'SPOOFABLE']);
+
+/**
+ * The finished score for a domain already in the table.
+ *
+ * A checkup is three requests. `/api/check` can write a row the moment it has
+ * an answer, and the answer it has is missing DKIM and the full include chain,
+ * both of which can only add findings — so the score it writes overstates the
+ * domain's health every time either of them finds something. The number the
+ * visitor actually reads is assembled in their browser, and this is how it gets
+ * back.
+ *
+ * It updates and never inserts. That is the whole trust model: the score
+ * arrives from a page rather than from a resolver, so it is only ever allowed
+ * to correct a row that a checkup on this Worker already created, for a domain
+ * this Worker already looked up. A caller who invents a domain gets nothing,
+ * and a caller who invents a score for a real one moves a number in a
+ * prospecting list — which is the reason the values are range-checked here and
+ * the reason `checks` is deliberately not touched: one visit is one visit,
+ * however many times its score is refined.
+ */
+export interface CheckupScore {
+  domain: string;
+  vitalsScore: number;
+  vitalsBand: string;
+  spoofable: string;
+}
+
 /** Rows are deleted this long after the last time the domain was checked. */
 export const RETENTION_DAYS = 90;
 
@@ -100,6 +132,13 @@ export async function writeCheckup(
      *
      * `COALESCE` on the score keeps a real result from being erased by a later
      * single-record Lab check, which has no score to offer.
+     *
+     * `score_complete` is reset by a new checkup and only by a new checkup. The
+     * score arriving here is the provisional one — nine records, no DKIM, a
+     * bounded chain walk — so a row that was settled by a previous visitor's
+     * result screen is unsettled again the moment a fresh checkup overwrites
+     * its number, and stays that way until this visitor's screen reports back.
+     * A Lab tool passes no score, so it must not clear the flag on one.
      */
     await database
       .prepare(
@@ -112,7 +151,11 @@ export async function writeCheckup(
            vitals_score = COALESCE(excluded.vitals_score, checkups.vitals_score),
            vitals_band  = COALESCE(excluded.vitals_band,  checkups.vitals_band),
            spoofable    = COALESCE(excluded.spoofable,    checkups.spoofable),
-           country      = COALESCE(excluded.country,      checkups.country)`,
+           country      = COALESCE(excluded.country,      checkups.country),
+           score_complete = CASE
+             WHEN excluded.vitals_score IS NULL THEN checkups.score_complete
+             ELSE 0
+           END`,
       )
       .bind(row.domain, row.source, row.vitalsScore, row.vitalsBand, row.spoofable, row.country)
       .run();
@@ -125,6 +168,73 @@ export async function writeCheckup(
     // somebody's checkup.
     return false;
   }
+}
+
+/**
+ * Correct a row's score to the one the visitor was shown. Never throws.
+ *
+ * Returns whether a row was updated, which is what the tests assert on. A
+ * `false` here is not an error: a domain whose checkup was served from cache
+ * never wrote a row, so there is nothing to correct.
+ */
+export async function recordFinalScore(entry: CheckupScore): Promise<boolean> {
+  const database = (env as Env).LEADS;
+  if (!database) return false;
+  return writeFinalScore(database, entry);
+}
+
+/** Takes the database rather than reading it, so a test can pass a fake one. */
+export async function writeFinalScore(
+  database: D1Database,
+  entry: CheckupScore,
+): Promise<boolean> {
+  const row = normalizeScore(entry);
+  if (row === null) return false;
+
+  try {
+    const result = await database
+      .prepare(
+        `UPDATE checkups
+            SET vitals_score   = ?,
+                vitals_band    = ?,
+                spoofable      = ?,
+                score_complete = 1
+          WHERE domain = ?`,
+      )
+      .bind(row.vitalsScore, row.vitalsBand, row.spoofable, row.domain)
+      .run();
+
+    return (result.meta?.changes ?? 0) > 0;
+  } catch {
+    // Same rule as every other write here: a table that is busy or missing is
+    // not a reason to fail anything a person is waiting for.
+    return false;
+  }
+}
+
+/**
+ * The correction as it will be stored, or null if it has no business being
+ * stored.
+ *
+ * Stricter than `normalizeCheckup` on purpose. Those values come from our own
+ * engines; these come over the wire from a page, so a band or a verdict outside
+ * the set the column is documented to hold is rejected outright rather than
+ * truncated to forty characters and written.
+ */
+export function normalizeScore(entry: CheckupScore): CheckupScore | null {
+  const domain = entry.domain.trim().toLowerCase().replace(/\.$/, '');
+  if (!domain || domain.length > 253 || !domain.includes('.')) return null;
+
+  const vitalsScore = score(entry.vitalsScore);
+  if (vitalsScore === null) return null;
+
+  const vitalsBand = text(entry.vitalsBand);
+  if (vitalsBand === null || !BANDS.has(vitalsBand)) return null;
+
+  const spoofable = text(entry.spoofable);
+  if (spoofable === null || !VERDICTS.has(spoofable)) return null;
+
+  return { domain, vitalsScore, vitalsBand, spoofable };
 }
 
 /** Delete everything past the retention window stated on `/privacy`. */

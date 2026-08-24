@@ -125,15 +125,65 @@ is not marked down for missing BIMI. `readPosture` in `healthCheck.ts` reads the
 two statements a domain actually made — a null MX (RFC 7505), and an SPF record
 that authorises nothing and ends in `-all` — and narrows the findings to match.
 
+## One record is a different question
+
+The Lab tools examine a single record and print a number beside it. That number
+is **not** Vitals and does not use the model above: `recordScore` is 100 minus
+what each distinct finding on that record costs, and the page labels it
+`SPF only`, `BIMI only` and so on.
+
+They used to call `vitals()`, which cannot answer a question about one record.
+Three of its four pillars have no findings to judge, so they score 100 and carry
+55% of the weight between them. An SPF record ending in `+all` — every server on
+the internet authorised to send as you, the worst thing an SPF record can say —
+came out at **82 out of 100**, which reads as a pass. The explanation printed
+underneath already said "100 minus the weight of each condition found on this
+record alone", which is what the number should always have been.
+
+Same severities, same deductions, same one-charge-per-code rule. A different
+denominator, because it is a different question.
+
+## A checkup arrives in three requests
+
+Fifty subrequests is not enough for one, so `/api/check` reads nine records,
+`/api/check/spf` walks the include chain to the end, and `/api/check/dkim`
+probes selectors. Both later legs can only *add* findings, which makes the
+score `/api/check` knows an over-estimate of health by construction.
+
+`finalizeCheckup` in `packages/engines/src/finalize.ts` is the single place
+those legs are merged, and everything that shows a number reads its result:
+the conditions deduped and sorted, the deep walk's SPF findings replacing the
+bounded walk's outright, the spoofability verdict reassessed so its reasons
+describe the deeper walk, the record cards rewritten to agree with the tree
+beside them, and `partial` cleared once the deep walk finishes a count the
+checkup could not.
+
+Before it existed, each consumer merged for itself or forgot to. The result
+screen got the right number; `/api/check` recorded one without DKIM; the
+readiness page passed an SPF record at "9 of 10 lookups" the diagnosis was
+calling a permanent error at twelve; the spoof banner kept the bounded walk's
+reasons; and "partial result" stayed on screen after the walk that completed it
+had landed. Four bugs, one cause, one fix.
+
+The finished score is posted back to `/api/checkup/score`, which is why the
+`checkups` table can hold the number the visitor actually read. See
+`docs/DEPLOY.md` for provisional versus final rows.
+
 ## Where the numbers are computed
 
-One function, `packages/catalog/src/score.ts`, called from four places: the
-Worker scores the records it checks, the browser re-scores once DKIM and the
-deep SPF chain arrive from their own endpoints, the Lab tools score a single
-record, and the explainer renders the same breakdown object the score came
-from. There is no second model that can drift from the first, and the arithmetic
-on screen reconciles to the headline number by construction rather than by
-being kept in step by hand.
+One function, `packages/catalog/src/score.ts`, called from three places: the
+Worker scores the records it checks, `finalizeCheckup` re-scores once DKIM and
+the deep SPF chain arrive, and the explainer renders the same breakdown object
+the score came from. The Lab tools call `recordScore` in the same file, on the
+single-record scale above. There is no second model that can drift from the
+first.
+
+The explainer's arithmetic reconciles by construction. Pillar contributions are
+printed exactly rather than rounded, because rounding each one does not preserve
+the sum: four pillars at 78, 60, 100 and 55 contribute 35.1, 15, 15 and 8.25,
+which display as whole numbers adding to 73 beside a headline of 73.35. The
+breakdown carries `weightedExact` for that, and the table states the rounding
+once, where it happens.
 
 ## Severities we changed after seeing them on real domains
 

@@ -143,6 +143,14 @@ const LIMITS = {
    * many times they mistype their email, ever meets it.
    */
   lead: 10,
+  /**
+   * The finished score coming back from a result screen. One per checkup, so
+   * it needs the same allowance a checkup has — and its own counter, for the
+   * reason above: a visitor who has run thirty checkups has spent thirty of
+   * the `check` bucket, and the last thing that should fail is the request
+   * that corrects what we recorded about them.
+   */
+  score: 30,
 } as const;
 
 export type RateLimitBucket = keyof typeof LIMITS;

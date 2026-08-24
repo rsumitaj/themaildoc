@@ -27,6 +27,8 @@ const workspaceAliases = {
   '@maildoc/report-parsers': pkg('report-parsers'),
   '@maildoc/resolver': pkg('resolver'),
   '@maildoc/engines/readiness': pkg('engines', 'src/readiness.ts'),
+  '@maildoc/engines/finalize': pkg('engines', 'src/finalize.ts'),
+  '@maildoc/engines/spoofability': pkg('engines', 'src/spoofability.ts'),
   '@maildoc/engines': pkg('engines'),
 };
 

@@ -14,6 +14,7 @@ npx wrangler d1 create maildoc-leads     # copy the database_id it prints
 
 pnpm db:migrate                          # creates the leads table remotely
 pnpm db:migrate:checkups                 # creates the checkups table remotely
+pnpm db:migrate:score                    # adds score_complete to it
 pnpm ship                                # builds and pushes
 ```
 
@@ -34,6 +35,28 @@ pnpm checkups        # worst score first, the working order
 pnpm checkups:hot    # spoofable or under 40, the ones worth a conversation
 pnpm domains         # live tail, as checks happen
 ```
+
+### Provisional and final scores
+
+The `score` column those two queries print is `score_complete`, and it is the
+difference between a number worth acting on and a number worth checking.
+
+A checkup is three requests, because fifty subrequests is not enough for one.
+`/api/check` reads nine records and writes the row. The DKIM selector probe and
+the full include-chain walk land afterwards, in the browser, and both can only
+*add* findings. So the score the endpoint writes is never worse than the truth,
+and for a while it was the only score this table ever held: rows sat at 85 and
+HEALTHY under result screens reading 78 and NEEDS CARE.
+
+The result screen now posts the finished number back to `/api/checkup/score`,
+which updates the row and marks it `final`. A row still marked `provisional`
+means no screen ever reported: the visitor closed the tab, ran without
+JavaScript, or one of the two later legs failed. Read its score as *no worse
+than this*, and re-run the checkup if it matters.
+
+That endpoint updates and never inserts, never touches `checks`, and range- and
+enum-checks everything before it reaches SQL, because it is the one value in
+either table that arrives from a page rather than from an engine.
 
 Pruning is opportunistic: every hundredth write deletes anything past the
 window. There is no cron trigger, because the static adapter gives no scheduled

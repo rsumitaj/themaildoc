@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { assessReadiness, type Readiness } from '@maildoc/engines/readiness';
-import type { CheckResponse, CheckSuccess, DkimResponse } from '../lib/types';
+import type { CheckResponse, CheckSuccess, DkimResponse, SpfResponse } from '../lib/types';
 import { DomainForm, rememberDomain, useDomainRunner, validateDomain } from './DomainForm';
 import { CrossIcon, TickIcon } from './Icons';
 
@@ -47,16 +47,32 @@ export default function ReadinessCheck() {
 
     try {
       const query = `domain=${encodeURIComponent(checked.domain)}`;
-      const [core, dkim] = await Promise.all([
+      /**
+       * The deep chain walk is fetched here for the same reason the diagnosis
+       * fetches it: the checkup's own SPF pass shares fifty subrequests with
+       * nine other records and stops when its share runs out. Without this, a
+       * chain that really costs twelve lookups came back counted at nine and
+       * this page printed "Published and within the lookup limit (9 of 10)" —
+       * a pass, for a record receivers answer with a permanent error, on the
+       * one page whose entire promise is telling a sender whether Google will
+       * take their mail. The diagnosis had it right on the same domain at the
+       * same moment.
+       */
+      const [core, dkim, deepSpf] = await Promise.all([
         fetch(`/api/check?${query}`).then((response) => response.json() as Promise<CheckResponse>),
         fetch(`/api/check/dkim?${query}`).then(
           (response) => response.json() as Promise<DkimResponse>,
         ),
+        fetch(`/api/check/spf?${query}`)
+          .then((response) => response.json() as Promise<SpfResponse>)
+          // The bounded walk is still on hand. Losing the deeper one costs
+          // depth, never the answer.
+          .catch(() => null),
       ]);
 
       if (!core.ok) throw new Error(core.error.message);
 
-      setReadiness(assessReadiness(toInput(core, dkim)));
+      setReadiness(assessReadiness(toInput(core, dkim, deepSpf)));
       setDomain(checked.domain);
       rememberDomain(checked.domain);
     } catch (caught) {
@@ -152,17 +168,21 @@ export default function ReadinessCheck() {
   );
 }
 
-/** Reshape two API responses into what the readiness engine needs. */
-function toInput(core: CheckSuccess, dkim: DkimResponse) {
+/** Reshape the API responses into what the readiness engine needs. */
+function toInput(core: CheckSuccess, dkim: DkimResponse, deepSpf: SpfResponse | null) {
   const keys = dkim.ok ? dkim.keys : [];
   const sizes = keys.map((key) => key.key?.bits).filter((bits): bits is number => typeof bits === 'number');
+
+  // The deep walk saw more of the chain, so it wins outright — the same rule
+  // the diagnosis applies, so the two pages cannot disagree about one domain.
+  const spf = deepSpf?.ok ? deepSpf : core.detail.spf;
 
   return {
     domain: core.domain,
     spf: {
-      found: core.detail.spf.found,
-      allQualifier: core.detail.spf.allQualifier,
-      lookupCount: core.detail.spf.lookupCount,
+      found: spf.found,
+      allQualifier: spf.allQualifier,
+      lookupCount: spf.lookupCount,
     },
     dmarc: {
       found: core.detail.dmarc.found,

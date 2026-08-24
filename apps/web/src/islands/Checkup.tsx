@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { dedupeConditions, sortConditions, vitals as computeVitals } from '@maildoc/catalog/scoring';
+import { finalizeCheckup } from '@maildoc/engines/finalize';
 import type {
   CheckResponse,
   CheckSuccess,
-  Condition,
   DkimResponse,
+  DkimSuccess,
   SpfResponse,
   SpfSuccess,
 } from '../lib/types';
@@ -51,7 +51,7 @@ export default function Checkup() {
   const [message, setMessage] = useState('');
   const [rows, setRows] = useState<ExamRow[]>(initialRows);
   const [core, setCore] = useState<CheckSuccess | null>(null);
-  const [dkimConditions, setDkimConditions] = useState<Condition[]>([]);
+  const [dkim, setDkim] = useState<DkimSuccess | null>(null);
   /** The deep chain walk, when it lands. Authoritative over the checkup's own. */
   const [deepSpf, setDeepSpf] = useState<SpfSuccess | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ export default function Checkup() {
     setMessage('');
     setRows(initialRows());
     setCore(null);
-    setDkimConditions([]);
+    setDkim(null);
     setDeepSpf(null);
 
     const query = `domain=${encodeURIComponent(domain)}`;
@@ -128,7 +128,7 @@ export default function Checkup() {
       .then((response) => response.json() as Promise<DkimResponse>)
       .then((data) => {
         if (!data.ok) return;
-        setDkimConditions(data.conditions);
+        setDkim(data);
         setRows((current) =>
           current.map((row) =>
             row.key === 'DKIM'
@@ -168,36 +168,49 @@ export default function Checkup() {
   }
 
   /**
-   * The deep walk's SPF findings replace the checkup's, rather than joining
-   * them.
+   * One merge, in the package, for every consumer.
    *
-   * Both walks judge the same record, so most of what they say is identical and
-   * dedupes away. The lookup count does not: a bounded walk that stopped at
-   * nine reports nine, the full walk reports twelve, and merging the two would
-   * put both numbers on the chart as separate findings. The deeper walk saw
-   * more, so it wins outright.
+   * This used to happen here — conditions concatenated, deduped and re-scored
+   * inline — which meant the result screen was the only place in the product
+   * that knew what a finished checkup looked like. `/api/check` recorded a
+   * score without DKIM, the readiness page read an SPF chain the deep walk had
+   * already superseded, and the spoof banner kept the reasons the bounded walk
+   * produced. `finalizeCheckup` is now the single answer to "what did we
+   * actually find", and this screen is one of its callers rather than its
+   * owner.
    */
-  const spfConditions = deepSpf
-    ? deepSpf.conditions
-    : (core?.conditions ?? []).filter((condition) => condition.record === 'SPF');
+  const final = core ? finalizeCheckup({ core, deepSpf, dkim }) : null;
 
-  const conditions: Condition[] = core
-    ? sortConditions(
-        dedupeConditions([
-          ...core.conditions.filter((condition) => condition.record !== 'SPF'),
-          ...spfConditions,
-          ...dkimConditions,
-        ]),
-      )
-    : [];
-  // Re-scored in the browser so DKIM's findings count toward Vitals, using the
-  // same arithmetic the Worker used.
-  // The verdict has to come along. Without it the headline number is scored
-  // one way and the explainer below it another, which is how a page ends up
-  // showing 53 above an explanation that adds up to 65.
-  const scored = core
-    ? computeVitals(conditions, { spoofability: core.spoofability.verdict })
-    : null;
+  /**
+   * The number we recorded is corrected to the number that was read.
+   *
+   * `/api/check` wrote the row before DKIM and the full chain existed, and both
+   * can only add findings, so what it wrote is never worse than the truth.
+   *
+   * Gated on the examination having settled rather than on both legs having
+   * landed, because a leg that failed is never going to land and the score on
+   * screen is final either way. Both later fetches swallow their own errors, so
+   * reaching `done` means nothing further is coming, and what gets recorded is
+   * what the visitor read. Sent quietly: nothing on this page depends on it and
+   * nobody is shown a failure to bookkeep.
+   */
+  useEffect(() => {
+    if (phase !== 'done' || !final) return;
+
+    void fetch('/api/checkup/score', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        domain: final.domain,
+        score: final.vitals.score,
+        band: final.vitals.band,
+        spoofable: final.spoofability.verdict,
+      }),
+      keepalive: true,
+    }).catch(() => {
+      // Our bookkeeping, not their diagnosis.
+    });
+  }, [phase, final?.domain, final?.vitals.score]);
 
   /** The chain to draw, and the count that goes with it. */
   const chain = deepSpf?.chain
@@ -209,30 +222,6 @@ export default function Checkup() {
           exact: core.detail.spf.lookupCountExact,
         }
       : null;
-
-  /**
-   * The SPF card has to agree with the tree beside it.
-   *
-   * Leaving the checkup's summary in place while the tree showed a deeper walk
-   * put "9+ of 10 lookups used" above a chain that plainly counted twelve.
-   */
-  const records = core
-    ? core.records.map((record) =>
-        record.record === 'SPF' && deepSpf
-          ? {
-              ...record,
-              status: deepSpf.status,
-              found: deepSpf.found,
-              conditionCount: deepSpf.conditions.length,
-              summary: deepSpf.found
-                ? `${deepSpf.lookupCount}${deepSpf.lookupCountExact ? '' : '+'} of 10 lookups used, ending in ${
-                    deepSpf.allQualifier === null ? 'no all mechanism' : `${deepSpf.allQualifier}all`
-                  }`
-                : 'No SPF record published',
-            }
-          : record,
-      )
-    : [];
 
   return (
     <div>
@@ -266,34 +255,37 @@ export default function Checkup() {
         </div>
       )}
 
-      {phase === 'done' && core && scored && (
+      {phase === 'done' && final && (
         <div ref={resultRef} class="md-result" style={{ paddingTop: 'var(--md-space-8)' }}>
           <div class="md-chart__head">
             <span class="md-chart__label">DIAGNOSIS</span>
-            <span class="md-chart__domain">{core.domain}</span>
+            <span class="md-chart__domain">{final.domain}</span>
           </div>
           <p class="md-chart__meta">
-            Examined just now · {conditions.length}{' '}
-            {conditions.length === 1 ? 'condition' : 'conditions'} found ·{' '}
-            {core.meta.queriesUsed + (deepSpf?.meta.queriesUsed ?? 0)} DNS lookups
-            {core.meta.partial ? ' · partial result' : ''}
+            Examined just now · {final.conditions.length}{' '}
+            {final.conditions.length === 1 ? 'condition' : 'conditions'} found ·{' '}
+            {final.queriesUsed} DNS lookups
+            {final.partial ? ' · partial result' : ''}
           </p>
 
           <div class="md-chart">
             <div>
-              <VitalsMonitor vitals={scored} />
-              <ScoreExplainer conditions={conditions} spoofability={core.spoofability.verdict} />
+              <VitalsMonitor vitals={final.vitals} />
+              <ScoreExplainer
+                conditions={final.conditions}
+                spoofability={final.spoofability.verdict}
+              />
             </div>
 
             <div>
-              <SpoofBanner spoofability={core.spoofability} />
-              <RecordRow records={records} />
+              <SpoofBanner spoofability={final.spoofability} />
+              <RecordRow records={final.records} />
 
               <div class="md-conditions">
-                {conditions.length === 0 ? (
+                {final.conditions.length === 0 ? (
                   <CleanBill />
                 ) : (
-                  conditions.map((condition) => (
+                  final.conditions.map((condition) => (
                     <ConditionCard key={condition.code + condition.title} condition={condition} />
                   ))
                 )}
@@ -308,9 +300,9 @@ export default function Checkup() {
               )}
 
               <ChartConsult
-                domain={core.domain}
-                vitals={scored}
-                spoofability={core.spoofability}
+                domain={final.domain}
+                vitals={final.vitals}
+                spoofability={final.spoofability}
               />
             </div>
           </div>

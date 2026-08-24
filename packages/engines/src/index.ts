@@ -69,7 +69,18 @@ export type { LogoReport, CertReport, AssetFailure } from './bimi/assets.js';
 export { assessSpoofability } from './spoofability.js';
 export { assessReadiness } from './readiness.js';
 export type { Readiness, Requirement, RequirementStatus, ReadinessInput } from './readiness.js';
-export type { Spoofability, SpoofVerdict } from './spoofability.js';
+export type { Spoofability, SpoofVerdict, SpoofDmarc, SpoofSpf } from './spoofability.js';
+
+export { finalizeCheckup } from './finalize.js';
+export type {
+  FinalCheckup,
+  FinalizeInput,
+  CoreLeg,
+  DeepSpfLeg,
+  DkimLeg,
+  SpfLeg,
+  RecordLike,
+} from './finalize.js';
 
 export { analyzeDkim, COMMON_SELECTORS } from './dkim/analyze.js';
 export type { DkimAnalysis, DkimEngineOptions, DkimKeyRecord } from './dkim/analyze.js';

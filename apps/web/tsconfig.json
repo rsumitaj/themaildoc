@@ -22,7 +22,9 @@
       "@maildoc/report-parsers": ["../../packages/report-parsers/src/index.ts"],
       "@maildoc/resolver": ["../../packages/resolver/src/index.ts"],
       "@maildoc/engines": ["../../packages/engines/src/index.ts"],
-      "@maildoc/engines/readiness": ["../../packages/engines/src/readiness.ts"]
+      "@maildoc/engines/readiness": ["../../packages/engines/src/readiness.ts"],
+      "@maildoc/engines/finalize": ["../../packages/engines/src/finalize.ts"],
+      "@maildoc/engines/spoofability": ["../../packages/engines/src/spoofability.ts"]
     }
   },
   "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],

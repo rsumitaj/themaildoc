@@ -18,10 +18,17 @@ const updated = 'August 2026';
       <h2>We keep the domain you check. We do not keep you.</h2>
       <p>
         Every checker on this site reads public DNS and answers. When a domain is checked we write
-        down three things: the domain, the score it received, and the date. Nothing else about the
-        check is stored, and nothing about you is: no account, no IP address, no cookie, no session,
-        no history tied to whoever ran it. The row says <em>example.com scored 42 on Tuesday</em>,
-        and there is no way to get from it to the person who typed it.
+        down one row about the domain: the name, the Vitals score and band it received, whether it
+        can be spoofed, the first and last date it was checked, how many times, which tool was used,
+        and the two-letter country Cloudflare attached to the request. Nothing about you is stored:
+        no account, no IP address, no cookie, no session, no history tied to whoever ran it. The row
+        says <em>example.com scored 42 on Tuesday, from India</em>, and there is no way to get from
+        it to the person who typed it.
+      </p>
+      <p>
+        A checkup runs as three requests, and the score is only final once all three have answered.
+        The row records which of the two it is, so a provisional number is never read as a settled
+        one. Correcting it changes the score in the row and nothing else.
       </p>
       <p>
         We keep it because it tells us which domains are struggling, and that is how this site finds

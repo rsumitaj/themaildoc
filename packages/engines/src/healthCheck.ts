@@ -123,6 +123,16 @@ export interface HealthCheck {
     budget: number;
     /** True when a guard stopped us short, so the chart is incomplete. */
     partial: boolean;
+    /**
+     * True when the *budget* is what stopped us, as distinct from the SPF chain
+     * running past its share of it.
+     *
+     * `partial` conflates the two, and the browser needs them apart. The deep
+     * chain walk exists precisely to finish a count this pass could not, so
+     * once it lands an inexact SPF count is no longer a reason to tell a
+     * visitor their complete result is partial. An exhausted budget still is.
+     */
+    budgetExhausted: boolean;
     notes: ResolverNote[];
     durationMs: number;
   };
@@ -238,6 +248,7 @@ export async function healthCheck(
       queriesUsed: resolver.queriesIssued,
       budget,
       partial: resolver.budgetExhausted || !spf.lookupCountExact,
+      budgetExhausted: resolver.budgetExhausted,
       notes: [...notes],
       durationMs: Date.now() - started,
     },

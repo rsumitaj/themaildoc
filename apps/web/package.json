@@ -12,10 +12,11 @@
     "clean": "rm -rf dist .astro .wrangler",
     "leads": "wrangler d1 execute maildoc-leads --remote --command \"SELECT id, created_at, name, email, company, domain, help_with, vitals_score, spoofable, status FROM leads ORDER BY id DESC LIMIT 50;\"",
     "leads:new": "wrangler d1 execute maildoc-leads --remote --command \"SELECT id, created_at, name, email, domain, help_with, message FROM leads WHERE status='new' ORDER BY id DESC;\"",
-    "checkups": "wrangler d1 execute maildoc-leads --remote --command \"SELECT domain, vitals_score, vitals_band, spoofable, checks, last_seen, country FROM checkups ORDER BY vitals_score ASC, last_seen DESC LIMIT 100;\"",
-    "checkups:hot": "wrangler d1 execute maildoc-leads --remote --command \"SELECT domain, vitals_score, spoofable, checks, last_seen FROM checkups WHERE spoofable = 'SPOOFABLE' OR vitals_score < 40 ORDER BY last_seen DESC LIMIT 100;\"",
+    "checkups": "wrangler d1 execute maildoc-leads --remote --command \"SELECT domain, vitals_score, vitals_band, spoofable, CASE score_complete WHEN 1 THEN 'final' ELSE 'provisional' END AS score, checks, last_seen, country FROM checkups ORDER BY vitals_score ASC, last_seen DESC LIMIT 100;\"",
+    "checkups:hot": "wrangler d1 execute maildoc-leads --remote --command \"SELECT domain, vitals_score, spoofable, CASE score_complete WHEN 1 THEN 'final' ELSE 'provisional' END AS score, checks, last_seen FROM checkups WHERE spoofable = 'SPOOFABLE' OR vitals_score < 40 ORDER BY last_seen DESC LIMIT 100;\"",
     "db:migrate": "wrangler d1 execute maildoc-leads --remote --file=migrations/0001_create_leads.sql",
-    "ship": "astro build && wrangler deploy"
+    "ship": "astro build && wrangler deploy",
+    "db:migrate:score": "wrangler d1 execute maildoc-leads --remote --file=migrations/0003_checkup_score_complete.sql"
   },
   "dependencies": {
     "@maildoc/catalog": "workspace:*",
