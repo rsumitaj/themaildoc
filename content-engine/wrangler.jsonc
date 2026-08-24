@@ -1,0 +1,49 @@
+{
+	// MailDoc Content Engine — an isolated Worker that researches, drafts,
+	// quality-checks and (on your one-tap email approval) publishes blog posts
+	// into the main site's content collection. Deployed separately from the
+	// site Worker; shares the same D1 database, adds its own `ce_*` tables.
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "maildoc-content-engine",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-09-23",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": { "enabled": true },
+
+	// Runs daily; the code decides whether to actually produce anything based on
+	// how many posts this ISO week already exist vs. the WEEKLY_* targets, and
+	// whether any candidate clears MIN_TOPIC_SCORE. A quiet day is a valid day.
+	"triggers": { "crons": ["0 9 * * *"] },
+
+	// Same physical database as the site (maildoc-leads); new tables only.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "maildoc-leads",
+			"database_id": "9994252c-b742-4a48-bf89-b341821d87af",
+			"migrations_dir": "migrations"
+		}
+	],
+
+	// Non-secret configuration. Change any of these without touching code.
+	// Secrets (API keys) are set with `wrangler secret put` — see .dev.vars.example.
+	"vars": {
+		"PUBLIC_BASE_URL": "https://themaildoc.co",
+		"GITHUB_REPO": "OWNER/themaildoc",
+		"GITHUB_BRANCH": "main",
+		"CONTENT_DIR": "apps/web/src/content/library",
+		"AUTHOR_NAME": "Sumit Raj",
+		"GEMINI_MODEL": "gemini-2.5-flash",
+		"GSC_SITE_URL": "sc-domain:themaildoc.co",
+
+		"WEEKLY_TRENDY_POSTS": "2",
+		"WEEKLY_NEWS_POSTS": "1",
+		"MIN_TOPIC_SCORE": "68",
+		"MIN_CONTENT_SCORE": "80",
+		"MAX_REGEN_ATTEMPTS": "3",
+		"TARGET_WORDS_MIN": "850",
+		"TARGET_WORDS_MAX": "1600",
+		"APPROVAL_TTL_HOURS": "120",
+		"DRY_RUN": "false"
+	}
+}

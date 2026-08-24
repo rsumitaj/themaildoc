@@ -1,0 +1,22 @@
+{
+  "name": "maildoc-content-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Autonomous, human-approved content pipeline for themaildoc.co",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail --format pretty",
+    "migrate:local": "wrangler d1 migrations apply maildoc-leads --local",
+    "migrate:remote": "wrangler d1 migrations apply maildoc-leads --remote",
+    "run:once": "wrangler dev --test-scheduled & sleep 3 && curl -s 'http://localhost:8787/__scheduled?cron=0+9+*+*+*'",
+    "gsc:sync": "node scripts/gsc-sync.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250923.0",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.0.0"
+  }
+}
