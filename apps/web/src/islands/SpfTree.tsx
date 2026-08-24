@@ -32,6 +32,7 @@ const STATUS_LABEL: Record<SpfNodeStatus, string> = {
   CIRCULAR: 'already visited in this chain',
   UNRESOLVED: 'we could not finish this lookup, not a fault in your record',
   TRUNCATED: 'we stopped walking here',
+  MACRO: 'expands per sender, cannot be read from DNS alone',
 };
 
 const STATUS_TONE: Record<SpfNodeStatus, string> = {
@@ -42,6 +43,7 @@ const STATUS_TONE: Record<SpfNodeStatus, string> = {
   CIRCULAR: 'is-bad',
   UNRESOLVED: 'is-warn',
   TRUNCATED: 'is-warn',
+  MACRO: 'is-warn',
 };
 
 /** RFC 7208 section 4.6.4. */

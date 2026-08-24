@@ -1001,3 +1001,75 @@ describe('SPF — the walk goes to the end of the chain', () => {
     expect(codes.filter((code) => code === 'RESOLVER_TIMEOUT')).toHaveLength(1);
   });
 });
+
+/**
+ * A chain that hides behind a macro.
+ *
+ * `include:%{ir}.%{v}.%{d}.spf.has.pphosted.com` is a different name for every
+ * connecting client, so nothing that reads a record statically can follow it.
+ * That is not a fault and it is not something to paper over: the walk used to
+ * count the macro term as one lookup, stop, and report the count as exact.
+ * booking.com publishes exactly one of these and really costs three lookups for
+ * a live sender, so the chart read "1 of 10 lookups used" with a clean bill of
+ * health for a record whose true cost nobody can know from DNS alone.
+ */
+describe('SPF — the part of the chain behind a macro', () => {
+  const macroZone: MockZone = {
+    'example.com': {
+      TXT: ['v=spf1 include:%{ir}.%{v}.%{d}.spf.vendor.test -all'],
+    },
+  };
+
+  it('says the count is a floor rather than a total', async () => {
+    const { analysis } = await run(macroZone);
+
+    expect(analysis.lookupCount).toBe(1);
+    expect(analysis.lookupCountExact).toBe(false);
+  });
+
+  it('names the term that cannot be followed', async () => {
+    const { analysis, codes } = await run(macroZone);
+
+    expect(codes).toContain('SPF_MACRO_CHAIN_HIDDEN');
+    const finding = analysis.conditions.find((c) => c.code === 'SPF_MACRO_CHAIN_HIDDEN');
+    expect(finding?.vars.offending_term).toBe('include:%{ir}.%{v}.%{d}.spf.vendor.test');
+  });
+
+  it('does not mark the record faulty for it', async () => {
+    // Usually the platform's design rather than the domain's mistake, so it is
+    // a note. Colouring it amber would spend the one colour that means "look at
+    // this" on something nobody needs to act on.
+    const { analysis } = await run(macroZone);
+
+    expect(analysis.status).toBe('HEALTHY');
+    expect(analysis.conditions.every((c) => c.severity === 'INFO')).toBe(true);
+  });
+
+  it('draws the macro in the tree rather than ending the chain silently', async () => {
+    const { analysis } = await run(macroZone);
+    const child = analysis.chain?.children[0];
+
+    expect(child?.status).toBe('MACRO');
+    expect(child?.domain).toContain('%{ir}');
+  });
+
+  it('treats a macro redirect the same way, and charges it its lookup', async () => {
+    // This used to cost nothing and say nothing: the branch simply fell through
+    // when the target contained a macro, so the lookup a receiver really spends
+    // was missing from the count.
+    const { analysis, codes } = await run({
+      'example.com': { TXT: ['v=spf1 redirect=%{i}.spf.vendor.test'] },
+    });
+
+    expect(analysis.lookupCount).toBe(1);
+    expect(analysis.lookupCountExact).toBe(false);
+    expect(codes).toContain('SPF_MACRO_CHAIN_HIDDEN');
+  });
+
+  it('leaves a record without macros counted exactly', async () => {
+    const { analysis } = await run(healthyZone);
+
+    expect(analysis.lookupCountExact).toBe(true);
+    expect(analysis.conditions.map((c) => c.code)).not.toContain('SPF_MACRO_CHAIN_HIDDEN');
+  });
+});

@@ -16,7 +16,13 @@ export type SpfNodeStatus =
   /** DNS did not answer (timeout/SERVFAIL). */
   | 'UNRESOLVED'
   /** We stopped walking here: depth guard or query budget. */
-  | 'TRUNCATED';
+  | 'TRUNCATED'
+  /**
+   * The target is a macro, so it is a different name for every sender and
+   * cannot be resolved without one. Not a fault, and not something a static
+   * read can see past.
+   */
+  | 'MACRO';
 
 /** One domain in the SPF include/redirect tree. */
 export interface SpfChainNode {

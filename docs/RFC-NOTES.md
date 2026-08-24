@@ -20,7 +20,7 @@ and fails the build on any reference to an obsoleted DMARC RFC.
 
 | Area | RFC | Sections we rely on |
 |---|---|---|
-| SPF | 7208 | §4.6.4 lookup and void limits · §5 mechanisms · §6 modifiers · §7 macros · §12 ABNF |
+| SPF | 7208 | §4 check_host() · §4.6.4 lookup and void limits · §5 mechanisms · §6 modifiers · §7 macros · §12 ABNF |
 | DMARC | **9989** | obsoletes 7489 **and 9091**. §4.4 alignment · §4.7.x tags · §4.8 ABNF · §4.10 DNS tree walk |
 | DMARC aggregate reports | **9990** | §3.1.1 report contents · §3.1.6 override reasons · §4 external destinations · §8.1 report content as an attack |
 | DMARC failure reports | **9991** | §5 external destinations |
@@ -56,6 +56,37 @@ of our citations are believed.
   is never evaluated, and an include placed before a `-` term can mask it.
 - **A void lookup is NXDOMAIN or NOERROR with no records** (RFC 7208 §4.6.4).
   A lookup that never completed is not void.
+
+- **`include:` matches only on pass** (RFC 7208 §5.2). An include that returns
+  fail is *not* a fail for the outer record; evaluation moves to the next term.
+  Getting this backwards turns every domain with two vendors into a failure on
+  its second one. `none` and `permerror` inside an include *are* a permerror
+  outside it, which is the opposite direction and just as easy to get wrong.
+
+- **The lookup limit is ten, and ten is allowed** (§4.6.4). The eleventh term is
+  the error. Erroring at the tenth condemns records receivers evaluate happily.
+
+- **The two permanent errors are not the same problem.** Over the lookup limit,
+  or two records at one name, breaks the record for *every* sender including the
+  domain's own servers. Exceeding the void-lookup limit usually breaks it for
+  *one* sender: records built on `exists:` with macros perform a lookup per
+  connecting address by design, and empty answers are the expected outcome for
+  an address the domain never authorised. Reporting both as "your record cannot
+  be evaluated" sends somebody to rewrite a working record.
+
+- **A macro hides everything past it** (§7). `include:%{ir}.%{v}.%{d}.…` is a
+  different name per sender, so a static read cannot follow it and the lookup
+  count stops being a total. Report it as a floor. booking.com publishes exactly
+  one macro include: read statically it costs one lookup, evaluated against a
+  real address it costs three.
+
+- **`redirect=` is ignored when the record has an `all` mechanism** (§6.1). A
+  receiver reaches `all`, which always matches, so the redirect is unreachable
+  and costs no lookup.
+
+- **An IPv4-mapped IPv6 address is an IPv4 sender.** A dual-stack receiver
+  reports `::ffff:203.0.113.9` for a client that connected over IPv4 and matches
+  it against `ip4:` mechanisms.
 
 ## Adding a check
 

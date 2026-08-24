@@ -199,4 +199,15 @@ once, where it happens.
 `DMARC_P_QUARANTINE` (LOW) does not appear in `context/03`. Quarantine catches
 forged mail and delivers it somewhere a determined recipient can still reach, so
 it is a real finding, but weighting it like a genuine gap put well-run domains
-next to domains with nothing. Anything else added later belongs in this list.
+next to domains with nothing.
+
+`SPF_MACRO_CHAIN_HIDDEN` (INFO) is not a fault in the record. It is a limit on
+what any static read can say about one: a macro `include` or `redirect` expands
+to a different name for every sender, so the chain past it cannot be followed
+and the lookup count is a floor rather than a total. It scores 2 and leaves the
+record HEALTHY, because it is the platform's design rather than the domain's
+mistake, and it exists because the alternative was a clean bill of health beside
+a count we could not finish. The sender check follows the macro properly, given
+an address to expand it with.
+
+Anything else added later belongs in this list.

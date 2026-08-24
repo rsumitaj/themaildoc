@@ -393,7 +393,24 @@ async function analyzeTerms(
           break;
         }
         includeCounts.set(target, (includeCounts.get(target) ?? 0) + 1);
-        if (containsMacro(target)) break; // can't expand statically
+        if (containsMacro(target)) {
+          /**
+           * The chain past a macro cannot be read, so the count stops being a
+           * total and becomes a floor.
+           *
+           * This used to `break` silently, leaving `lookupsExact` true, and the
+           * result was a record reported as "1 of 10 lookups used" with no
+           * findings at all — booking.com publishes exactly one macro include
+           * and really costs three lookups for a live sender, more for others.
+           * Printing a confident 1 there reads as nine lookups of headroom for
+           * a record whose real cost nobody can know from DNS alone.
+           */
+          context.lookupsExact = false;
+          context.voidExact = false;
+          emit(context, 'SPF_MACRO_CHAIN_HIDDEN', { offending_term: term.raw });
+          node.children.push(macroNode(target, node.depth + 1, 'include'));
+          break;
+        }
         if (path.includes(target)) {
           emit(context, 'SPF_CIRCULAR_INCLUDE', {
             chain_path: [...path, target].join(' → '),
@@ -470,7 +487,15 @@ async function analyzeTerms(
       // With an `all` mechanism present, redirect= is ignored entirely — and
       // so is the DNS lookup it would have cost.
       emit(context, 'SPF_REDIRECT_ALL_CONFLICT', { target: target ?? redirect.value });
-    } else if (target && !containsMacro(target)) {
+    } else if (target && containsMacro(target)) {
+      // A macro redirect costs its lookup and hides everything past it, exactly
+      // as a macro include does. It used to cost nothing and say nothing.
+      spendLookup(context, node);
+      context.lookupsExact = false;
+      context.voidExact = false;
+      emit(context, 'SPF_MACRO_CHAIN_HIDDEN', { offending_term: redirect.raw });
+      node.children.push(macroNode(target, node.depth + 1, 'redirect'));
+    } else if (target) {
       spendLookup(context, node);
       if (path.includes(target)) {
         emit(context, 'SPF_REDIRECT_LOOP', { chain_path: [...path, target].join(' → ') });
@@ -736,6 +761,17 @@ function normalizeTarget(value: string | null): string | null {
 
 function circularNode(domain: string, depth: number, via: 'include' | 'redirect'): SpfChainNode {
   return { domain, via, depth, record: null, lookups: 0, status: 'CIRCULAR', children: [] };
+}
+
+/**
+ * A name we cannot resolve because it is not a name yet.
+ *
+ * Shown in the tree with the macro still in it, because that is what is
+ * published, and drawing nothing there would leave a record looking shorter
+ * than it is.
+ */
+function macroNode(domain: string, depth: number, via: 'include' | 'redirect'): SpfChainNode {
+  return { domain, via, depth, record: null, lookups: 0, status: 'MACRO', children: [] };
 }
 
 function emit(

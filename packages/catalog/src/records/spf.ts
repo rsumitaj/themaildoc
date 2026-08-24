@@ -242,6 +242,35 @@ export const SPF_ISSUES: readonly Issue[] = [
     vars: ['count'],
   },
   {
+    /**
+     * Not a fault in the record. A limit on what any static read can say about
+     * it, and the honest thing is to say so rather than print a lookup count
+     * that looks like headroom.
+     *
+     * `include:%{ir}.%{v}.%{d}.spf.has.pphosted.com` is a different name for
+     * every connecting client, so what it costs, and whether the record fits
+     * inside ten lookups, is a question with a different answer per sender.
+     * booking.com's entire record is one of these: read statically it costs one
+     * lookup, and evaluated against a real address it costs three. A checker
+     * reporting "1 of 10 used" is not wrong so much as answering a question
+     * nobody asked.
+     *
+     * INFO because it is usually deliberate and always the platform's design
+     * rather than the domain's mistake. It still has to appear, because the
+     * alternative is a clean bill of health for a record we could not finish
+     * counting.
+     */
+    code: 'SPF_MACRO_CHAIN_HIDDEN',
+    record: 'SPF',
+    severity: 'INFO',
+    category: 'lookup',
+    title: 'Part of this record is behind a macro',
+    why: 'The term {offending_term} expands to a different name for every sending server, so the rest of the chain cannot be read from DNS alone. The lookup count shown is what we could reach, not the total, and the real cost depends on who is sending.',
+    fix: 'Nothing to change if this is your provider\u2019s design, which it usually is. To see what the record really costs, check a specific sending address against it: the evaluation follows the macro the way a receiver does.',
+    rfc: 'RFC 7208 section 7',
+    vars: ['offending_term'],
+  },
+  {
     code: 'SPF_INVALID_MACRO',
     record: 'SPF',
     severity: 'MEDIUM',
