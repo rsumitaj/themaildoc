@@ -23,6 +23,7 @@ export {
 
 export {
   scoreConditions,
+  recordScore,
   clampScore,
   rollupRecord,
   worstSeverity,

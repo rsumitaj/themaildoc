@@ -28,6 +28,7 @@ export type { ConditionOptions } from './registry.js';
 
 export {
   scoreConditions,
+  recordScore,
   clampScore,
   rollupRecord,
   worstSeverity,

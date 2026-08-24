@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createCondition,
   dedupeConditions,
+  recordScore,
   rollupRecord,
   scoreBreakdown,
   scoreConditions,
@@ -439,5 +440,82 @@ describe('severity maps to one triage level, one chip and one colour', () => {
     expect(triageFor('INFO')).toBe('HEALTHY');
     expect(TRIAGE_CHIP.HEALTHY).toBe('NOTE');
     expect(rollupRecord([createCondition('BIMI_MISSING', { domain: 'a.com' })])).toBe('HEALTHY');
+  });
+});
+
+/**
+ * One record, on its own scale.
+ *
+ * The Lab tools print a number beside a single record. They used to call
+ * `vitals()`, which is the four-pillar model, and that model cannot answer a
+ * question about one record: three of its four questions have no findings, so
+ * they score 100 and carry 55 percent of the weight between them.
+ */
+describe('recordScore', () => {
+  it('starts at 100 for a record with nothing against it', () => {
+    expect(recordScore([])).toBe(100);
+  });
+
+  it('subtracts what the finding costs, and nothing else', () => {
+    // The copy beside the number has always said "100 minus the weight of each
+    // condition found on this record alone". Now it is true.
+    expect(recordScore([critical()])).toBe(100 - SEVERITY_DEDUCTION.CRITICAL);
+    expect(recordScore([high()])).toBe(100 - SEVERITY_DEDUCTION.HIGH);
+    expect(recordScore([medium()])).toBe(100 - SEVERITY_DEDUCTION.MEDIUM);
+  });
+
+  it('does not flatter the worst thing a single record can say', () => {
+    // The regression this exists for. `+all` tells every receiver that any
+    // server on earth may send as this domain, and under the four-pillar model
+    // the SPF Lab tool scored it 82 out of 100 — a pass — because visibility
+    // and hardening had no findings to charge and kept full marks between
+    // them. On its own scale it is what it is: one critical finding.
+    const permissive = createCondition('SPF_ALL_TOO_PERMISSIVE', {
+      domain: 'a.com',
+      offending_term: '+all',
+    });
+
+    expect(recordScore([permissive])).toBe(100 - SEVERITY_DEDUCTION.CRITICAL);
+    expect(vitals([permissive]).score).toBe(82);
+  });
+
+  it('charges a finding once however many times it was found', () => {
+    // Same rule as Vitals: three selectors carrying the same weak key is one
+    // fix, not three.
+    expect(recordScore([critical(), critical(), critical()])).toBe(recordScore([critical()]));
+  });
+
+  it('never goes below zero', () => {
+    const many = [
+      createCondition('SPF_RECORD_MISSING', { domain: 'a.com' }),
+      createCondition('SPF_ALL_MISSING', { domain: 'a.com' }),
+      createCondition('SPF_UDP_TRUNCATION_RISK', { count: 470 }),
+      createCondition('SPF_MULTIPLE_RECORDS', { count: 2 }),
+    ];
+    expect(recordScore(many)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('the explainer reconciles to the number above it', () => {
+  it('reports the weighted total unrounded, so the column adds up', () => {
+    // The table exists so somebody can check the score rather than believe it.
+    // Rounding each contribution to a whole number does not preserve the sum,
+    // so the contributions are shown exactly and this is what they add to.
+    const sum = scoreBreakdown([critical(), medium()]);
+    const contributions = sum.pillars.reduce(
+      (total, pillar) => total + (pillar.score * pillar.weight) / 100,
+      0,
+    );
+
+    expect(sum.weightedExact).toBeCloseTo(contributions, 10);
+    expect(sum.weighted).toBe(Math.round(sum.weightedExact));
+  });
+
+  it('still reports the headline as the rounded, capped number', () => {
+    const sum = scoreBreakdown([critical()], { spoofability: 'SPOOFABLE' });
+
+    expect(sum.capped).toBe(true);
+    expect(sum.score).toBe(39);
+    expect(sum.weightedExact).toBeGreaterThan(39);
   });
 });

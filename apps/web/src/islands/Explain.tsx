@@ -1,5 +1,10 @@
 import { useId, useState } from 'preact/hooks';
-import { scoreBreakdown, type AbsenceCode, type SpoofVerdict } from '@maildoc/catalog/scoring';
+import {
+  recordScore,
+  scoreBreakdown,
+  type AbsenceCode,
+  type SpoofVerdict,
+} from '@maildoc/catalog/scoring';
 import type { Condition } from '../lib/types';
 
 /**
@@ -80,6 +85,17 @@ const ABSENCE_REASON: Record<AbsenceCode, string> = {
   SPF_RECORD_MISSING:
     'with no SPF record, nothing states which servers may send for you.',
 };
+
+/**
+ * A number the reader can check, printed to as many places as it really has.
+ *
+ * Two is enough for every value this table produces: weights are whole
+ * percentages and pillar scores are whole numbers, so a contribution is always
+ * a multiple of 0.05.
+ */
+function decimal(value: number): string {
+  return String(Math.round(value * 100) / 100);
+}
 
 /**
  * How the score was produced, in full.
@@ -163,19 +179,32 @@ export function ScoreExplainer({
                   </td>
                   <td class="md-mono">{pillar.score}</td>
                   <td class="md-mono">{pillar.weight}%</td>
-                  <td class="md-mono">
-                    {Math.round((pillar.score * pillar.weight) / 100)}
-                  </td>
+                  <td class="md-mono">{decimal((pillar.score * pillar.weight) / 100)}</td>
                 </tr>
               ))}
               <tr>
                 <td>
                   <strong>Your Vitals</strong>
-                  {sum.capped && (
+                  {sum.capped ? (
                     <span class="md-scorewhy__q">
-                      Held at {sum.score} because the domain can still be sent as. The weighted total
-                      was {sum.weighted}.
+                      Held at {sum.score} because the domain can still be sent as. The column adds
+                      to {decimal(sum.weightedExact)}.
                     </span>
+                  ) : (
+                    sum.weightedExact !== sum.score && (
+                      /*
+                       * The point of this table is that somebody can add the
+                       * column up, so it has to add up. Rounding each
+                       * contribution to a whole number does not preserve the
+                       * sum — four pillars at 78, 60, 100 and 55 contribute
+                       * 35.1, 15, 15 and 8.25 — so the contributions are shown
+                       * exactly and the rounding is stated once, here, where it
+                       * actually happens.
+                       */
+                      <span class="md-scorewhy__q">
+                        The column adds to {decimal(sum.weightedExact)}, rounded to {sum.score}.
+                      </span>
+                    )
                   )}
                 </td>
                 <td class="md-mono">
@@ -271,6 +300,118 @@ export function ScoreExplainer({
             DMARC reports, because those describe last week's mail and a quiet week would flatter a
             broken domain.
           </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * How a single record was scored, for the Lab tools.
+ *
+ * Deliberately a different explanation, because it is a different number. The
+ * Lab tools used to print `vitals()` — the four-pillar model — beside one
+ * record, and that model cannot answer a question about one record: three of
+ * its four questions have no findings, so they score 100 and carry 55% of the
+ * weight between them. An SPF record ending in `+all`, the worst thing an SPF
+ * record can say, came out at 82 out of 100. The explanation printed beneath it
+ * said "100 minus the weight of each condition found on this record alone",
+ * which is what the number should always have been and never was.
+ *
+ * So this shows exactly that subtraction, and points at the full checkup for
+ * the question this page is not answering.
+ */
+export function RecordScoreExplainer({
+  conditions,
+  record,
+}: {
+  conditions: readonly Condition[];
+  record: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const charged = new Map<string, number>();
+  for (const condition of conditions) {
+    if (condition.deduction <= 0) continue;
+    const current = charged.get(condition.code);
+    if (current === undefined || condition.deduction > current) {
+      charged.set(condition.code, condition.deduction);
+    }
+  }
+  const score = recordScore(conditions);
+
+  return (
+    <div class="md-scorewhy">
+      <button
+        type="button"
+        class="md-scorewhy__toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        How this score works
+        <span aria-hidden="true">{open ? '\u2212' : '+'}</span>
+      </button>
+
+      {open && (
+        <div class="md-scorewhy__body">
+          <p>
+            One record, one number: 100, minus what each distinct finding on this record costs. The
+            costs are the same ones the full checkup uses, and a finding is charged once however
+            many times it was found.
+          </p>
+
+          <table class="md-scorewhy__table">
+            <tbody>
+              <tr>
+                <td>Starting from</td>
+                <td class="md-mono">100</td>
+              </tr>
+              {[...charged.entries()].map(([code, deduction]) => (
+                <tr key={code}>
+                  <td class="md-mono">{code}</td>
+                  <td class="md-mono">{'\u2212'}{deduction}</td>
+                </tr>
+              ))}
+              <tr>
+                <td>
+                  <strong>{record} only</strong>
+                </td>
+                <td class="md-mono">
+                  <strong>{score}</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>What this number is not</h4>
+          <p>
+            It is not your Vitals score. Vitals asks four questions about a whole domain, then
+            weights them: can somebody send as you, will your mail arrive, would you find out, and
+            what optional hardening is published. Three of those four cannot be answered from one
+            record, so this page does not try to. Run the full checkup for that.
+          </p>
+
+          <h4>What each finding costs</h4>
+          <table class="md-scorewhy__table">
+            <thead>
+              <tr>
+                <th>Condition</th>
+                <th>Costs</th>
+                <th>Means</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SEVERITY_ROWS.map((row) => (
+                <tr key={row.triage}>
+                  <td>
+                    <span class={`md-chip ${row.tone}`}>{row.triage}</span>
+                  </td>
+                  <td class="md-mono">{'\u2212'}{row.deduction}</td>
+                  <td>{row.meaning}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

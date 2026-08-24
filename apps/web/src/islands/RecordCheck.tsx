@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { TRIAGE_COLOR, vitals as computeVitals } from '@maildoc/catalog/scoring';
+import { recordScore, TRIAGE_COLOR } from '@maildoc/catalog/scoring';
 import { domainRejectionMessage, normalizeDomain } from '@maildoc/shared';
 import type { CheckResponse, CheckSuccess, Condition, DkimResponse } from '../lib/types';
 import { ArrowIcon, StethoscopeIcon } from './Icons';
 import { CleanBill, ConditionCard } from './Chart';
 import { SpfTree } from './SpfTree';
-import { Explain, ScoreExplainer } from './Explain';
+import { Explain, RecordScoreExplainer } from './Explain';
 
 /**
  * A single-record test, for the Lab pages.
@@ -115,7 +115,7 @@ export default function RecordCheck({ record, label, action, endpoint = 'check' 
     void examine(value);
   };
 
-  const scored = phase === 'done' ? computeVitals(conditions) : null;
+  const scored = phase === 'done' ? recordScore(conditions) : null;
 
   return (
     <div>
@@ -160,7 +160,7 @@ export default function RecordCheck({ record, label, action, endpoint = 'check' 
         )}
       </form>
 
-      {phase === 'done' && scored && (
+      {phase === 'done' && scored !== null && (
         <div ref={resultRef} class="md-result md-testresult">
           <div class="md-testresult__head">
             <span
@@ -174,7 +174,7 @@ export default function RecordCheck({ record, label, action, endpoint = 'check' 
               {summary && <p class="md-testresult__summary">{summary}</p>}
             </div>
             <span class="md-testresult__score md-mono">
-              {scored.score}/100 · {record} only
+              {scored}/100 · {record} only
               <Explain label="this score">
                 100 minus the weight of each condition found on this record alone. It is not your
                 domain's Vitals, which counts every record together.
@@ -192,7 +192,7 @@ export default function RecordCheck({ record, label, action, endpoint = 'check' 
             />
           )}
 
-          <ScoreExplainer conditions={conditions} />
+          <RecordScoreExplainer conditions={conditions} record={record} />
 
           <div class="md-conditions">
             {conditions.length === 0 ? (

@@ -176,6 +176,18 @@ export interface ScoreBreakdown {
   pillars: PillarBreakdown[];
   /** Weighted total before the spoofable ceiling. */
   weighted: number;
+  /**
+   * The same total unrounded.
+   *
+   * The explainer prints one contribution per pillar and then the headline
+   * number, and a reader is entitled to add the column up. Rounding each
+   * contribution to a whole number does not preserve the sum: four pillars at
+   * 78, 60, 100 and 55 contribute 35.1, 15, 15 and 8.25, which display as 35,
+   * 15, 15 and 8 and add to 73 beside a headline of 73.35 rounded to 73 — and
+   * the same arithmetic lands a point out often enough to be noticed. The
+   * table shows exact contributions and this total, so the column reconciles.
+   */
+  weightedExact: number;
   score: number;
   /** True when the ceiling for a spoofable domain brought the score down. */
   capped: boolean;
@@ -270,10 +282,47 @@ export function scoreBreakdown(
   return {
     pillars,
     weighted: clampScore(weighted),
+    weightedExact: weighted,
     score: clampScore(capped ? ceiling : weighted),
     capped,
     charged: [...charged.values()],
   };
+}
+
+/**
+ * One record, on its own scale.
+ *
+ * The Lab tools examine a single record and print a number beside it. They used
+ * to call `vitals()`, which is the four-pillar model, and that model cannot
+ * answer a question about one record: three of its four questions have no
+ * findings to judge, so they score 100 and carry 55% of the weight between
+ * them. An SPF record ending in `+all` — every server on the internet
+ * authorised to send as you, the worst thing an SPF record can say — came out
+ * at 82 out of 100, which reads as a pass. The four questions are a property of
+ * a domain, not of a TXT string.
+ *
+ * So a single record is scored the way the copy beside it has always claimed:
+ * 100, minus what each distinct finding on that record costs. Same severities,
+ * same deductions, same one-charge-per-code rule as Vitals — a different
+ * denominator, because it is a different question, and the page says so in the
+ * words "SPF only".
+ *
+ * Bloodwork findings are skipped here for the same reason they are skipped in
+ * Vitals: they describe last week's mail rather than what is published today.
+ */
+export function recordScore(conditions: readonly Condition[]): number {
+  const charged = new Map<string, number>();
+  for (const condition of conditions) {
+    if (condition.record === 'RUA') continue;
+    if (condition.deduction <= 0) continue;
+    const current = charged.get(condition.code);
+    if (current === undefined || condition.deduction > current) {
+      charged.set(condition.code, condition.deduction);
+    }
+  }
+  let total = 0;
+  for (const deduction of charged.values()) total += deduction;
+  return clampScore(100 - total);
 }
 
 export function clampScore(score: number): number {

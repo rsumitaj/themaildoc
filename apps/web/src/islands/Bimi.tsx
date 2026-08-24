@@ -1,9 +1,9 @@
 import { useState } from 'preact/hooks';
-import { sortConditions, vitals as computeVitals } from '@maildoc/catalog/scoring';
+import { recordScore, sortConditions } from '@maildoc/catalog/scoring';
 import type { Condition } from '../lib/types';
 import { CleanBill, ConditionCard } from './Chart';
 import { DomainForm, rememberDomain, useDomainRunner, validateDomain } from './DomainForm';
-import { ScoreExplainer } from './Explain';
+import { RecordScoreExplainer } from './Explain';
 import { CrossIcon, TickIcon } from './Icons';
 
 /**
@@ -89,7 +89,7 @@ export default function Bimi() {
   useDomainRunner(examine);
 
   const conditions = result ? sortConditions(result.conditions) : [];
-  const scored = result ? computeVitals(conditions) : null;
+  const scored = result ? recordScore(conditions) : null;
 
   return (
     <div>
@@ -106,7 +106,7 @@ export default function Bimi() {
         </p>
       )}
 
-      {result && scored && (
+      {result && scored !== null && (
         <div class="md-result md-testresult">
           <div class="md-testresult__head">
             <span
@@ -125,7 +125,7 @@ export default function Bimi() {
                       }`}
               </p>
             </div>
-            <span class="md-testresult__score md-mono">{scored.score}/100 · BIMI only</span>
+            <span class="md-testresult__score md-mono">{scored}/100 · BIMI only</span>
           </div>
 
           {result.record && <pre class="md-testresult__record">{result.record}</pre>}
@@ -215,7 +215,7 @@ export default function Bimi() {
             </p>
           )}
 
-          <ScoreExplainer conditions={conditions} />
+          <RecordScoreExplainer conditions={conditions} record="BIMI" />
 
           <div class="md-conditions">
             {conditions.length === 0 ? (
